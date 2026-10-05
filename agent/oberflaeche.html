@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurs-Agent</title>
+<style>
+ /* Aufbau wie ein Gespraech (04.10.2026, Anweisung des Auftraggebers): oben der Kopf, unten
+    immer das Eingabefeld, dazwischen der Verlauf, der bei Bedarf scrollt. */
+ :root { --rand:#cbd5e0; --grau:#718096; --blau:#2b6cb0; --gruen:#276749; --rot:#9b2c2c; --hell:#f7fafc; }
+ * { box-sizing:border-box; }
+ html, body { height:100%; }
+ body { font-family:-apple-system,Segoe UI,Roboto,sans-serif; margin:0; background:var(--hell);
+        color:#1a202c; line-height:1.5; display:flex; flex-direction:column; }
+ header { background:#2d3748; color:#e2e8f0; padding:10px 18px; display:flex; align-items:center;
+          gap:14px; flex-wrap:wrap; flex:0 0 auto; }
+ header h1 { font-size:1.05rem; margin:0; font-weight:600; }
+ header .wo { font-size:.76rem; color:#a0aec0; font-family:ui-monospace,monospace; }
+ .ampel { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:.84rem; }
+ .punkt { width:11px; height:11px; border-radius:50%; background:#718096; }
+ .punkt.an { background:#48bb78; box-shadow:0 0 9px #48bb78; animation:pulsen 1.2s infinite; }
+ @keyframes pulsen { 0%,100%{opacity:1} 50%{opacity:.45} }
+ header button { background:transparent; color:#e2e8f0; border:1px solid #4a5568; border-radius:6px;
+                 padding:5px 10px; font:inherit; font-size:.8rem; cursor:pointer; }
+ header button:hover { border-color:#a0aec0; }
+ #verlauf { flex:1 1 auto; overflow-y:auto; padding:18px 0 12px; }
+ .innen { max-width:960px; margin:0 auto; padding:0 16px; }
+ .leer { color:var(--grau); font-size:.92rem; padding:30px 20px; text-align:center;
+         border:1px dashed var(--rand); border-radius:10px; }
+ .leer b { color:#2d3748; }
+ /* Eintraege */
+ .mensch { display:flex; justify-content:flex-end; margin:14px 0 8px; }
+ .mensch .blase { background:var(--blau); color:#fff; border-radius:14px 14px 3px 14px; padding:10px 14px;
+                  max-width:78%; white-space:pre-wrap; word-break:break-word; font-size:.93rem; }
+ .mensch .nr { font-size:.72rem; opacity:.75; display:block; margin-bottom:3px; }
+ .agent { display:flex; justify-content:flex-start; margin:8px 0; }
+ .agent .blase { background:#fff; border:1px solid var(--rand); border-radius:14px 14px 14px 3px;
+                 padding:10px 14px; max-width:84%; white-space:pre-wrap; word-break:break-word; font-size:.93rem; }
+ .agent .blase.gut { background:#f0fff4; border-color:#9ae6b4; }
+ .agent .blase.rot { background:#fff5f5; border-color:#feb2b2; }
+ .schritt { margin:4px 0 4px 6px; border-left:3px solid var(--rand); padding:4px 10px; font-size:.86rem; }
+ .schritt.ruft { border-left-color:var(--blau); }
+ .schritt.gut  { border-left-color:#48bb78; }
+ .schritt.fehl { border-left-color:#e53e3e; }
+ .schritt.still{ color:var(--grau); border-left-color:#e2e8f0; }
+ .schritt .kopf { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+ .schritt .nr { font-family:ui-monospace,monospace; color:var(--grau); font-size:.76rem; }
+ .schritt .was { font-weight:600; }
+ .schritt .uhr { margin-left:auto; color:var(--grau); font-size:.74rem; font-family:ui-monospace,monospace; }
+ .schritt pre { margin:5px 0 0; font-size:.8rem; background:var(--hell); padding:7px 10px; border-radius:5px;
+                overflow-x:auto; white-space:pre-wrap; word-break:break-word; max-height:220px; overflow-y:auto; }
+ .schritt details summary { cursor:pointer; color:var(--grau); font-size:.78rem; }
+ .marke { font-size:.72rem; padding:1px 8px; border-radius:11px; font-weight:600; }
+ .m-gut { background:#c6f6d5; color:var(--gruen); }
+ .m-rot { background:#fed7d7; color:var(--rot); }
+ iframe { width:100%; height:240px; border:1px solid var(--rand); border-radius:8px; background:#1a202c; margin-top:6px; }
+ #runter { position:fixed; right:22px; bottom:150px; display:none; background:#2d3748; color:#fff; border:none;
+           border-radius:18px; padding:7px 14px; font:inherit; font-size:.82rem; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+ /* Eingabe */
+ footer { flex:0 0 auto; background:#fff; border-top:1px solid var(--rand); padding:10px 0 12px; }
+ .chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+ .chip { background:var(--hell); border:1px solid var(--rand); border-radius:14px; padding:4px 11px; font:inherit;
+         font-size:.78rem; cursor:pointer; color:#2d3748; }
+ .chip:hover:not(:disabled) { border-color:var(--blau); color:var(--blau); }
+ .chip:disabled { opacity:.45; cursor:not-allowed; }
+ .eingabe { display:flex; gap:9px; align-items:flex-end; }
+ textarea { flex:1; min-height:44px; max-height:200px; border:1px solid var(--rand); border-radius:9px; padding:10px 12px;
+            font:inherit; font-size:.93rem; resize:none; }
+ textarea:disabled { background:var(--hell); }
+ button.senden { height:44px; padding:0 20px; border-radius:9px; border:none; background:var(--blau); color:#fff;
+                 font:inherit; font-size:.93rem; cursor:pointer; }
+ button.senden:disabled { opacity:.45; cursor:not-allowed; }
+ .werkzeuge { margin-top:8px; font-size:.8rem; color:var(--grau); }
+ .werkzeuge summary { cursor:pointer; }
+ .reihe { display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-top:7px; }
+ .reihe input { width:92px; padding:5px 8px; border:1px solid var(--rand); border-radius:6px; font:inherit; font-size:.8rem; }
+ .reihe button { background:#fff; border:1px solid var(--rand); border-radius:6px; padding:5px 10px; font:inherit;
+                 font-size:.8rem; cursor:pointer; color:#2d3748; }
+ .reihe button:disabled { opacity:.45; cursor:not-allowed; }
+ @media (max-width:560px){ header{padding:9px 12px} .innen{padding:0 10px} .mensch .blase,.agent .blase{max-width:95%} }
+</style></head><body>
+
+<header>
+ <h1>Kurs-Agent</h1>
+ <span class="wo" id="wo">—</span>
+ <span class="ampel"><span class="punkt" id="punkt"></span><span id="stand">bereit</span></span>
+ <button id="neu" title="Das Gespraech beenden und ein neues beginnen; die Werkstatt bleibt">Neues Gespräch</button>
+ <div id="balken" hidden style="flex-basis:100%;height:5px;background:#4a5568;border-radius:3px;overflow:hidden"><div id="fuellung" style="height:100%;width:0;background:#48bb78;transition:width .4s"></div></div>
+</header>
+
+<div id="verlauf"><div class="innen" id="eintraege">
+ <div class="leer" id="leer"><b>Sagen Sie dem Agenten, was er tun soll.</b><br>
+  Er fragt ein Sprachmodell auf diesem Rechner, welches Werkzeug es aufrufen soll, führt es aus, liest das Ergebnis
+  und macht weiter, bis die Anweisung erledigt ist. Danach können Sie die nächste geben: einen anderen Pin, eine
+  andere Frequenz, erst prüfen, dann laden — oder ein eigenes Programm zum Prüfen (in ``` ``` einrahmen).</div>
+</div></div>
+<button id="runter">↓ neue Einträge</button>
+
+<footer><div class="innen">
+ <div class="chips" id="chips"></div>
+ <div class="eingabe">
+  <textarea id="frei" rows="1" placeholder="Anweisung eingeben … (Enter sendet, Umschalt+Enter macht eine neue Zeile)"></textarea>
+  <button class="senden" id="los">Senden</button>
+ </div>
+ <details class="werkzeuge"><summary>Von Hand · Werkzeuge prüfen (ohne Modell), Aufräumen zeigen</summary>
+  <div class="reihe">
+   <button id="pruefen">Werkzeuge prüfen (ohne Modell)</button>
+   <button id="aufraeumen">Aufräumen zeigen</button>
+  </div>
+  <div style="margin-top:6px">Alles andere ist eine Anweisung: „Lade blink.py auf den ESP32 an COM3 und lies nach, ob die LED blinkt.“
+   Den Anschluss nennen Sie; geraten wird er nie, geflasht nur auf Ihr Wort.</div>
+ </details>
+</div></footer>
+
+<script>
+const VERLAUF = document.getElementById('verlauf'), EINTRAEGE = document.getElementById('eintraege');
+const FREI = document.getElementById('frei'), LOS = document.getElementById('los');
+let ab = 0, laeuft = false, nummer = 0, folgen = true;
+
+// ---- Verlauf: anhaengen, und nur dann mitscrollen, wenn der Leser unten ist ---------------
+function untenDran() { return VERLAUF.scrollHeight - VERLAUF.scrollTop - VERLAUF.clientHeight < 80; }
+function anhaengen(el) {
+  document.getElementById('leer')?.remove();
+  EINTRAEGE.appendChild(el);
+  if (folgen) VERLAUF.scrollTop = VERLAUF.scrollHeight;
+  else document.getElementById('runter').style.display = 'block';
+}
+//  Der Leser entscheidet durch Scrollen, ob mitgefolgt wird: wer hochscrollt, bleibt oben;
+//  wer wieder unten ankommt, wird wieder mitgenommen.
+VERLAUF.addEventListener('scroll', () => { folgen = untenDran(); if (folgen) document.getElementById('runter').style.display = 'none'; });
+document.getElementById('runter').onclick = () => { folgen = true; VERLAUF.scrollTop = VERLAUF.scrollHeight; };
+//  Jede eigene Eingabe bringt den Verlauf wieder nach unten.
+function nachUnten() { folgen = true; VERLAUF.scrollTop = VERLAUF.scrollHeight; document.getElementById('runter').style.display = 'none'; }
+
+function mensch(text, nr) {
+  const d = document.createElement('div'); d.className = 'mensch';
+  const b = document.createElement('div'); b.className = 'blase';
+  if (nr) { const n = document.createElement('span'); n.className = 'nr'; n.textContent = (typeof nr === 'number' ? 'Anweisung ' + nr : nr); b.appendChild(n); }
+  b.appendChild(document.createTextNode(text)); d.appendChild(b); anhaengen(d);
+}
+function agentBlase(text, art) {
+  const d = document.createElement('div'); d.className = 'agent';
+  const b = document.createElement('div'); b.className = 'blase ' + (art || ''); b.textContent = text;
+  d.appendChild(b); anhaengen(d);
+}
+function schritt(klasse, kopf, nr, uhr, text, marke, zuklappen) {
+  const d = document.createElement('div'); d.className = 'schritt ' + klasse;
+  const k = document.createElement('div'); k.className = 'kopf';
+  if (nr) { const s = document.createElement('span'); s.className='nr'; s.textContent='['+nr+']'; k.appendChild(s); }
+  const w = document.createElement('span'); w.className='was'; w.textContent = kopf; k.appendChild(w);
+  if (marke) { const m = document.createElement('span'); m.className='marke '+(marke.gut?'m-gut':'m-rot'); m.textContent = marke.text; k.appendChild(m); }
+  const u = document.createElement('span'); u.className='uhr'; u.textContent = uhr || ''; k.appendChild(u);
+  d.appendChild(k);
+  if (text) {
+    const p = document.createElement('pre'); p.textContent = text;
+    if (zuklappen && text.length > 160) {
+      const det = document.createElement('details'); const su = document.createElement('summary');
+      su.textContent = text.split('\n')[0].slice(0, 110) + ' … (aufklappen)'; det.appendChild(su); det.appendChild(p); d.appendChild(det);
+    } else d.appendChild(p);
+  }
+  anhaengen(d); return d;
+}
+
+// ---- Zustand und Sperre: der Server sagt, ob etwas laeuft -------------------------------------
+//  Erwartete Dauer in Sekunden fuer den Fortschrittsbalken (Auftraggeber 04.10.2026: den Download anzeigen)
+const ERWARTET_S = { esp32_firmware: 90, esp32_uebertragen: 12, esp32_nachlesen: 10, programm_testen: 8, paket_installieren: 30, umgebung_anlegen: 15, programm_ausfuehren: 12 };
+const DAUER = { esp32_firmware: 'Flashen dauert etwa 1–2 Minuten', esp32_uebertragen: 'Kopieren und Neustart, etwa 10 Sekunden',
+                esp32_nachlesen: 'misst am Gerät, einige Sekunden', programm_testen: 'läuft die eingestellten Sekunden plus Start',
+                paket_installieren: 'aus den mitgelieferten Dateien, bis zu 1 Minute', umgebung_anlegen: 'einige Sekunden',
+                nachweis_autark: 'einige Sekunden' };
+let laufendesWerkzeug = null, laufendSeit = 0;
+function sperren(an) {
+  laeuft = an;
+  //  Das Eingabefeld bleibt waehrend des Laufs offen: eine Eingabe ist dann ein Zwischenruf,
+  //  den der Agent beim naechsten Schritt aufnimmt („eine Quereingabe muss moeglich sein").
+  document.querySelectorAll('.chip, .reihe button, #neu').forEach(e => e.disabled = an);
+  LOS.textContent = an ? 'Zwischenruf' : 'Senden';
+  FREI.placeholder = an ? 'Zwischenruf eingeben … (z. B. „COM3“, „nimm GPIO 4“) — der Agent nimmt ihn beim nächsten Schritt auf'
+                        : 'Anweisung eingeben … (Enter sendet, Umschalt+Enter macht eine neue Zeile)';
+  document.getElementById('punkt').classList.toggle('an', an);
+  if (an) laufendSeit = Date.now(); else { laufendesWerkzeug = null; FREI.focus(); }
+  document.getElementById('stand').textContent = an ? 'läuft …' : 'bereit — nächste Anweisung unten';
+}
+setInterval(() => {
+  const balken = document.getElementById('balken'), fuellung = document.getElementById('fuellung');
+  if (!laeuft) { balken.hidden = true; return; }
+  const s = (Date.now() - laufendSeit) / 1000;
+  document.getElementById('stand').textContent = laufendesWerkzeug
+    ? `${laufendesWerkzeug} läuft seit ${Math.round(s)} s · ${DAUER[laufendesWerkzeug] || ''}` : `das Modell überlegt seit ${Math.round(s)} s …`;
+  const erw = laufendesWerkzeug ? ERWARTET_S[laufendesWerkzeug] : null;
+  if (erw) { balken.hidden = false; fuellung.style.width = Math.min(96, 100 * s / erw).toFixed(0) + '%';
+             balken.title = `${laufendesWerkzeug}: etwa ${erw} s erwartet`; }
+  else balken.hidden = true;
+}, 500);
+
+async function zustand() {
+  const z = await (await fetch('/zustand')).json();
+  const s = z.sitzung;
+  document.getElementById('wo').textContent = z.wurzel + '   ·   Modell: ' + z.modell
+    + (s ? `   ·   Gespräch: ${s.anweisungen} Anweisung(en)${s.modell_geladen ? ', Modell geladen' : ''}` : '');
+  const c = document.getElementById('chips');
+  if (!c.childElementCount) z.auftraege.forEach(a => {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = a.titel; b.title = a.text;
+    b.onclick = () => { FREI.value = a.text; wachsen(); FREI.focus(); };
+    c.appendChild(b);
+  });
+}
+
+// ---- Senden -----------------------------------------------------------------------------------
+async function antwortPruefen(r, was) {
+  if (r.ok) return true;
+  let text = ''; try { text = (await r.json()).fehler || ''; } catch (e) { text = await r.text().catch(() => ''); }
+  if (r.status === 409) { agentBlase(was + ' nicht möglich: der Agent arbeitet noch an der vorigen Anweisung.', 'rot'); sperren(true); }
+  else { agentBlase(was + ' nicht möglich: ' + text, 'rot'); sperren(false); }
+  return false;
+}
+async function senden() {
+  const t = FREI.value.trim(); if (!t) return;
+  FREI.value = ''; wachsen(); nachUnten();
+  const war = laeuft;
+  if (!war) sperren(true);
+  const r = await fetch('/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ auftrag: t }) });
+  if (war && r.ok) return;                      // der Zwischenruf erscheint als Blase, sobald der Agent ihn aufnimmt
+  await antwortPruefen(r, war ? 'Zwischenruf' : 'Senden');
+}
+async function werkzeug(name, eingabe) {
+  if (laeuft) return;
+  mensch(`${name} ${JSON.stringify(eingabe)}`, null);
+  sperren(true);
+  const r = await fetch('/werkzeug', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, eingabe }) });
+  await antwortPruefen(r, name);
+}
+LOS.onclick = senden;
+FREI.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); senden(); } });
+function wachsen() { FREI.style.height = 'auto'; FREI.style.height = Math.min(FREI.scrollHeight, 200) + 'px'; }
+FREI.addEventListener('input', wachsen);
+
+document.getElementById('neu').onclick = async () => {
+  if (laeuft) return;
+  if (!confirm('Das Gespräch beenden und ein neues beginnen? Der Agent vergisst den Zusammenhang; die Werkstatt bleibt.')) return;
+  const r = await fetch('/neu', { method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' });
+  if (await antwortPruefen(r, 'Neues Gespräch')) { nummer = 0; }
+};
+
+// ---- Von Hand: nur Pruefen und Aufraeumen; alles andere ist eine Anweisung ----------------
+document.getElementById('pruefen').onclick = async () => {
+  if (laeuft) return; sperren(true);
+  for (const n of ['nachweis_autark', 'schreib_datei', 'programm_testen']) {
+    const eingabe = n === 'nachweis_autark' ? {wann:'vorher'}
+      : n === 'schreib_datei' ? {name:'probe.py', inhalt:'from machine import Pin\nimport time\nled = Pin(2, Pin.OUT)\nwhile True:\n    led.value(1)\n    time.sleep(0.5)\n    led.value(0)\n    time.sleep(0.5)\n'}
+      : {datei:'probe.py', sekunden:4, oeffnen:false, erwartet:{pins:[2], takt_hz:1.0}};
+    mensch(`${n} ${JSON.stringify(eingabe).slice(0, 80)}`, null);
+    const r = await fetch('/werkzeug', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:n, eingabe }) });
+    if (!(await antwortPruefen(r, 'Werkzeuge prüfen'))) return;
+    await new Promise(r => setTimeout(r, 600));
+    while ((await (await fetch('/zustand')).json()).laeuft) await new Promise(r => setTimeout(r, 400));
+  }
+  sperren(false);
+};
+document.getElementById('aufraeumen').onclick = () => {
+  if (confirm('Zeigen, was das Aufräumen entfernen würde? Gelöscht wird hier nichts — das macht START.bat, Punkt [2].'))
+    werkzeug('aufraeumen', { nur_zeigen: true });
+};
+
+// ---- Ereignisse vom Server --------------------------------------------------------------------
+async function holen() {
+  try {
+    const z = await (await fetch('/ereignisse?ab=' + ab)).json();
+    ab = z.ab;
+    for (const e of z.neu) {
+      if (e.art === 'auftrag') { if (e.zwischenruf) mensch(e.text, 'Zwischenruf'); else { nummer = e.nummer || (nummer + 1); mensch(e.text, nummer); } }
+      else if (e.art === 'modell_laedt')  schritt('still', 'Das Sprachmodell wird geladen …', null, e.zeit);
+      else if (e.art === 'modell_bereit') schritt('still', 'Modell bereit', null, e.zeit);
+      else if (e.art === 'denkt') { if (!e.aus_warteschlange) schritt('still', 'Das Modell überlegt …', e.schritt, e.zeit); }
+      else if (e.art === 'hinweis') schritt('still', 'Hinweis', null, e.zeit, e.text);
+      else if (e.art === 'antwort') { /* der Aufruf selbst folgt als "ruft"; freier Text folgt als fertig/abbruch */ }
+      else if (e.art === 'ruft') {
+        laufendesWerkzeug = e.werkzeug; laufendSeit = Date.now();
+        schritt('ruft', (e.vom_menschen ? 'aus Ihrer Eingabe: ' : '') + e.werkzeug, e.schritt || null, e.zeit, JSON.stringify(e.eingabe), null, true);
+      }
+      else if (e.art === 'ergibt') {
+        laufendesWerkzeug = null;
+        const marke = e.abnahme === 'bestanden' ? {gut:true, text:'ABNAHME BESTANDEN'}
+                    : e.abnahme === 'durchgefallen' ? {gut:false, text:'ABNAHME NICHT BESTANDEN'}
+                    : e.fehler ? {gut:false, text:'Fehler'} : null;
+        const d = schritt(e.fehler || e.abnahme === 'durchgefallen' ? 'fehl' : 'gut', e.werkzeug + ' — Ergebnis', e.schritt || null, e.zeit, e.text, marke, true);
+        if (e.werkzeug === 'programm_testen' && !e.fehler) {
+          const det = document.createElement('details'); const su = document.createElement('summary'); su.textContent = 'virtuelle LED anzeigen';
+          det.appendChild(su); const fr = document.createElement('iframe'); fr.title = 'Virtuelle LED'; fr.loading = 'lazy';
+          det.addEventListener('toggle', () => { if (det.open && !fr.src) fr.src = '/led?t=' + Date.now(); }); det.appendChild(fr); d.appendChild(det);
+        }
+      }
+      else if (e.art === 'fertig')  agentBlase(e.text, 'gut');
+      else if (e.art === 'abbruch') agentBlase(e.text, 'rot');
+      else if (e.art === 'fehler')  agentBlase('Fehler: ' + e.text, 'rot');
+      else if (e.art === 'kein_modell') { agentBlase('Das Sprachmodell kann hier nicht starten: ' + e.text, 'rot');
+                                          schritt('still', 'Es geht ohne Modell weiter: dieselben Werkzeuge, dieselbe Abnahme, die Entscheidungen trifft ein festes Drehbuch.', null, e.zeit); }
+      else if (e.art === 'neu')     schritt('still', e.text, null, e.zeit);
+      else if (e.art === 'ende')    { sperren(false); zustand(); }
+    }
+    if (z.laeuft !== laeuft) sperren(z.laeuft);
+  } catch (e) { document.getElementById('stand').textContent = 'keine Verbindung'; }
+}
+zustand(); setInterval(holen, 500); FREI.focus();
+</script>
+</body></html>

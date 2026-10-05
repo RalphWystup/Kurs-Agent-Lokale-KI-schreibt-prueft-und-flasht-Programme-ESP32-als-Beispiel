@@ -1,0 +1,47 @@
+[
+ {
+  "titel": "Hallo, bist du bereit?",
+  "text": "hallo, bist du bereit?",
+  "hinweis": "nur ein Gruß — Antwort in Worten"
+ },
+ {
+  "titel": "LED blinken lassen, 1 Hz",
+  "text": "Schreibe blink.py, das die LED an GPIO 2 einmal je Sekunde blinken laesst, und pruefe es gegen pins [2] und takt_hz 1.0.",
+  "hinweis": "ohne Hardware — schreiben, prüfen, Abnahme"
+ },
+ {
+  "titel": "Auf 2 Hz ändern",
+  "text": "Aendere die Blinkfrequenz auf 2 Hz.",
+  "hinweis": "Folgeanweisung: die Erwartung wandert mit"
+ },
+ {
+  "titel": "1 s an, 1 s aus",
+  "text": "Schreibe blink.py neu, so dass die LED an GPIO 2 genau 1 Sekunde an und 1 Sekunde aus ist (pins [2], takt_hz 0.5). Pruefe es.",
+  "hinweis": "langsam genug zum Zählen"
+ },
+ {
+  "titel": "Auf den ESP32 an COM3 und nachlesen",
+  "text": "Lade blink.py auf den ESP32 an COM3 und lies am Geraet nach, ob die LED so blinkt.",
+  "hinweis": "Anschluss anpassen — geraten wird er nie"
+ },
+ {
+  "titel": "Sinusförmig atmen, 1 Hz",
+  "text": "Schreibe ein Programm atmen.py, das die LED an GPIO 2 per PWM sinusfoermig atmen laesst, eine Periode pro Sekunde. Pruefe es mit programm_testen.",
+  "hinweis": "PWM-Hüllkurve: Takt und Form werden gemessen"
+ },
+ {
+  "titel": "Zwei LEDs, zwei Takte",
+  "text": "Schreibe zwei.py: LED an GPIO 2 zweimal je Sekunde und LED an GPIO 4 einmal je Sekunde, gleichzeitig. Pruefe gegen pins [2, 4].",
+  "hinweis": "schwere Karte — kleine Modelle scheitern hier meist"
+ },
+ {
+  "titel": "Taschenrechner mit Fenster",
+  "text": "Programmiere einen einfachen Taschenrechner rechner.py mit grafischer Oberflaeche (tkinter): Anzeige, Ziffern 0-9, Tasten + - * / = C. Fuehre ihn mit programm_ausfuehren aus (fenster true) und lass das Fenster am Ende fuer mich offen (offen_lassen true).",
+  "hinweis": "allgemeines Programm, tkinter aus dem Paket"
+ },
+ {
+  "titel": "Was ist angeschlossen?",
+  "text": "Richte die Umgebung ein, installiere esptool und sieh dann nach, welche seriellen Anschluesse es an diesem Rechner gibt.",
+  "hinweis": "kurzer Lauf — gut als erster Versuch"
+ }
+]
