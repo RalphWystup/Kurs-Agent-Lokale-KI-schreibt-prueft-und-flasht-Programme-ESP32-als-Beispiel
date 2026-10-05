@@ -55,6 +55,7 @@ from _muster import werkzeug, Abbruch, lauf, in_der_ablage, ABLAGE, WERKSTATT, p
 #  math, random, struct, sys, gc: reine Rechenbibliotheken, die es in MicroPython wie in CPython gibt.
 #  Ohne math kein Sinus — am 05.10.2026 fiel ein korrektes Sinus-Atmen daran, dass math verboten war.
 ERLAUBTE_MODULE = {"machine", "time", "utime", "math", "random", "struct", "ustruct", "sys", "gc"}
+NACHGEBILDET = {"Pin", "Signal", "PWM", "ADC", "reset", "freq", "unique_id"}     # was machine.py im Nachbau wirklich hat
 # Alles, was zur Laufzeit an Dinge herankommt, die der Syntaxbaum nicht mehr sieht.
 # getattr gehoert dazu: getattr(x, "__class__") fuehrt ueber die Klassenhierarchie zurueck
 # zu allem, was die Liste darueber gerade verbietet.
@@ -70,9 +71,9 @@ MACHINE = '''# -*- coding: utf-8 -*-
 Nachgebildet wird nur, was ein Blinkprogramm braucht. Jeder Zustandswechsel wird mit
 Zeitstempel ausgegeben; wer mehr braucht, erweitert diese Datei.
 """
-import sys, time
+import sys as _sys, time as _time   # mit Unterstrich: „from machine import time" darf hier nicht gelingen (05.10.2026, 13:02)
 
-_START = time.time()
+_START = _time.time()
 
 
 class Pin:
@@ -85,7 +86,7 @@ class Pin:
         self._melde()
 
     def _melde(self):
-        print(f"PIN {self.nummer} {self._wert} {time.time() - _START:.3f}", flush=True)
+        print(f"PIN {self.nummer} {self._wert} {_time.time() - _START:.3f}", flush=True)
 
     def value(self, wert=None):
         if wert is None:
@@ -120,7 +121,7 @@ class PWM:
         self._melde()
 
     def _melde(self):
-        print(f"PWM {self.pin} {self._f} {self._d:.4f} {time.time() - _START:.3f}", flush=True)
+        print(f"PWM {self.pin} {self._f} {self._d:.4f} {_time.time() - _START:.3f}", flush=True)
 
     def freq(self, f=None):
         if f is None:
@@ -154,11 +155,11 @@ class ADC:
     def width(self, *a): pass
 
     def read(self):
-        print(f"ADC {self.pin} 2048 ERFUNDEN {time.time() - _START:.3f}", flush=True)
+        print(f"ADC {self.pin} 2048 ERFUNDEN {_time.time() - _START:.3f}", flush=True)
         return 2048
 
     def read_u16(self):
-        print(f"ADC {self.pin} 32768 ERFUNDEN {time.time() - _START:.3f}", flush=True)
+        print(f"ADC {self.pin} 32768 ERFUNDEN {_time.time() - _START:.3f}", flush=True)
         return 32768
 
 
@@ -210,6 +211,13 @@ def _pruefen(quelltext: str, name: str):
                                   f"{', '.join(sorted(ERLAUBTE_MODULE))} — der Lauf ohne "
                                   f"Hardware fuehrt nur Blinkprogramme aus.")
         elif isinstance(k, ast.ImportFrom):
+            if (k.module or "") == "machine":
+                #  „from machine import Pin, time" lief im Nachbau durch (13:02) — auf dem Geraet gibt es
+                #  machine.time nicht. Der Nachbau darf nichts koennen, was das Geraet nicht kann.
+                fremd = [a.name for a in k.names if a.name not in NACHGEBILDET]
+                if fremd:
+                    raise Abbruch(f"{name}, Zeile {k.lineno}: from machine import {', '.join(fremd)} — das gibt es in MicroPython "
+                                  f"nicht. machine bietet {', '.join(sorted(NACHGEBILDET))}; time ist ein eigenes Modul: import time.")
             if (k.module or "").split(".")[0] not in ERLAUBTE_MODULE:
                 raise Abbruch(f"{name} holt aus '{k.module}'. Erlaubt sind hier nur "
                               f"{', '.join(sorted(ERLAUBTE_MODULE))}.")
@@ -471,7 +479,15 @@ def _pwm_auswerten(ausgabe):
         ts = [x[0] for x in liste]; ds = [x[1] for x in liste]
         lo, hi = min(ds), max(ds); traeger = liste[-1][2]
         if hi - lo < 0.1:
-            bericht.append(f"\nPWM an Pin {pin}: Traeger {traeger} Hz, Tastgrad fest bei {hi*100:.0f} % — keine Huellkurve.")
+            #  05.10.2026, 12:08: duty_u16(1023 * …) — Vollausschlag waere 65535, so blieb die LED bei 1,6 %
+            #  und der Befund „fest bei 2 %" fuehrte das Modell nicht zur Ursache.
+            if hi - lo < 0.005:
+                bericht.append(f"\nPWM an Pin {pin}: Traeger {traeger} Hz, Tastgrad fest bei {hi*100:.1f} % — keine Huellkurve, "
+                               f"der Tastgrad aendert sich nicht.")
+            else:
+                bericht.append(f"\nPWM an Pin {pin}: Traeger {traeger} Hz, Tastgrad nur zwischen {lo*100:.1f} % und {hi*100:.1f} % — "
+                               f"zu wenig Hub fuer ein Atmen (unter 10 %). Vollausschlag ist bei duty() 1023, bei duty_u16() 65535; "
+                               f"pruefe, welche der beiden Funktionen der Quelltext benutzt und mit welcher Zahl er multipliziert.")
             continue
         #  Durchgaenge mit Hysterese (30 %/70 % des Bereichs): Eine am Geraet gemessene Kurve rauscht,
         #  und ohne Hysterese zaehlte jedes Zittern um die Mitte als neue Periode (05.10.2026, 10:24:

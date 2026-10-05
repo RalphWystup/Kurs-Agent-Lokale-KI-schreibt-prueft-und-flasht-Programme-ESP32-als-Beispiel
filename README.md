@@ -30,7 +30,7 @@ ESP32 an COM3 gemessen; alles andere steht im Reiter **Stand und Grenzen** als o
 
 | Datei / Ordner | Inhalt |
 |:--|:--|
-| [`Kurs_Agent_3.0.html`](Kurs_Agent_3.0.html) | die Kurs-Seite: Inbetriebnahme, Komponenten in getrennten Reitern, Funktionsskizze, Messungen, Stand und Grenzen |
+| [`Kurs_Agent_3.1.html`](Kurs_Agent_3.1.html) | die Kurs-Seite: Inbetriebnahme, Komponenten in getrennten Reitern, Funktionsskizze, Messungen, Stand und Grenzen |
 | [`AUFGABE.md`](AUFGABE.md) / [`.pdf`](AUFGABE.pdf) | die Aufgabe des Auftraggebers, wörtlich, und was daraus folgt |
 | [`ANFORDERUNGEN.md`](ANFORDERUNGEN.md) / [`.pdf`](ANFORDERUNGEN.pdf) | 96 Anforderungen in elf Gruppen, jede so gefasst, dass sie scheitern kann |
 | [`PRUEFPROTOKOLL.md`](PRUEFPROTOKOLL.md) / [`.pdf`](PRUEFPROTOKOLL.pdf) | was geprüft ist, womit, mit welchem Ergebnis — einschließlich der Fehlschläge |
@@ -39,7 +39,7 @@ ESP32 an COM3 gemessen; alles andere steht im Reiter **Stand und Grenzen** als o
 | `hole_paket.py` | füllt das Paket einmal mit Netz aus den Originalquellen (Python, pip, Räder, llama.cpp, MicroPython, Treiber, Modell); im Kurs nie |
 | `agent/` | der Agent (`agent.py`, Klasse `Sitzung`), die Modellanbindung, die Oberfläche (Gespräch im Browser), die festen Anfragen (`auftraege.json`) |
 | `agent/werkzeuge/` | elf Werkzeuge, jedes ein eigenes Programm mit `--beschreibung`: schreib_datei, programm_testen (Nachbau mit gedachter Uhr, PWM-Hüllkurve), programm_ausfuehren, ports_zeigen, esp32_firmware, esp32_uebertragen, esp32_nachlesen (misst am Gerät), umgebung_anlegen, paket_installieren, nachweis_autark, aufraeumen |
-| `pruefstand/` | die Gegenproben: `pruefe_schleife.py`, `pruefe_regeln.py`, `pruefe_gespraech.py`, `pruefe_ungeprueft.py`, `pruefe_pwm.py`, dazu `messe_modell.py` für Modellvergleiche |
+| `pruefstand/` | die Gegenproben: `pruefe_schleife.py`, `pruefe_regeln.py`, `pruefe_gespraech.py`, `pruefe_ungeprueft.py`, `pruefe_pwm.py`, dazu `messe_modell.py` für Modellvergleiche und `lauf_neun_fragen.json`, die Messwerte der neun festen Anfragen vom 05.10.2026 |
 | `pruefe_alles.py`, `pruefe_unversehrtheit.py`, `pruefe_rechner.py`, `sammle_bericht.py` | Prüfung gegen das Anforderungsblatt, Unversehrtheit des Rechners, Eignung des Rechners, Ferndiagnose in einer Datei |
 | `paket/tkinter-8.6.13-py3.12-win-amd64.zip` | tkinter für das eingebettete Python (aus conda-forge, Lizenzen im Archiv) — alles andere im Paket wird geholt, nicht mitgeliefert |
 | `erstelle_anleitung.py`, `bilder/` | erzeugt die Seite; die Werkzeugtabelle wird aus den Programmen gelesen |

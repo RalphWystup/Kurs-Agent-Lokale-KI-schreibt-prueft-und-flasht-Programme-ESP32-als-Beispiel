@@ -68,6 +68,37 @@ def auftraege_lesen() -> list:
 _ereignisse: list = []
 _sperre = threading.Lock()
 _laeuft = False
+
+_geraete = {"zeit": 0.0, "liste": None}
+def geraete() -> list | None:
+    """Welche seriellen Anschluesse gerade da sind — fuer die Kopfzeile („sehe nie, ob der ESP32 ueberhaupt
+    verbunden ist", 05.10.2026). Hoechstens alle 5 s, und nie waehrend ein Werkzeug laeuft: Ein Flashen oder
+    Uebertragen darf keine zweite Abfrage am selben Anschluss bekommen. None heisst: nicht feststellbar
+    (noch kein eigenes Python oder kein pyserial)."""
+    if _laeuft or time.time() - _geraete["zeit"] < 5:
+        return _geraete["liste"]
+    _geraete["zeit"] = time.time()
+    try:
+        from pfade import python_exe
+        w = str(pathlib.Path(__file__).resolve().parent / "werkzeuge")
+        if w not in sys.path:
+            sys.path.insert(0, w)
+        from ports_zeigen import ABFRAGE, WANDLER
+        if not python_exe().exists():
+            return None
+        from pfade import umgebung
+        r = subprocess.run([str(python_exe()), "-c", ABFRAGE], capture_output=True, text=True, timeout=10,
+                           env=umgebung(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if r.returncode != 0:
+            return None
+        liste = []
+        for p in json.loads(r.stdout):
+            kennung = f"{p['vid']:04X}:{p['pid']:04X}" if p.get("vid") else ""
+            liste.append({"port": p["port"], "name": p.get("name", ""), "wandler": WANDLER.get(kennung)})
+        _geraete["liste"] = liste
+    except Exception:
+        return _geraete["liste"]
+    return _geraete["liste"]
 _sitzung = None          # das Gespraech: bleibt ueber Anweisungen hinweg offen (04.10.2026)
 
 
@@ -166,6 +197,7 @@ class Griff(http.server.BaseHTTPRequestHandler):
                     "erwartung": s.feste_erwartung, "ports": sorted(s.genannte_ports),
                     "abgenommen": sorted(s.abgenommen), "ungeprueft": sorted(s.ungeprueft)},
                 "auftraege": auftraege_lesen(),
+                "geraete": geraete(),
             }).encode())
         if self.path.startswith("/led"):
             # startswith, nicht ==: die Seite haengt ein ?t=<Zeit> an, um den

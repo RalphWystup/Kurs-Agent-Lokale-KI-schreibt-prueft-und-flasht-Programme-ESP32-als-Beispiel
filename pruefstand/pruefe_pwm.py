@@ -22,4 +22,12 @@ d = lauf("pwm_fest.py", {"pins": [2], "takt_hz": 1.0}); pr("fester Tastgrad: kei
 e = lauf("atmen_dreieck.py", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig"}); pr("Dreieck gegen Erwartung sinusfoermig: NICHT BESTANDEN (Dreieck ist kein Sinus)", "ABNAHME NICHT BESTANDEN" in e and "Form: erwartet sinusfoermig, gemessen dreieckig  NICHT ERFUELLT" in e)
 g = lauf("atmen_sinus.py", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig"}); pr("Sinus gegen Erwartung sinusfoermig: BESTANDEN", "ABNAHME BESTANDEN" in g and "Form: erwartet sinusfoermig, gemessen sinusfoermig  erfuellt" in g)
 h = lauf("atmen_sinus.py", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig", "mindestens_wechsel": 6}); pr("Sinus mit mindestens 6 Wechseln: PWM-Durchgaenge zaehlen, BESTANDEN", "ABNAHME BESTANDEN" in h, [l for l in h.splitlines() if "Zustandswechsel" in l][:1])
+# 05.10.2026, 12:08: duty_u16 mit 1023 statt 65535 -> Hub 1,6 %; der Befund muss die Ursache nennen
+(w / "atmen_klein.py").write_text("from machine import Pin, PWM\nimport time, math\nled = PWM(Pin(2), freq=1000)\nwhile True:\n    for i in range(100):\n        led.duty_u16(int(1023 * (1 - math.cos(2 * math.pi * i / 100)) / 2)); time.sleep(0.01)\n")
+k = lauf("atmen_klein.py", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig"}); pr("duty_u16 mit 1023: NICHT BESTANDEN, Befund nennt zu wenig Hub und 65535", "NICHT BESTANDEN" in k and "zu wenig Hub" in k and "65535" in k, [l for l in k.splitlines() if "PWM an Pin" in l][:1])
+# 05.10.2026, 13:02: „from machine import Pin, time" bestand im Nachbau — auf dem Geraet gibt es machine.time nicht
+(w / "falsch_import.py").write_text("from machine import Pin, time\nled = Pin(2, Pin.OUT)\nwhile True:\n    led.value(1); time.sleep(0.25); led.value(0); time.sleep(0.25)\n")
+fi = lauf("falsch_import.py", {"pins": [2], "takt_hz": 2.0}); pr("from machine import time: FEHLER vor dem Lauf, Hinweis 'import time'", fi.startswith("FEHLER") and "import time" in fi and "BESTANDEN" not in fi, fi.splitlines()[0][:120])
+(w / "attr_time.py").write_text("import machine\nled = machine.Pin(2, machine.Pin.OUT)\nwhile True:\n    led.value(1); machine.time.sleep(0.25); led.value(0)\n")
+at = lauf("attr_time.py", {"pins": [2], "takt_hz": 2.0}); pr("machine.time.sleep: bricht ab (nicht nachgebildet)", at.startswith("FEHLER") and "nicht nachgebildet" in at)
 print(f"\n  {sum(f)} von {len(f)}"); sys.exit(0 if all(f) else 1)

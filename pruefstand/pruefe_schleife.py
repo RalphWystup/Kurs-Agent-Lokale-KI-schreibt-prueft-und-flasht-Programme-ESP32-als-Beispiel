@@ -62,12 +62,15 @@ def pruefen(was, bedingung):
 
 pruefen("alle neun Antworten wurden gebraucht (FERTIG wurde zweimal zurueckgewiesen)",
         _i[0] == len(ANTWORTEN))
-pruefen("genau sechs Werkzeugaufrufe", len(rufe) == 6)
+# seit 05.10.2026: auf jedes FERTIG nach einem Fehlschlag holt der Berichtigungsfokus die neue Datei und der
+# Agent prueft sie sofort selbst; der eigene Pruefaufruf des Modells folgt danach noch einmal — acht Aufrufe
+pruefen("genau acht Werkzeugaufrufe (3 x schreiben, 5 x pruefen)", len(rufe) == 8)
 pruefen("die Reihenfolge stimmt",
-        rufe == ["schreib_datei", "programm_testen"] * 3)
+        rufe == ["schreib_datei", "programm_testen", "schreib_datei", "programm_testen", "programm_testen",
+                 "schreib_datei", "programm_testen", "programm_testen"])
 pruefen("erste Pruefung: Fehler (kein Abnahmeurteil)", len(abn) > 1 and abn[1] is None)
-pruefen("zweite Pruefung: durchgefallen", len(abn) > 3 and abn[3] == "durchgefallen")
-pruefen("dritte Pruefung: bestanden", len(abn) > 5 and abn[5] == "bestanden")
+pruefen("zweite Pruefung (vom Agenten angehaengt): durchgefallen", len(abn) > 3 and abn[3] == "durchgefallen")
+pruefen("letzte Pruefungen: bestanden", len(abn) == 8 and abn[6] == "bestanden" and abn[7] == "bestanden")
 pruefen("FERTIG wurde genau einmal angenommen", len(fertig) == 1)
 pruefen("und erst nach der bestandenen Abnahme",
         fertig and "1 Hz" in fertig[0]["text"])

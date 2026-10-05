@@ -12,7 +12,7 @@ Aenderung; eine erfragte stimmt immer oder das Erzeugen scheitert.
 from __future__ import annotations
 import json, subprocess, sys, pathlib, datetime, html
 
-FASSUNG = "3.0"
+FASSUNG = "3.1"
 HIER = pathlib.Path(__file__).resolve().parent
 ZIEL = HIER / f"Kurs_Agent_{FASSUNG}.html"
 
@@ -104,6 +104,33 @@ SCHAUBILD = '''
    <tspan x="42" dy="19">Der orange Schritt ist dann das Ergebnis: das Programm läuft, die LED blinkt auf dem Bildschirm — nur eben nicht am Steckbrett.</tspan>
  </text>
 </svg>'''
+
+
+def neun_fragen() -> str:
+    """Tabelle der neun festen Anfragen (agent/auftraege.json), live am Laptop mit Coder-3B und ESP32 an COM3,
+    aus pruefstand/lauf_neun_fragen.json (vom Prüfstandsskript aus den Ereignissen des Agenten erzeugt)."""
+    import json as _json
+    d = HIER / "pruefstand" / "lauf_neun_fragen.json"
+    if not d.is_file():
+        return "<p>(Lauf der neun festen Anfragen noch nicht ausgewertet.)</p>"
+    m = _json.loads(d.read_text(encoding="utf-8"))
+    k = [f"<p>Gemessen am {m['datum']}, {m['ort']}, Modell {m['modell']}. Jede Zeile ist eine Anweisung aus den Knöpfen der Oberfläche, "
+         "der Reihe nach in einem Gespräch; nichts davon ist hinterlegt — die Werkzeugaufrufe, Abnahmen und Zeiten stammen aus dem Ereignisprotokoll des Agenten. "
+         f"Läufe: {m.get('laeufe', '')}.</p>",
+         "<table><tr><th>Nr</th><th>Anfrage</th><th>Ende</th><th>Aufrufe</th><th>Abnahmen</th><th>Agent griff ein</th><th>Dauer</th><th>vom Werkzeug gemessen</th><th>Bemerkung</th></tr>"]
+    for z in m["anweisungen"]:
+        eingriffe = []
+        if z["fokus"]: eingriffe.append(f"{z['fokus']}× Fokus")
+        if z["berichtigung"]: eingriffe.append(f"{z['berichtigung']}× Berichtigung")
+        if z["selbst"]: eingriffe.append(f"{z['selbst']}× selbst geprüft")
+        if z["anmerkung"]: eingriffe.append(f"{z['anmerkung']}× Anmerkung")
+        if z["ersetzt"]: eingriffe.append("Abschluss ersetzt")
+        k.append(f"<tr><td>{z['nr']}</td><td>{z['anweisung'][:90] + ('…' if len(z['anweisung']) > 90 else '')}</td><td><strong>{z['ende']}</strong></td><td>{len(z['aufrufe'])}</td>"
+                 f"<td>✓{z['bestanden']} ✗{z['durchgefallen']}" + (f" F{z['fehler']}" if z['fehler'] else "") + f"</td>"
+                 f"<td>{', '.join(eingriffe) or '—'}</td><td>{z['sekunden'] or 0} s</td><td class=\"klein\">{(z['gemessen'] or '—')[:220]}</td>"
+                 f"<td class=\"klein\">{z.get('bemerkung', '')}</td></tr>")
+    k.append("</table>")
+    return "\n".join(k)
 
 
 def messreihe() -> str:
@@ -239,6 +266,7 @@ def seite() -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kurs-Agent {FASSUNG} — Lehrbeispiel: eine lokale KI schreibt, prüft und flasht Programme</title>
 <style>
+.klein {{ font-size:.8em; color:#4a5568; }}
  :root {{ --rand:#cbd5e0; --grau:#718096; --dunkel:#2d3748; --blau:#2b6cb0; }}
  * {{ box-sizing:border-box; }}
  body {{ font-family:-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.65; color:#1a202c;
@@ -964,6 +992,17 @@ ebenso ehrlich, woran ein kleines Modell scheitert. Alles, was hier als „funkt
 <li>Hardwarefragen beantwortet es falsch („die LED am Bildschirm“); das Brettwissen in der Anweisung mildert das, ersetzt es nicht.</li>
 <li>Die Rücklesung bei PWM bremst das Programm noch leicht (0,49 Hz gemessen gegen 0,55 Hz gezählt).</li>
 </ul>
+<h3>Der Nachmittag des 05.10.2026 — die neun festen Anfragen, ohne Fake</h3>
+<p>Vorgabe: „Wenigstens die vorgefertigten Fragen müssen durchlaufen durch das System, und zwar ohne eine Fake-Sache. Der Agent soll die
+Realität prüfen, nicht das Wunschdenken.“ Die Läufe mit dem echten Modell zeigten neun Lücken im Agenten, jede mit Uhrzeit im
+Prüfprotokoll (J19–J27, K7): ein leeres FERTIG auf eine Aufgabe; „die Zeile wurde korrigiert“ ohne Werkzeug, dreimal derselbe Satz; ein
+Schlusssatz mit falscher Zahl („Periode von 2 Sekunden“ bei 2 Hz); der Rügetext des Agenten als Schlusssatz des Modells nachgeplappert;
+„Lade blink.py auf den ESP32“ ließ das Modell die Datei umschreiben statt zu übertragen; ein fehlgeschlagenes Übertragen zählte als gelaufen;
+fünf Minuten je Antwort im langen Gespräch; ein Taschenrechner wurde gegen Pins geprüft, weil eine ESP32-Erwartung aus der
+Anweisung davor stand; ein Ein/Aus-Programm erbte die Kurvenform „sinusförmig“ vom Atmen davor. Behoben wurde das im Agenten, nicht im Modell: Unter jedem FERTIG steht jetzt, was die Werkzeuge
+gemessen haben; der Agent zeigt dem Modell die Datei und den Befund ohne Vorgeschichte und prüft selbst nach; den Geräteschritt führt er
+notfalls selbst aus; der Verlauf wird je Anweisung verdichtet. Was das Modell schreibt, bleibt sichtbar — daneben steht, was wahr ist.</p>
+{neun_fragen()}
 <h3>Messreihe 3 — Qwen2.5-Coder-3B gegen -7B, dasselbe Gespräch, derselbe Agent (05.10.2026, Prüfstand ohne Grafikkarte)</h3>
 {messreihe()}
 <p>Lesart: „Ende“ ist, wie die Anweisung ausging; „Abnahmen“ zählt bestandene (✓) und durchgefallene (✗) Prüfungen; „selbst“ heißt, der Agent

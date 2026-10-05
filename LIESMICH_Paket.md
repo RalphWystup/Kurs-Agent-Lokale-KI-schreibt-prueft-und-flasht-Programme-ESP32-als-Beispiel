@@ -36,7 +36,7 @@ einem anderen Rechner: füllen einmal, weitergeben beliebig oft.
 
 ## Die ganze Anleitung
 
-**`Kurs_Agent_3.0.html`** — Doppelklick, öffnet im Browser, braucht kein Netz.
+**`Kurs_Agent_3.1.html`** — Doppelklick, öffnet im Browser, braucht kein Netz.
 Sieben Reiter mit allem: wofür das Ganze, was im Paket ist, Schritt für Schritt, zwei
 Beispiele mit und ohne Hardware, Treiber, was der Rechner davon merkt, und was zu tun ist,
 wenn es klemmt. Mit Bildern der laufenden Bedienung.

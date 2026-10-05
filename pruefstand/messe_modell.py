@@ -43,8 +43,10 @@ for i, text in enumerate(GESPRAECH, 1):
     zeilen.append({"nr": i, "anweisung": text[:70], "ende": ende, "antwort": r.strip().splitlines()[0][:110], "aufrufe": len(rufe), "werkzeuge": rufe,
                    "bestanden": best, "durchgefallen": durch, "fehler": fehler, "fokus": fokus, "selbst": selbst, "anmerkung": anm, "sekunden": round(time.time() - t0)})
     print(f"[{i}] {ende:16s} {len(rufe):2d} Aufrufe  ✓{best} ✗{durch} F{fehler}  Fokus {fokus} Selbst {selbst} Anm {anm}  {round(time.time()-t0):4d} s  | {r.strip().splitlines()[0][:90]}", flush=True)
+    #  nach jeder Anweisung schreiben: am 05.10.2026 ging eine 50-Minuten-Reihe am Ende an einem Namensfehler verloren
+    name = (sys.modules["pfade"].eine("modell/*.gguf") or pathlib.Path("?")).name
+    ergebnis = {"modell": name, "wurzel": str(wurzel), "agent_stand": time.strftime("%Y-%m-%d %H:%M", time.localtime(A.joinpath("agent.py").stat().st_mtime)),
+                "dauer_s": round(time.time() - t_ges), "anweisungen": zeilen, "vollstaendig": i == len(GESPRAECH)}
+    (wurzel / "messung.json").write_text(json.dumps(ergebnis, ensure_ascii=False, indent=1), encoding="utf-8")
 s.schliessen()
-name = (agent.eine("modell/*.gguf") or pathlib.Path("?")).name
-ergebnis = {"modell": name, "wurzel": str(wurzel), "dauer_s": round(time.time() - t_ges), "anweisungen": zeilen}
-(wurzel / "messung.json").write_text(json.dumps(ergebnis, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"\n{name}: {ergebnis['dauer_s']} s gesamt; FERTIG {sum(1 for z in zeilen if z['ende']=='FERTIG')}/{len(zeilen)}, Antwort {sum(1 for z in zeilen if z['ende']=='Antwort')}, nicht abgenommen {sum(1 for z in zeilen if z['ende']=='Nicht abgenommen')}; Aufrufe {sum(z['aufrufe'] for z in zeilen)}, bestanden {sum(z['bestanden'] for z in zeilen)}, durchgefallen {sum(z['durchgefallen'] for z in zeilen)}")

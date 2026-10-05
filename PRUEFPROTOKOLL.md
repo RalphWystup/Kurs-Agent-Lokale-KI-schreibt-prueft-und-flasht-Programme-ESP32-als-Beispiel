@@ -226,6 +226,16 @@ ist deshalb nachgetragen; aus 47 Punkten wurden 50.
 | J12 | **Live am Laptop, 20:01–20:04 Uhr (Coder-3B):** blink.py 2 Hz (erst 1 Hz durchgefallen, berichtigt, bestanden); Modell wollte COM5, abgewiesen, fragt; „Der Anschluss ist COM3. Lade … und lies nach": `esp32_uebertragen` COM3, `esp32_nachlesen` 2,06 Hz BESTANDEN, ehrliches FERTIG; Taschenrechner (tkinter, 37 Zeilen) als Fenster offen, Nutzer: „der Taschenrechner funktioniert" | Gespräch über die Brücke, Nutzer am Bildschirm | **erfüllt** |
 | J13–J18 | ergebnisoffen, Methode bereitstellen, Fokus, fehlende Datei, Anmerkung, Erwartung aus Worten | `pruefe_gespraech.py` 30/30, Laptop-Gespräche 05.10.2026 9:09–10:20 | **erfüllt** — „hallo bist du bereit?" → „Ja, ich bin bereit"; erfundene Arbeit („geschrieben, geprüft, übertragen" ohne Werkzeug) wird als unwahr zurückgewiesen, Fokus liefert den Aufruf; keine Behauptung ging als abgenommen durch |
 
+| J19 | leeres FERTIG → Fokus; alte, nie geschriebene Datei blockiert nicht | `pruefe_gespraech.py` 5h, 5i; Laptop 11:09/11:36 | **erfüllt** — 11:09: viermal „FERTIG — Bereit für die nächste Anweisung" → Nicht abgenommen; nach der Korrektur 11:36: Fokus liefert schreib_datei im ersten Anlauf |
+| J20 | Berichtigungsfokus nach durchgefallener Prüfung | `pruefe_gespraech.py` 5l; `pruefe_schleife.py` 8 Aufrufe; Laptop 11:50/12:00 | **erfüllt** — 11:50: dreimal „Die Zeile time.sleep(1) wurde korrigiert" ohne Werkzeug → Nicht abgenommen; nach der Korrektur 12:00: Datei + Befund ohne Vorgeschichte → berichtigt, vom Agenten geprüft, bestanden |
+| J21 | gemessene Zeile unter FERTIG, Widerspruch angemerkt, nachgeplapperter Text ersetzt | `pruefe_gespraech.py` 5k, 5m; Laptop 11:40/12:01 | **erfüllt** — 11:40: „Periode von 2 Sekunden" bei gemessenen 1,99 Hz; 12:01: der Rügetext des Agenten als Schlusssatz des Modells |
+| J22 | Geräteschritt: Fokus auf genau diesen Aufruf, sonst führt der Agent ihn aus; Fehlschlag zählt nicht als gelaufen | `pruefe_gespraech.py` 4, 5b, 5n, 6; Laptop 12:03 | **erfüllt** — 12:03: „Lade blink.py auf den ESP32 an COM3" ließ das Modell blink.py umschreiben (PWM!) statt zu übertragen, weil der Fokus-Hinweis pauschal schreib_datei nannte |
+| J23 | „dritter gleicher Fehlschlag" nur bei Fehlschlägen, je Anweisung | `pruefe_gespraech.py` 5j; Laptop 11:39 | **erfüllt** — der Hinweis stand unter einer BESTANDENEN Abnahme |
+| J24 | verdichteter Verlauf je Anweisung | `pruefe_gespraech.py` (Zusammenfassung nennt Dateien, Erwartung, Anschlüsse) | **erfüllt** im Prüfstand; Anlass Laptop 12:14–12:19: fünf Minuten je Antwort in der sechsten Anweisung |
+| J26 | Prüfweg nach der Datei, nicht nach der alten Erwartung | `pruefe_gespraech.py` 5l-e; Laptop 14:50 → 15:40 | **erfüllt** — 14:50: rechner.py mit programm_testen gegen pins [2, 4] (FEHLER „importiert tkinter“, Abbruch nach 25 Schritten); nach der Korrektur 15:40: programm_ausfuehren, Fenster „Taschenrechner“, LAUF BESTANDEN |
+| J27 | Kurvenform erbt nicht auf ein neues Programm | `pruefe_regeln.py`, `pruefe_gespraech.py` 5l-d; Laptop 13:33/14:26 | **erfüllt** im Prüfstand; am Laptop nicht erneut gemessen (Frage 7 scheitert ohnehin an den zwei Takten) |
+| J25 | Geräteanzeige in der Kopfzeile, Fortschrittsbalken je Aufruf | Laptop | wirksam nach Neustart des Agenten (`oberflaeche.py` ist der Server selbst) — Rüge 12:15: „sehe nie einen Fortschrittsbalken zur Übertragung und nie, ob der ESP32 überhaupt verbunden ist" |
+
 ## K — allgemeine Python-Programme
 
 | | Anforderung | geprüft | Ergebnis |
@@ -236,6 +246,19 @@ ist deshalb nachgetragen; aus 47 Punkten wurden 50.
 | K4 | Lauf zählt als Prüfung | `pruefe_regeln.py` | **erfüllt** — kaputter Lauf sperrt FERTIG, guter gibt frei |
 | K5 | PWM-Hüllkurve, Form als Kriterium | `pruefe_pwm.py` 7/7; Laptop 10:17: Modellprogramm sinusförmig 0,97 Hz erkannt | **erfüllt** |
 | K6 | gedachte Uhr im Nachbau | `pruefe_pwm.py`, `pruefe_alles.py` 19/19 | **erfüllt** — Läufe in 0,6 s statt 4 × 4 s; Takt unabhängig von der Windows-Uhr |
+
+| K7 | PWM mit zu kleinem Hub: Befund nennt 1023/65535; `time.sleep` im Brettwissen | `pruefe_pwm.py` 8/8; Laptop 12:08 | **erfüllt** — Anlass: `duty_u16(1023 * …)`, Hub 1,6 %, Befund „fest bei 2 %" führte nicht zur Ursache; 11:36: `machine.delay(1000)` dreimal |
+
+**Der Nachmittag des 05.10.2026 — die neun festen Anfragen, Endlauf (Coder-3B, Laptop, ESP32 an COM3; Tabelle in `pruefstand/lauf_neun_fragen.json` und im Reiter „Stand und Grenzen“):**
+Vorgabe: „Die vorgefertigten Fragen müssen durchlaufen, und zwar ohne eine Fake-Sache … der Agent soll die Realität prüfen, nicht das Wunschdenken.“
+Ergebnis: **1** Gruß → Antwort in Worten; **2** blink 1 Hz → FERTIG (erste Fassung 0,5 Hz durchgefallen, Berichtigungsfokus, 1,00 Hz gemessen, 63 s);
+**3** 2 Hz → FERTIG (1,99 Hz, 111 s); **4** 0,5 Hz → FERTIG (0,50 Hz, 51 s); **5** auf den ESP32 an COM3 und nachlesen → FERTIG, der Agent führte
+`esp32_uebertragen` selbst aus, Rücklesung am Gerät 0,5 Hz (35 s); **6** Sinus-Atmen → Lauf E bestanden (Form sinusförmig, 1,00 Hz, 12 min), Lauf F
+nicht abgenommen (`cos` ohne import, `i` ohne Definition, dreimal dieselbe Datei; 14 min); **7** zwei LEDs → Abbruch nach 25 Schritten in allen Läufen
+(schwere Karte); **8** Taschenrechner → im Lauf F am Agentenfehler J26 gescheitert, nach der Korrektur LAUF BESTANDEN mit Fenster „Taschenrechner“ (2,8 min);
+**9** Anschlüsse → FERTIG in 38 s (Python da, esptool 5.4.0 aus dem Vorrat, COM3 CH340). Unter jedem FERTIG stand die vom Werkzeug gemessene Zeile;
+kein Satz des Modells ging ungeprüft als Ergebnis durch. In jeder Anfrage mit Programm griff der Agent mindestens einmal ein (Fokus oder Berichtigung).
+Nicht erneut gemessen nach der letzten Korrektur: Frage 6 mit dem vollständigen Schleifen-Hinweis.
 
 **Der Vormittag des 05.10.2026 im Gespräch (Coder-3B, Laptop):** Begrüßung und Fragen in Worten beantwortet (Hardwarefrage falsch: „LED am Bildschirm"); Blinkauftrag zunächst mit erfundener Arbeit beantwortet (viermal „geschrieben, geprüft, übertragen" ohne ein Werkzeug) — vom Agenten abgefangen, danach Fokus eingebaut; Atem-Aufgabe: 1. Anlauf PWM-Trägerfrequenz als Takt (1000 Hz) festgehalten, Dreieck statt Sinus; 2.–4. Anlauf deckten Lücken im Prüfwerkzeug auf (keine Hüllkurve, `math` verboten, Windows-Uhr, stilles blink.py, Wechselzahl bei PWM); 5. Anlauf läuft mit allen Korrekturen. Messreihe 3 (Coder-3B gegen Coder-7B, acht Anweisungen, derselbe Agent) läuft auf dem Prüfstand.
 
@@ -363,8 +386,20 @@ mit; `PYTHONPATH` lud fremden Code in unseren Prozess.
 
 ## Was offen bleibt
 
+Stand 05.10.2026, nachmittags. Die Säulen sind gemessen: Modell unter Smart App Control über den signierten Server, Agent,
+Werkzeuge, ESP32 an COM3 mit Rücklesung am Gerät. Offen ist, was ein kleines Modell nicht verlässlich kann — und was hier
+bewusst nicht gebaut wurde.
+
 | | warum |
 |---|---|
+| **Das 3B-Modell** trifft Zahlen nicht sicher (3 Hz, 0,5 Hz erst mit vorgerechneter Ersetzung), schreibt PWM statt Ein/Aus, kennt `machine.delay`, `from machine import time`; es erzählt Arbeit und plappert Agentensätze nach | der Agent fängt jedes davon ab (J16–J24, K7), aber jede Abfangrunde kostet 10–60 s; zwei LEDs mit zwei Takten scheitern weiter |
+| **Qwen2.5-Coder-7B** ist auf dem Prüfstand ohne Grafikkarte 3- bis 5-mal langsamer und nicht besser (Messreihe 3: Atmen nach 25 Schritten abgebrochen) | kein Ersatz für das 3B auf einem 8-GB-Laptop; ein 30B-A3B auf 24 GB ist nicht gemessen |
+| **Geräteanzeige und großer Fortschrittsbalken** (J25) | im Quelltext, auf C: kopiert, aber `oberflaeche.py` ist der Server selbst: wirksam erst nach Neustart des Agenten (START.bat) |
+| D6 Selbstlöschung aus der Kopie | Betriebsart [2] nicht am Laptop erprobt |
+| CP210x-Treiber im Vorrat | Silicon Labs liefert nur an Browser; der Laptop hatte den Treiber schon |
+| Lauf auf einem **fremden** Windows-Rechner ohne den Erbauer | nur `fehlerbericht.txt` und das Protokoll stünden dann zur Verfügung; nicht erprobt |
+
+---|---|
 | **Lauf auf echtem Windows** | Wine bildet nach, beweist aber nicht. Dies ist der wichtigste offene Punkt |
 | B7, H1–H3 am Gerät | kein ESP32 vorhanden |
 | D6 Selbstlöschung | Betriebsart [2] nicht erprobt |

@@ -40,7 +40,9 @@ shutil.copytree(str(pathlib.Path(__file__).resolve().parent / "ablage" / "python
 r2 = agent.schleife("Schreibe blink.py, pruefe gegen pins [2] und takt_hz 1.0", agent.sammlung(), laut=False)
 prot2 = (pathlib.Path(w) / "ablage" / "protokoll.txt").read_text(encoding="utf-8")
 pr("FERTIG ohne Pruefung, 2-Hz-Programm -> Agent prueft selbst, faellt durch, Ende NICHT ABGENOMMEN", r2.startswith("Nicht abgenommen") and "AGENT PRUEFT SELBST" in prot2 and "NICHT ABGENOMMEN" in prot2 and "\nFERTIG" not in prot2.replace("ABGENOMMEN", ""))
-pr("sieben Modellantworten bis zum Ende (2 Abweisungen, Selbstpruefung, 3 Abweisungen)", i[0] == 7, f"({i[0]})")
+# seit 05.10.2026: nach der durchgefallenen Selbstpruefung fragt der Agent bei jedem FERTIG ohne Vorgeschichte nach der
+# berichtigten Datei (Berichtigungsfokus, je eine Antwort mehr) — 1 + 2 + Selbstpruefung + 3 x 2 + 1 = 10 Antworten
+pr("zehn Modellantworten bis zum Ende (2 Abweisungen, Selbstpruefung, 3 Berichtigungsfokus-Runden)", i[0] == 10, f"({i[0]})")
 # Modell schreibt und sagt nur noch FERTIG: der Agent prueft selbst, dann gilt FERTIG (bei bestandener Pruefung)
 ANT3 = ['WERKZEUG: schreib_datei {"name": "blink.py", "inhalt": "' + R + '"}', 'FERTIG', 'FERTIG', 'FERTIG. Dann eben jetzt.']
 i[0] = 0; ANT[:] = ANT3; ev4 = []

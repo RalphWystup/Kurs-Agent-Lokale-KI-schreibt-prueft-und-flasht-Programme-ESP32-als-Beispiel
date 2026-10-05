@@ -1,6 +1,6 @@
 # Kurs-Agent — Anforderungen
 
-Stand 05.10.2026. 96 Punkte in elf Gruppen. Jede Anforderung ist so gefasst, dass sie **scheitern kann**: es steht
+Stand 05.10.2026. 106 Punkte in elf Gruppen. Jede Anforderung ist so gefasst, dass sie **scheitern kann**: es steht
 dabei, woran man sie misst. Was nur maschinell prüfbar ist, prüft `pruefe_alles.py`.
 
 > **Die Aufgabe — gesetzt am 04.10.2026, 12:40 Uhr (Quelle: `AUFGABE.md`):** „Ziel der Kurs-KI ist es, auf einem Ordner ein SLM oder kleines LLM speziell für die
@@ -234,6 +234,15 @@ runterlädst, oder ich gebe selbst ein Programm ein zum Überprüfen."
 | J16 | **Fokus:** Erzählt das Modell Arbeit, die kein Werkzeug getan hat, oder verlangt die Anweisung einen Geräteschritt und nichts lief, fragt der Agent das Modell **ohne die lange Vorgeschichte** nur nach dem nächsten Werkzeugaufruf (Anweisung + Aufgabe + ein Satz). Kleine Modelle folgen so, wo das Gespräch sie in Prosa hält. | `pruefe_gespraech.py` 5g |
 | J17 | Fehlt im Prüfaufruf die Datei, nimmt der Agent die zuletzt geschriebene dieser Anweisung und sagt es; eine Behauptung in freier Rede ohne Beleg bekommt eine sichtbare Anmerkung des Agenten. | `pruefe_gespraech.py` 5f; Laptop 05.10.2026 9:55 |
 | J18 | Die Erwartung des Menschen wird aus seinen Worten gelesen, auch Zahlwörter („eine Periode pro Sekunde", „zweimal je Sekunde") und die Kurvenform („sinusförmig"). Was er nicht festlegt, legt der erste Aufruf des Modells fest — außer unsichtbare Takte (> 50 Hz, Trägerfrequenz) und `mindestens_wechsel`. | `erwartung_aus`-Proben; Laptop 05.10.2026 9:44 (1000 Hz) und 10:17 (10 Wechsel) |
+| J19 | **Leeres FERTIG auf eine Aufgabe** („FERTIG — bereit für die nächste Anweisung", kein Werkzeug, keine Behauptung) wird sofort zum Fokus: das Modell wird ohne Vorgeschichte nach dem ersten Aufruf gefragt. Eine früher verlangte, nie geschriebene Datei blockiert eine andere Anweisung nicht. | `pruefe_gespraech.py` 5h, 5i |
+| J20 | **Berichtigungsfokus:** Sagt das Modell nach einer durchgefallenen Prüfung FERTIG, ohne etwas geändert zu haben („die Zeile wurde korrigiert"), zeigt ihm der Agent ohne Vorgeschichte die Datei, wie sie wirklich dasteht, und den Befund, und verlangt nur die berichtigte Datei; die Prüfung hängt er selbst an. Liefert das Modell dieselbe Datei Zeichen für Zeichen, wird sie nicht noch einmal geprüft. | `pruefe_gespraech.py` 5l; `pruefe_schleife.py`, `pruefe_ungeprueft.py`, `pruefe_regeln.py` |
+| J21 | **Unter jedem FERTIG steht, was die Werkzeuge gemessen haben** (Anschlüsse, Takt, Form, Abnahme; Geräteschritte mit Ausgang) — Zahlen aus dem Werkzeug, nicht Sätze des Modells. Nennt das Modell eine Zahl, die der Messung widerspricht („Periode von 2 Sekunden" bei 2 Hz), merkt der Agent es sichtbar an. Ein Abschlusstext, der leer ist oder aus den Sätzen des Agenten besteht, wird durch den Abschluss des Agenten ersetzt. | `pruefe_gespraech.py` 5k, 5m |
+| J22 | **Geräteschritt verlangt, Anschluss genannt, Datei abgenommen:** Der Agent fragt ohne Vorgeschichte nach genau diesem Aufruf; nennt das Modell ihn nicht, führt der Agent ihn selbst aus (einmal). Ein fehlgeschlagener Geräteschritt gilt nicht als gelaufen; „geladen" behauptet nach einem Fehlschlag wird zurückgewiesen, „steht aus" angenommen. Der zuletzt genannte Anschluss gilt. | `pruefe_gespraech.py` 4, 5b, 5n, 6 |
+| J23 | Der Hinweis „dritter gleicher Fehlschlag" zählt nur Fehlschläge, an der Zeile mit dem Grund, und je Anweisung neu — nie unter einer bestandenen Abnahme. | `pruefe_gespraech.py` 5j |
+| J24 | **Verdichteter Verlauf:** Zu Beginn jeder Anweisung wird das Frühere zu einem Absatz aus dem Zustand des Agenten (Dateien mit Stand, Erwartung, Anschlüsse, Messungen, Geräteschritte); die letzte Anweisung bleibt im Wortlaut. Grund: fünf Minuten je Antwort in der sechsten Anweisung (05.10.2026, 12:14–12:19). | `pruefe_gespraech.py` |
+| J26 | Der **Prüfweg richtet sich nach der Datei**, nicht nach der Vorgeschichte: ein Programm ohne `machine` prüft der Agent mit `programm_ausfuehren` (Fenster erkannt an tkinter), auch wenn aus ESP32-Anweisungen davor eine Erwartung steht. Anlass 05.10.2026, 14:50: rechner.py (tkinter) wurde gegen pins [2, 4] geprüft. | `pruefe_gespraech.py` 5l-e |
+| J27 | Eine **Kurvenform erbt nicht** auf ein neues Programm — weder aus der Erwartung davor noch aus dem Aufruf des Modells; nur ein Wort des Menschen (sinusförmig, dreieckig, PWM, atmen) setzt sie. Anlass 13:33 und 14:26: zwei.py (Ein/Aus, zwei LEDs) sollte „sinusförmig“ sein. | `pruefe_regeln.py`, `pruefe_gespraech.py` 5l-d |
+| J25 | Die Kopfzeile zeigt, **ob ein ESP32 angeschlossen ist** (serielle Anschlüsse alle 5 s, nie während ein Werkzeug läuft, Wandler erkannt); jeder laufende Werkzeugaufruf trägt einen **Fortschrittsbalken** mit Sekunden und erwarteter Dauer. | Laptop 05.10.2026 |
 
 ---
 
@@ -250,6 +259,8 @@ graphischer Ausgabe." Die Aufgabe verlangt Python-Programme auf Anforderung — 
 | K4 | `programm_ausfuehren` zählt als Prüfung wie `programm_testen`: ein kaputter Lauf sperrt FERTIG, ein guter gibt frei; nur in dieser Sitzung Geschriebenes wird ausgeführt. | `pruefe_regeln.py` |
 | K5 | `programm_testen` misst bei PWM die **Hüllkurve** des Tastgrads: Periode, Takt, Form (sinusförmig oder dreieckig, Abweichung zu beiden Bezugsformen); die Form ist Abnahmekriterium, wenn der Mensch sie nennt — „Dreieck ist kein Sinus". PWM-Durchgänge zählen als Zustandswechsel. | `pruefstand/pruefe_pwm.py` 7/7 |
 | K6 | Der Nachbau rechnet mit einer **gedachten Uhr**: `time.sleep` rückt sie vor statt zu warten. Grund: Windows hält 10 ms Schlaf nicht ein (bis 15,6 ms), der ESP32 schon; ein richtiges 1-Hz-Atmen lief auf dem PC mit 0,64 Hz. Zeitstempel und Zeitgrenze folgen der gedachten Uhr; ein Lauf dauert Bruchteile einer Sekunde. Rechenbibliotheken `math`, `random`, `struct` sind erlaubt. | `pruefe_pwm.py`, `pruefe_alles.py` 19/19 |
+
+| K7 | `programm_testen` nennt bei PWM mit zu kleinem Hub (unter 10 %) die Ursache: Vollausschlag bei `duty()` 1023, bei `duty_u16()` 65535 — Anlass 05.10.2026, 12:08: `duty_u16(1023 * …)`, Hub 1,6 %. Das Brettwissen nennt `time.sleep`/`time.sleep_ms` als einzige Wartefunktionen (`machine.delay` gibt es nicht). | `pruefe_pwm.py` 8/8 |
 
 ## Was ausdrücklich **nicht** gilt
 

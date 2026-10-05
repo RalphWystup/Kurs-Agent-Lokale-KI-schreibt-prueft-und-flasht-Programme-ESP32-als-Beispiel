@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kurs-Agent 3.0 — Lehrbeispiel: eine lokale KI schreibt, prüft und flasht Programme</title>
+<title>Kurs-Agent 3.1 — Lehrbeispiel: eine lokale KI schreibt, prüft und flasht Programme</title>
 <style>
+.klein { font-size:.8em; color:#4a5568; }
  :root { --rand:#cbd5e0; --grau:#718096; --dunkel:#2d3748; --blau:#2b6cb0; }
  * { box-sizing:border-box; }
  body { font-family:-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.65; color:#1a202c;
@@ -40,7 +41,7 @@
 </style></head><body>
 
 <h1>Kurs-Agent — Lehrbeispiel: eine lokale KI schreibt, prüft und flasht Programme</h1>
-<div class="kopf">Fassung 3.0 · 05.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.</div>
+<div class="kopf">Fassung 3.1 · 05.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.</div>
 
 <p><strong>Dieses Paket vertieft am realen System, was die veröffentlichte Seite
 <a href="https://ralphwystup.github.io/KI-steuert-lokale-Hardware-ueber-eine-Bruecke/Bruecke_KI_und_Arbeitsplatz_1.0.html#aufgabe">„KI steuert lokale Hardware über eine Brücke"</a> exemplarisch zeigt.</strong>
@@ -877,17 +878,39 @@ ebenso ehrlich, woran ein kleines Modell scheitert. Alles, was hier als „funkt
 <li>Hardwarefragen beantwortet es falsch („die LED am Bildschirm“); das Brettwissen in der Anweisung mildert das, ersetzt es nicht.</li>
 <li>Die Rücklesung bei PWM bremst das Programm noch leicht (0,49 Hz gemessen gegen 0,55 Hz gezählt).</li>
 </ul>
+<h3>Der Nachmittag des 05.10.2026 — die neun festen Anfragen, ohne Fake</h3>
+<p>Vorgabe: „Wenigstens die vorgefertigten Fragen müssen durchlaufen durch das System, und zwar ohne eine Fake-Sache. Der Agent soll die
+Realität prüfen, nicht das Wunschdenken.“ Die Läufe mit dem echten Modell zeigten neun Lücken im Agenten, jede mit Uhrzeit im
+Prüfprotokoll (J19–J27, K7): ein leeres FERTIG auf eine Aufgabe; „die Zeile wurde korrigiert“ ohne Werkzeug, dreimal derselbe Satz; ein
+Schlusssatz mit falscher Zahl („Periode von 2 Sekunden“ bei 2 Hz); der Rügetext des Agenten als Schlusssatz des Modells nachgeplappert;
+„Lade blink.py auf den ESP32“ ließ das Modell die Datei umschreiben statt zu übertragen; ein fehlgeschlagenes Übertragen zählte als gelaufen;
+fünf Minuten je Antwort im langen Gespräch; ein Taschenrechner wurde gegen Pins geprüft, weil eine ESP32-Erwartung aus der
+Anweisung davor stand; ein Ein/Aus-Programm erbte die Kurvenform „sinusförmig“ vom Atmen davor. Behoben wurde das im Agenten, nicht im Modell: Unter jedem FERTIG steht jetzt, was die Werkzeuge
+gemessen haben; der Agent zeigt dem Modell die Datei und den Befund ohne Vorgeschichte und prüft selbst nach; den Geräteschritt führt er
+notfalls selbst aus; der Verlauf wird je Anweisung verdichtet. Was das Modell schreibt, bleibt sichtbar — daneben steht, was wahr ist.</p>
+<p>Gemessen am 2026-10-05, Laptop (8 GB frei, Smart App Control EIN), ESP32 an COM3, Modell Qwen2.5-Coder-3B-Instruct-Q4_K_M. Jede Zeile ist eine Anweisung aus den Knöpfen der Oberfläche, der Reihe nach in einem Gespräch; nichts davon ist hinterlegt — die Werkzeugaufrufe, Abnahmen und Zeiten stammen aus dem Ereignisprotokoll des Agenten. Läufe: Endlauf F 14:00–15:30 Uhr für die Fragen 1–7; Nachlauf 15:37–15:41 Uhr für 8–9 nach der Korrektur J26; Lauf E 13:09–13:31 Uhr als Vergleich bei Frage 6.</p>
+<table><tr><th>Nr</th><th>Anfrage</th><th>Ende</th><th>Aufrufe</th><th>Abnahmen</th><th>Agent griff ein</th><th>Dauer</th><th>vom Werkzeug gemessen</th><th>Bemerkung</th></tr>
+<tr><td>1</td><td>hallo, bist du bereit?</td><td><strong>Antwort</strong></td><td>0</td><td>✓0 ✗0</td><td>—</td><td>0 s</td><td class="klein">—</td><td class="klein">Antwort in Worten, kein Werkzeug — so soll es sein.</td></tr>
+<tr><td>2</td><td>Schreibe blink.py, das die LED an GPIO 2 einmal je Sekunde blinken laesst, und pruefe es g…</td><td><strong>FERTIG</strong></td><td>4</td><td>✓1 ✗1</td><td>1× Fokus, 1× Berichtigung</td><td>63 s</td><td class="klein">blink.py (programm_testen): Anschluesse: erwartet [2], gemessen [2] erfuellt; Takt: erwartet 1.00 Hz, gemessen 1.00 Hz (Spielraum 10 %) erfuellt — bestanden</td><td class="klein">Erste Fassung 0,5 Hz (durchgefallen); Berichtigungsfokus: Datei + Befund ohne Vorgeschichte → 1,00 Hz. In allen drei Endläufen bestanden.</td></tr>
+<tr><td>3</td><td>Aendere die Blinkfrequenz auf 2 Hz.</td><td><strong>FERTIG</strong></td><td>4</td><td>✓1 ✗1</td><td>1× Fokus, 1× Berichtigung</td><td>111 s</td><td class="klein">blink.py (programm_testen): Anschluesse: erwartet [2], gemessen [2] erfuellt; Takt: erwartet 2.00 Hz, gemessen 1.99 Hz (Spielraum 10 %) erfuellt — bestanden</td><td class="klein">Modell wollte zuerst PWM; nach Berichtigung Ein/Aus mit 0,25 s → 1,99 Hz. In allen drei Endläufen bestanden.</td></tr>
+<tr><td>4</td><td>Schreibe blink.py neu, so dass die LED an GPIO 2 genau 1 Sekunde an und 1 Sekunde aus ist …</td><td><strong>FERTIG</strong></td><td>2</td><td>✓1 ✗0</td><td>1× Fokus</td><td>51 s</td><td class="klein">blink.py (programm_testen): Anschluesse: erwartet [2], gemessen [2] erfuellt; Takt: erwartet 0.50 Hz, gemessen 0.50 Hz (Spielraum 10 %) erfuellt — bestanden</td><td class="klein">In allen drei Endläufen bestanden (0,50 Hz gemessen).</td></tr>
+<tr><td>5</td><td>Lade blink.py auf den ESP32 an COM3 und lies am Geraet nach, ob die LED so blinkt.</td><td><strong>FERTIG</strong></td><td>1</td><td>✓1 ✗0</td><td>1× Fokus</td><td>35 s</td><td class="klein">esp32_uebertragen: gelungen | esp32_nachlesen: gelungen</td><td class="klein">Das Modell nannte den Aufruf nicht; der Agent führte esp32_uebertragen COM3 mit der Erwartung selbst aus; das Werkzeug las am Gerät nach: 0,5 Hz. In allen drei Endläufen bestanden.</td></tr>
+<tr><td>6</td><td>Schreibe ein Programm atmen.py, das die LED an GPIO 2 per PWM sinusfoermig atmen laesst, e…</td><td><strong>Nicht abgenommen</strong></td><td>10</td><td>✓0 ✗3 F2</td><td>1× Fokus, 9× Berichtigung, 1× selbst geprüft</td><td>840 s</td><td class="klein">—</td><td class="klein">Lauf E: bestanden nach 12 min (Form sinusförmig, 1,00 Hz gemessen). Lauf F: nicht abgenommen — cos ohne import, dann i ohne Definition, dann dreimal dieselbe Datei. Der Hinweis nennt seither die ganze Schleife; nicht erneut gemessen.</td></tr>
+<tr><td>7</td><td>Schreibe zwei.py: LED an GPIO 2 zweimal je Sekunde und LED an GPIO 4 einmal je Sekunde, gl…</td><td><strong>Abbruch</strong></td><td>16</td><td>✓0 ✗8</td><td>9× Berichtigung</td><td>1256 s</td><td class="klein">—</td><td class="klein">Schwere Karte: zwei Takte brauchen eine nicht blockierende Schleife; das 3B-Modell schreibt blockierende sleep-Folgen. In allen Läufen gescheitert — erwartet und so dokumentiert. Das Mitlese-Protokoll dieses Laufs ist lückenhaft (Brücke antwortete zeitweise nicht), die Zahlen sind Untergrenzen.</td></tr>
+<tr><td>8</td><td>Programmiere einen einfachen Taschenrechner rechner.py mit grafischer Oberflaeche (tkinter…</td><td><strong>FERTIG</strong></td><td>2</td><td>✓1 ✗0</td><td>—</td><td>167 s</td><td class="klein">rechner.py (programm_ausfuehren): keine Erwartung angegeben, nur gelaufen — bestanden</td><td class="klein">Im Lauf F zuvor an einem Agentenfehler gescheitert (Prüfweg nach alter ESP32-Erwartung statt nach der Datei, J26); nach der Korrektur im Nachlauf: Fenster „Taschenrechner“ erkannt, LAUF BESTANDEN; 2,8 min, davon 2,5 min erste Modellantwort (45 Zeilen tkinter).</td></tr>
+<tr><td>9</td><td>Richte die Umgebung ein, installiere esptool und sieh dann nach, welche seriellen Anschlue…</td><td><strong>FERTIG</strong></td><td>3</td><td>✓0 ✗0</td><td>—</td><td>38 s</td><td class="klein">In dieser Anweisung wurde nichts gemessen.</td><td class="klein">Drei Werkzeuge in Folge ohne Umweg: Python vorhanden, esptool 5.4.0 aus dem Vorrat, COM3 mit CH340 erkannt.</td></tr>
+</table>
 <h3>Messreihe 3 — Qwen2.5-Coder-3B gegen -7B, dasselbe Gespräch, derselbe Agent (05.10.2026, Prüfstand ohne Grafikkarte)</h3>
 <table><tr><th>Anweisung</th><th colspan=3>Qwen2.5-Coder-3B</th><th colspan=4>Qwen2.5-Coder-7B</th></tr>
 <tr><th></th><th>Ende</th><th>Aufrufe</th><th>Abnahmen</th><th>Ende</th><th>Aufrufe</th><th>Abnahmen</th><th>Dauer</th></tr>
-<tr><td>hallo bist du bereit?</td><td>Antwort in Worten</td><td>0</td><td>—</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>Wie testen wir ein Blinkprogramm? Gibt es eine LED?</td><td>schrieb und prüfte gleich blink.py; FERTIG</td><td>3</td><td>✓1</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>blink.py, 1 Hz</td><td>FERTIG</td><td>5</td><td>✓1 ✗1, 1× selbst geprüft</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>auf 3 Hz ändern</td><td>Abbruch nach 25 Schritten</td><td>15</td><td>✗5, 5× selbst geprüft</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>atmen.py sinusförmig 1 Hz</td><td>FERTIG</td><td>9</td><td>✓1 ✗1, 3× selbst geprüft</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>zwei LEDs, zwei Takte</td><td>Textantwort („JSON nicht korrekt“), kein Werkzeug</td><td>0</td><td>—</td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>Taschenrechner tkinter</td><td>nicht mehr gemessen (Reihe abgebrochen)</td><td></td><td></td><td>läuft noch</td><td></td><td></td><td></td></tr>
-<tr><td>Ist nun alles ok?</td><td>nicht mehr gemessen</td><td></td><td></td><td>läuft noch</td><td></td><td></td><td></td></tr>
+<tr><td>hallo bist du bereit?</td><td>Antwort in Worten</td><td>0</td><td>—</td><td>Antwort</td><td>0</td><td>✓0 ✗0</td><td>83 s</td></tr>
+<tr><td>Wie testen wir ein Blinkprogramm? Gibt es eine LED?</td><td>schrieb und prüfte gleich blink.py; FERTIG</td><td>3</td><td>✓1</td><td>FERTIG</td><td>14</td><td>✓1 ✗1, 1× Fokus</td><td>394 s</td></tr>
+<tr><td>blink.py, 1 Hz</td><td>FERTIG</td><td>5</td><td>✓1 ✗1, 1× selbst geprüft</td><td>FERTIG</td><td>4</td><td>✓1 ✗1</td><td>123 s</td></tr>
+<tr><td>auf 3 Hz ändern</td><td>Abbruch nach 25 Schritten</td><td>15</td><td>✗5, 5× selbst geprüft</td><td>FERTIG</td><td>4</td><td>✓1 ✗1</td><td>146 s</td></tr>
+<tr><td>atmen.py sinusförmig 1 Hz</td><td>FERTIG</td><td>9</td><td>✓1 ✗1, 3× selbst geprüft</td><td>Abbruch</td><td>19</td><td>✓0 ✗9, 6× Fokus</td><td>1524 s</td></tr>
+<tr><td>zwei LEDs, zwei Takte</td><td>Textantwort („JSON nicht korrekt“), kein Werkzeug</td><td>0</td><td>—</td><td>—</td><td></td><td></td><td></td></tr>
+<tr><td>Taschenrechner tkinter</td><td>nicht mehr gemessen (Reihe abgebrochen)</td><td></td><td></td><td>—</td><td></td><td></td><td></td></tr>
+<tr><td>Ist nun alles ok?</td><td>nicht mehr gemessen</td><td></td><td></td><td>—</td><td></td><td></td><td></td></tr>
 </table>
 <p>Lesart: „Ende“ ist, wie die Anweisung ausging; „Abnahmen“ zählt bestandene (✓) und durchgefallene (✗) Prüfungen; „selbst“ heißt, der Agent
 musste die Prüfung auslösen, weil das Modell FERTIG sagte, ohne zu prüfen. Die 3B-Reihe wurde nach sechs Anweisungen abgebrochen, um dem 7B
@@ -985,7 +1008,7 @@ python agent\werkzeuge\ports_zeigen.py "{}"  ein Werkzeug einzeln</code></pre>
 </div>
 
 <footer>
-Kurs-Agent 3.0 · 05.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.<br>
+Kurs-Agent 3.1 · 05.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.<br>
 erstellt mit KI und Agent (Claude Code, Anthropic)
 </footer>
 

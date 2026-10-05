@@ -114,6 +114,11 @@ pr("FERTIG ohne die verlangte blink.py -> NICHT ABGENOMMEN nach drei Abweisungen
 # Aufruf ohne JSON, und FERTIG mit falscher Behauptung
 n, e = agent.heraus('WERKZEUG: ports_zeigen', namen); pr("Aufruf ohne JSON gilt als leere Eingabe", n == "ports_zeigen" and e == {})
 pr("zerlegen trennt auch vor einem Aufruf ohne JSON", len(agent.zerlegen('WERKZEUG: programm_testen {"datei": "a.py"}\nWERKZEUG: ports_zeigen', namen)) == 2)
+# 05.10.2026, 13:33: ein neues Blinkprogramm erbt nicht die Kurvenform des Atmens davor
+e_form = agent.erwartung_aus("Schreibe zwei.py: LED an GPIO 2 zweimal je Sekunde und LED an GPIO 4 einmal je Sekunde, gleichzeitig. Pruefe gegen pins [2, 4].", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig"})
+pr("Erwartung: neues Programm ohne Wort zur Form setzt 'form' zurueck, Pins und Takt neu", e_form == {"pins": [2, 4], "takt_hz": 2.0}, str(e_form))
+e_form2 = agent.erwartung_aus("Aendere die Blinkfrequenz auf 2 Hz.", {"pins": [2], "takt_hz": 1.0, "form": "sinusfoermig"})
+pr("Erwartung: nur neue Frequenz, kein neues Programm -> Form bleibt (Gegenprobe)", e_form2 == {"pins": [2], "takt_hz": 2.0, "form": "sinusfoermig"}, str(e_form2))
 zustand["n"] = 0
 def luegner(verlauf, **kw):
     zustand["n"] += 1
@@ -142,7 +147,9 @@ shutil.copytree(str(pathlib.Path(__file__).resolve().parent / "ablage" / "python
 ev3 = []
 r = agent.schleife("Schreibe rechner.py, das 2+3 ausgibt.", werk, laut=False, melden=ev3.append)
 urteile = [e.get("abnahme") for e in ev3 if e["art"] == "ergibt" and e["werkzeug"] == "programm_ausfuehren"]
-pr("allgemeines Programm: kaputter Lauf sperrt FERTIG, guter Lauf gibt frei", zustand["n"] == 6 and r.startswith("FERTIG. Der Rechner rechnet") and urteile == ["durchgefallen", "bestanden"], str(urteile))
+# seit 05.10.2026: auf das FERTIG nach dem kaputten Lauf holt der Berichtigungsfokus die neue Datei und der Agent
+# haengt programm_ausfuehren selbst an; der eigene Lauf des Modells kommt danach noch einmal — drei Urteile
+pr("allgemeines Programm: kaputter Lauf sperrt FERTIG, Berichtigungsfokus + eigener Lauf, guter Lauf gibt frei", zustand["n"] == 6 and r.startswith("FERTIG. Der Rechner rechnet") and urteile == ["durchgefallen", "bestanden", "bestanden"], str(urteile))
 # doppelt maskierte Zeilenumbrueche (7B-Marotte): Agent loest sie auf, Datei ist gueltiges Python, Pruefung laeuft
 zustand["n"] = 0
 def maskiert(verlauf, **kw):

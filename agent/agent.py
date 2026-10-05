@@ -112,6 +112,8 @@ Was du ueber das Brett weisst (ESP32-DevKit, MicroPython):
 - Helligkeit regelt man mit PWM: machine.PWM(machine.Pin(2), freq=1000) und duty(0 bis 1023)
   oder duty_u16(0 bis 65535). Ein weiches Atmen ist eine Folge von duty-Werten, z. B. einer
   Sinus-Halbwelle, im Takt der gewuenschten Periode.
+- Warten: import time, dann time.sleep(sekunden) oder time.sleep_ms(millisekunden). Etwas
+  anderes zum Warten gibt es nicht — machine.delay oder utime.wait existieren nicht.
 - Tasten, Sensoren und Anzeigen gibt es nur, wenn der Mensch sie angeschlossen hat; frage nach,
   statt sie anzunehmen.
 
@@ -235,7 +237,7 @@ def beurteilen(ergebnis: str) -> dict:
 
 
 
-def kuerzen(ergebnis: str, kopf=20, fuss=8, hoechstens=2500) -> str:
+def kuerzen(ergebnis: str, kopf=8, fuss=12, hoechstens=1800) -> str:
     """Was ins Gedaechtnis des Modells geht: Anfang und Ende, nicht jeden Zustandswechsel.
 
     programm_testen liefert je Lauf ueber hundert Zeilen Zeitachse. Nach 23 Schritten war
@@ -395,6 +397,11 @@ def erwartung_aus(text: str, bisher=None):
         e["form"] = "sinusfoermig"
     elif re.search(r"dreieck", text, re.I):
         e["form"] = "dreieckig"
+    elif "form" in e and (re.findall(r"\b[\w-]+\.py\b", text) or p) \
+            and not re.search(r"pwm|atme|hell|dimm|weich", text, re.I):
+        #  05.10.2026, 13:33: „zwei.py: LED an GPIO 2 zweimal je Sekunde …" erbte „sinusfoermig" vom Atmen davor —
+        #  ein Ein/Aus-Blinken kann diese Form nie erfuellen. Ein neues Programm ohne Wort zur Kurvenform setzt sie zurueck.
+        del e["form"]
     return e or None
 
 
@@ -428,12 +435,17 @@ class Sitzung:
         self.verlauf = [{"role": "system", "content": anweisung}]
         self.gesehen, self.getan = {}, []
         self.letzter_befund = None
+        self.messungen: dict = {}                   # Datei -> was das Werkzeug zuletzt gemessen hat
+        self.letzte_pruefdatei = None               # welche Datei zuletzt geprueft wurde
+        self.letzter_befund_zeilen = ""             # die Zeilen des Befunds, die den Grund nennen
+        self.letzter_befund_pwm = False
         self.feste_erwartung = None                 # der Mensch setzt den Massstab
         self.geschrieben: set = set()               # in dieser Sitzung geschrieben
         self.ungeprueft: set = set()                # geschrieben, seitdem nicht geprueft
         self.abgenommen: set = set()                # zuletzt geprueft und bestanden, seitdem unveraendert
         self.verlangt: list = []                    # Dateien, die der Mensch nannte
         self.genannte_ports: set = set()            # Anschluesse, die der Mensch nannte
+        self.letzter_port = None                    # der zuletzt genannte davon
         self.anweisungen = 0
         self.zwischenrufe: list = []                # Eingaben waehrend eines Laufs (Quereingabe)
         self._schloss = __import__("threading").Lock()
@@ -526,8 +538,10 @@ class Sitzung:
                 self.verlangt.append(n)
         #  „nein es ist com 3 nicht com 5" (04.10.2026, 19:57): mit Leerzeichen, klein geschrieben —
         #  der Mensch schreibt, wie er spricht. Alles davon heisst COM3.
-        self.genannte_ports |= {"COM" + z for z in re.findall(r"\bCOM\s*(\d{1,3})\b", text, re.I)}
-        self.genannte_ports |= set(re.findall(r"(/dev/tty[A-Za-z0-9]+)", text))
+        neue_ports = ["COM" + z for z in re.findall(r"\bCOM\s*(\d{1,3})\b", text, re.I)] + re.findall(r"(/dev/tty[A-Za-z0-9]+)", text)
+        self.genannte_ports |= set(neue_ports)
+        if neue_ports:
+            self.letzter_port = neue_ports[-1]          # der zuletzt genannte gilt („com 3 wäre richtig")
 
     def _eigenes_programm(self, text: str, schritt=0):
         """Gibt der Mensch selbst ein Programm ein (```…```), schreibt der Agent es — woertlich.
@@ -558,7 +572,9 @@ class Sitzung:
             quelle = (WERKSTATT / datei).read_text(encoding="utf-8", errors="replace")
         except OSError:
             quelle = ""
-        if "machine" in quelle or self.feste_erwartung:
+        #  14:50: rechner.py (tkinter) wurde mit programm_testen gegen pins [2, 4] geprueft, weil eine Erwartung aus
+        #  den ESP32-Anweisungen davor stand. Der Pruefweg richtet sich nach der Datei, nicht nach der Vorgeschichte.
+        if "machine" in quelle or (self.feste_erwartung and not quelle.strip()):
             e = {"datei": datei, "sekunden": 6, "oeffnen": False}
             if self.feste_erwartung:
                 e["erwartet"] = self.feste_erwartung
@@ -568,7 +584,7 @@ class Sitzung:
             e["fenster"] = True
         return "WERKZEUG: programm_ausfuehren " + json.dumps(e, ensure_ascii=False)
 
-    def _fokus(self, text: str, hinweis: str) -> str:
+    def _fokus(self, text: str, hinweis: str, meldung: str | None = None) -> str:
         """Dasselbe Modell, aber ohne die lange Vorgeschichte: Anweisung, Aufgabe, eine Aufforderung.
 
         Am 05.10.2026 (9:35) erzaehlte das 3B-Modell viermal hintereinander, es habe geschrieben,
@@ -581,8 +597,48 @@ class Sitzung:
                                             "Antworte AUSSCHLIESSLICH mit genau einer Zeile 'WERKZEUG: <name> {...}' — "
                                             "kein Satz davor, keiner danach, kein FERTIG."}]
         notieren("FOKUS Modell ohne Vorgeschichte nach dem Werkzeugaufruf gefragt")
-        self.sagen("hinweis", text="Das Modell erzaehlt Arbeit, die kein Werkzeug getan hat. Der Agent fragt es ohne Vorgeschichte noch einmal nur nach dem naechsten Werkzeugaufruf.")
+        self.sagen("hinweis", text=meldung or "Das Modell erzaehlt Arbeit, die kein Werkzeug getan hat. Der Agent fragt es ohne Vorgeschichte noch einmal nur nach dem naechsten Werkzeugaufruf.")
         return self.modell.fragen(mini)
+
+    def _berichtigungsfokus(self, text: str, werkzeuge: dict) -> list:
+        """Nach einer durchgefallenen Pruefung sagt das Modell FERTIG und behauptet eine Korrektur, ohne
+        schreib_datei zu rufen — dreimal denselben Satz (05.10.2026, 11:50: „Die Zeile time.sleep(1) wurde
+        korrigiert auf time.sleep(0.5)"). Im langen Gespraech bleibt es dabei. Also bekommt es ohne
+        Vorgeschichte die Datei, wie sie wirklich dasteht, den Befund und die Rechnung, und soll nur die
+        berichtigte Datei schreiben. Die Pruefung danach haengt der Agent selbst an — erzeugt, geprueft."""
+        datei = self.letzte_pruefdatei or (self.verlangt[-1] if self.verlangt else None)
+        if not datei:
+            return []
+        try:
+            quelle = (WERKSTATT / datei).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            quelle = ""
+        esp = "machine" in quelle
+        hinweis = (f"Die Datei {datei} hat die Pruefung NICHT bestanden. Befund des Werkzeugs:\n{self.letzter_befund_zeilen}\n"
+                   f"So steht {datei} jetzt wirklich da (nichts davon ist bisher geaendert worden):\n{quelle.strip()}\n\n"
+                   + (f"{self._takt_hinweis(pwm=self.letzter_befund_pwm)}\n{self._ersetzungshinweis(text, quelle)}" if esp
+                      else "Das ist ein gewoehnliches Python-Programm (kein ESP32): Die letzte Zeile der Fehlerausgabe nennt die Ursache.")
+                   + f"\nSchreibe die GANZE Datei berichtigt neu, in einer Zeile: "
+                   f"WERKZEUG: schreib_datei {{\"name\": \"{datei}\", \"inhalt\": \"<vollstaendiger berichtigter Quelltext>\"}}")
+        fokus = self._fokus(text, hinweis, meldung=(
+            "Das Modell sagt FERTIG, obwohl die letzte Pruefung durchfiel und kein Werkzeug etwas geaendert hat. Der Agent "
+            "zeigt ihm ohne Vorgeschichte die Datei und den Befund und verlangt nur die berichtigte Datei; die Pruefung haengt er selbst an."))
+        teile = zerlegen(fokus, werkzeuge)
+        if not teile:
+            return []
+        name, eingabe = heraus(teile[0], werkzeuge)
+        if name != "schreib_datei" or not isinstance(eingabe, dict) or not eingabe.get("inhalt"):
+            return []
+        if str(eingabe["inhalt"]).replace("\\n", "\n").strip() == quelle.strip():
+            #  12:09, 12:14, 12:20: dreimal Zeichen fuer Zeichen dieselbe Datei. Das ist keine Berichtigung;
+            #  sie zu pruefen aendert nichts, und das Modell bekommt es gesagt.
+            notieren("FOKUS lieferte dieselbe Datei unveraendert")
+            self.sagen("hinweis", text=f"Das Modell liefert {datei} Zeichen fuer Zeichen unveraendert. Das ist keine Berichtigung; der Agent prueft sie nicht noch einmal.")
+            self.verlauf.append({"role": "user", "content": f"Die Datei {datei}, die du soeben geschrieben hast, ist Zeichen fuer Zeichen die alte. "
+                                 f"Sie faellt wieder durch. Der Befund: {self.letzter_befund_zeilen[:400]}"})
+            return []
+        eingabe["name"] = datei
+        return ["WERKZEUG: schreib_datei " + json.dumps(eingabe, ensure_ascii=False), self._pruefaufruf(datei)]
 
     def _anmerkung_zu(self, antwort: str):
         """Behauptet eine Antwort in freier Rede etwas, das kein Werkzeug der Sitzung belegt, sagt der
@@ -597,12 +653,203 @@ class Sitzung:
             saetze.append("Es wurde keine Datei geschrieben.")
         return " ".join(saetze) if saetze else None
 
+    def _messung_merken(self, name, eingabe, ergebnis):
+        """Was ein Pruefwerkzeug gemessen hat, merkt sich der Agent je Datei — als Zahl aus dem Werkzeug,
+        nicht als Satz des Modells. Daraus wird die Zeile unter jedem FERTIG ("ohne Fake", 05.10.2026)."""
+        datei = eingabe.get("datei") or (self.abgenommen and sorted(self.abgenommen)[-1]) or (self.verlangt[-1] if self.verlangt else "")
+        if name == "esp32_nachlesen":
+            datei = datei or "am Geraet"
+        urteil = beurteilen(ergebnis)
+        befunde = [z.strip() for z in ergebnis.splitlines()
+                   if re.match(r"\s{2}(Anschluesse|Takt|Form):", z)]      # die eingerueckten Abnahmezeilen
+        hz = re.search(r"gemessen\s+([\d.]+)\s*Hz", ergebnis) or re.search(r"\(([\d.]+)\s*Hz\)", ergebnis)
+        self.messungen[datei] = {"werkzeug": name, "befunde": befunde, "anweisung": self.anweisungen,
+                                 "hz": float(hz.group(1)) if hz else None,
+                                 "stand": ("bestanden" if urteil["abnahme"] == "bestanden"
+                                           else "durchgefallen" if urteil["abnahme"] == "durchgefallen"
+                                           else "Fehler" if urteil["fehler"] else "nur gelaufen")}
+
+    def _gemessen_zeile(self, getan_hier=(), gelungen_hier=()):
+        """Eine Zeile je geprueftem Programm: Werkzeug, Befunde, Stand — Zahlen aus dem Werkzeug; dazu die
+        Geraeteschritte dieser Anweisung mit ihrem Ausgang."""
+        teile = []
+        for schritt in ("esp32_firmware", "esp32_uebertragen", "esp32_nachlesen"):
+            if schritt in getan_hier:
+                teile.append(f"{schritt}: {'gelungen' if schritt in gelungen_hier else 'fehlgeschlagen'}")
+        for datei, m in self.messungen.items():
+            if m.get("anweisung") != self.anweisungen:
+                continue                                   # nur, was diese Anweisung gemessen hat
+            befund = "; ".join(b.replace("  ", " ") for b in m["befunde"]) if m["befunde"] else \
+                     (f"{m['hz']:.2f} Hz" if m["hz"] else "keine Erwartung angegeben, nur gelaufen")
+            teile.append(f"{datei} ({m['werkzeug']}): {befund} — {m['stand']}")
+        return " | ".join(teile) if teile else "In dieser Anweisung wurde nichts gemessen."
+
+    def _widerspruch(self, antwort: str):
+        """Nennt das Modell unter FERTIG eine Zahl, die der Messung widerspricht, sagt der Agent es
+        dazu (05.10.2026, 11:40: „Periode von 2 Sekunden" bei gemessenen 1,99 Hz)."""
+        hz = next((m["hz"] for m in reversed(list(self.messungen.values()))
+                   if m["hz"] and m.get("anweisung") == self.anweisungen), None)
+        if not hz:
+            return self._anmerkung_zu(antwort)
+        saetze = []
+        for z in re.findall(r"Periode\s+von\s+([\d.,]+)\s*(?:s\b|Sek)", antwort, re.I):
+            p = float(z.replace(",", "."))
+            if abs(p - 1 / hz) > 0.15 / hz:
+                saetze.append(f"Das Modell schreibt eine Periode von {p:g} s; gemessen wurden {hz:.2f} Hz, also {1/hz:.2f} s.")
+        for z in re.findall(r"([\d.,]+)\s*Hz", antwort):
+            f = float(z.replace(",", "."))
+            if f > 0 and abs(f - hz) > 0.15 * hz and abs(f - 1000) > 50:
+                saetze.append(f"Das Modell schreibt {f:g} Hz; gemessen wurden {hz:.2f} Hz.")
+        for z in re.findall(r"(?:alle|je|jede)\s+([\d.,]+)\s*(?:s\b|Sek)", antwort, re.I):
+            p = float(z.replace(",", "."))
+            if abs(p - 1 / hz) > 0.15 / hz and abs(p - 1 / (2 * hz)) > 0.15 / hz:
+                saetze.append(f"Das Modell schreibt alle {p:g} s; gemessen wurden {hz:.2f} Hz ({1/hz:.2f} s Periode).")
+        return " ".join(saetze) if saetze else None
+
+    AGENTENSAETZE = ("gilt nicht als geliefert", "Berichtige den Quelltext", "aendere wirklich etwas",
+                     "derselbe Text fuehrt zum selben Ergebnis", "Noch nicht fertig", "Das ist nicht wahr",
+                     "kein Werkzeug gelaufen", "kein einziges Werkzeug", "Rufe dieses Werkzeug nicht noch einmal",
+                     "NAECHSTER SCHRITT", "Das war kein Ergebnis", "Es ist nichts geschehen", "erst ein bestandener Test",
+                     "keinen Anschluss genannt", "frage ihn danach", "Fuehre den fehlenden Schritt aus", "Der Agent prueft",
+                     "ist in dieser Anweisung nicht gelaufen")      # 12:38: „Der Mensch hat noch keinen Anschluss genannt. Bitte frage ihn danach."
+
+    def _nachgeplappert(self, antwort: str) -> bool:
+        """Besteht ein Abschlusstext aus Saetzen, die der Agent selbst ins Gespraech gegeben hat?"""
+        rest = re.sub(r"^\s*FERTIG[.:!]?\s*", "", antwort.strip(), flags=re.I)
+        if not rest or re.fullmatch(r"(bereit f[uü]e?r die n[aä]e?chste anweisung)?[.!]?", rest, re.I):
+            return True                               # ein leeres FERTIG sagt dem Menschen nichts
+        if any(satz.lower() in rest.lower() for satz in self.AGENTENSAETZE):
+            return True
+        eigene = " ".join(m["content"] for m in self.verlauf if m["role"] == "user")
+        for satz in re.split(r"(?<=[.!?])\s+", rest):
+            satz = satz.strip()
+            if len(satz) >= 40 and satz in eigene:
+                return True
+        return False
+
+    def _eigener_abschluss(self, getan_hier: list, gelungen_hier: list) -> str:
+        """Was wirklich geschah, in einem Satz des Agenten — aus den Werkzeugen, nicht aus dem Modell."""
+        teile = []
+        geschrieben = [d for d in self.geschrieben if d in self.messungen and self.messungen[d].get("anweisung") == self.anweisungen]
+        for d in geschrieben:
+            m = self.messungen[d]
+            teile.append(f"{d} wurde geschrieben und mit {m['werkzeug']} geprueft: {m['stand']}.")
+        for schritt, gut, schlecht in (("esp32_uebertragen", "Das Programm wurde auf den ESP32 uebertragen.", "Das Uebertragen auf den ESP32 ist fehlgeschlagen."),
+                                       ("esp32_nachlesen", "Am Geraet wurde nachgelesen.", "Das Nachlesen am Geraet ist fehlgeschlagen."),
+                                       ("esp32_firmware", "MicroPython wurde aufgespielt.", "Das Aufspielen von MicroPython ist fehlgeschlagen.")):
+            if schritt in gelungen_hier:
+                teile.append(gut)
+            elif schritt in getan_hier:
+                teile.append(schlecht)
+        if not teile:
+            teile.append(f"Werkzeuge in dieser Anweisung: {', '.join(getan_hier) or 'keine'}.")
+        return " ".join(teile) + " Gemessen: " + self._gemessen_zeile()
+
+    def _verdichten(self, verlauf: list) -> list:
+        """Anweisung des Agenten + ein Absatz Tatsachen + die letzte Anweisung des Menschen mit allem, was
+        darauf folgte. Die Tatsachen stammen aus dem Zustand des Agenten, nicht aus dem Modelltext."""
+        letzte = max((i for i, m in enumerate(verlauf) if m["role"] == "user" and i > 0
+                      and not m["content"].startswith(("Ergebnis von", "Noch nicht fertig", "Das ist nicht wahr",
+                                                        "Das war kein Ergebnis", "FEHLER", "Hinweis des Agenten",
+                                                        "Zwischenruf", "Die Datei", "Zusammenfassung"))), default=None)
+        if letzte is None or letzte < 3:
+            return verlauf
+        saetze = [f"Bisheriger Verlauf, vom Agenten zusammengefasst ({self.anweisungen} Anweisungen):"]
+        if self.geschrieben:
+            saetze.append("Geschriebene Dateien in der Werkstatt: " + ", ".join(
+                f"{d} ({'abgenommen' if d in self.abgenommen else 'ungeprueft' if d in self.ungeprueft else 'geprueft, nicht bestanden'})"
+                for d in sorted(self.geschrieben)) + ".")
+        if self.feste_erwartung:
+            saetze.append(f"Erwartung des Menschen: {json.dumps(self.feste_erwartung, ensure_ascii=False)}.")
+        if self.genannte_ports:
+            saetze.append(f"Vom Menschen genannte Anschluesse: {', '.join(sorted(self.genannte_ports))}.")
+        if self.messungen:
+            saetze.append("Zuletzt gemessen: " + self._gemessen_zeile().replace("In dieser Anweisung wurde nichts gemessen.", "") )
+        geraete = [n for n in ("esp32_firmware", "esp32_uebertragen", "esp32_nachlesen") if n in self.getan]
+        if geraete:
+            saetze.append("Am Geraet lief bereits: " + ", ".join(geraete) + ".")
+        return verlauf[:1] + [{"role": "user", "content": " ".join(saetze)}] + verlauf[letzte:]
+
+    def _ersetzungshinweis(self, text: str, quelle: str) -> str:
+        """Aus Messung und Erwartung die Aenderung vorrechnen, Zeile fuer Zeile: „Ersetze time.sleep_ms(500) durch
+        time.sleep_ms(1000)". Am 05.10.2026 (12:47 bis 12:54) lieferte das 3B-Modell dreimal dieselbe Datei und schrieb
+        dazu „Die Taktperiode sollte 2 s sein" — die Rechnung hatte es, die Umsetzung nicht. Dazu: verlangt die Anweisung
+        Ein/Aus-Blinken, aber die Datei schaltet per PWM, wird das gesagt."""
+        saetze = []
+        m_hz = re.search(r"Takt: erwartet ([\d.]+) Hz, gemessen ([\d.]+) Hz", self.letzter_befund_zeilen or "")
+        if m_hz and float(m_hz.group(2)) > 0:
+            faktor = float(m_hz.group(2)) / float(m_hz.group(1))          # gemessen/erwartet = so viel laenger muss jede Pause werden
+            paare = []
+            for fn, zahl in re.findall(r"time\.(sleep_ms|sleep_us|sleep)\(\s*([\d.]+)\s*\)", quelle):
+                alt_z = zahl; z = float(zahl) * faktor
+                neu_z = f"{int(round(z))}" if fn != "sleep" else f"{z:g}"
+                paare.append(f"time.{fn}({alt_z}) durch time.{fn}({neu_z})")
+            if paare:
+                saetze.append("Rechnung des Agenten: gemessen " + m_hz.group(2) + " Hz, erwartet " + m_hz.group(1) +
+                              f" Hz — jede Pause muss {faktor:g}-mal so lang werden. Ersetze " + "; ".join(dict.fromkeys(paare)) + ".")
+        if re.search(r"\bPWM\b", quelle) and not re.search(r"pwm|atme|hell|dimm|sinus|weich", text, re.I):
+            saetze.append("Die Anweisung verlangt Ein/Aus-Blinken, keine PWM: nimm machine.Pin(2, machine.Pin.OUT) mit "
+                          "led.value(1) und led.value(0), dazwischen time.sleep(<Pause in Sekunden>).")
+        return " ".join(saetze)
+
+    @staticmethod
+    def _verdichten_mitte(verlauf: list) -> list:
+        """Werkzeugergebnisse vor den letzten acht Nachrichten auf ihre erste Zeile und ihr Urteil kuerzen."""
+        kopf, mitte, schwanz = verlauf[:2], verlauf[2:-8], verlauf[-8:]
+        neu = []
+        for m in mitte:
+            c = m["content"]
+            if m["role"] == "user" and c.startswith("Ergebnis von "):
+                urteil = ("ABNAHME BESTANDEN" if "ABNAHME BESTANDEN" in c else "ABNAHME NICHT BESTANDEN" if "ABNAHME NICHT BESTANDEN" in c
+                          else "LAUF BESTANDEN" if "LAUF BESTANDEN" in c else "LAUF NICHT BESTANDEN" if "LAUF NICHT BESTANDEN" in c
+                          else "FEHLER" if "FEHLER" in c else "")
+                grund = next((z.strip() for z in c.splitlines() if "NICHT ERFUELLT" in z or "Error" in z), "")
+                zeilen = c.splitlines()
+                neu.append({"role": "user", "content": zeilen[0] + " " + (zeilen[1][:100] if len(zeilen) > 1 else "")
+                                                       + (f" — {urteil}" if urteil else "") + (f" ({grund[:120]})" if grund else "")})
+            elif m["role"] == "assistant" and len(c) > 400:
+                neu.append({"role": "assistant", "content": c[:400] + " …"})
+            else:
+                neu.append(m)
+        return kopf + neu + schwanz
+
+    def _geraetedatei(self, text: str) -> str:
+        """Welche Datei auf das Geraet soll: die in dieser Anweisung genannte, sonst die zuletzt abgenommene,
+        sonst die zuletzt verlangte."""
+        genannt = re.findall(r"\b([\w-]+\.py)\b", text)
+        if genannt:
+            return genannt[-1]
+        if self.abgenommen:
+            return sorted(self.abgenommen)[-1]
+        return self.verlangt[-1] if self.verlangt else "blink.py"
+
+    def _geraeteaufrufe(self, fehlt_geraet: list, datei: str) -> list:
+        """Die Geraeteschritte als fertige Aufrufe: uebertragen (mit der Erwartung des Menschen liest das
+        Werkzeug nach dem Neustart selbst nach), sonst nachlesen."""
+        if not self.genannte_ports:
+            return []
+        port = self.letzter_port or sorted(self.genannte_ports)[0]
+        if "esp32_uebertragen" in fehlt_geraet:
+            if datei not in self.abgenommen:
+                return []
+            e = {"port": port, "datei": datei}
+            if self.feste_erwartung:
+                e["erwartet"] = self.feste_erwartung
+            return ["WERKZEUG: esp32_uebertragen " + json.dumps(e, ensure_ascii=False)]
+        e = {"port": port, "sekunden": 6}
+        if self.feste_erwartung:
+            e["erwartet"] = self.feste_erwartung
+        return ["WERKZEUG: esp32_nachlesen " + json.dumps(e, ensure_ascii=False)]
+
     def _takt_hinweis(self, pwm=False) -> str:
         f = (self.feste_erwartung or {}).get("takt_hz")
         if f and pwm:
-            return (f"Bei {float(f):g} Hz Atmen dauert eine Periode {1/float(f):g} s. Mit N Stufen je Periode ist "
-                    f"jede Pause time.sleep({1/float(f):g}/N) — zum Beispiel 100 Stufen: time.sleep({1/float(f)/100:g}). "
-                    f"Sinusfoermig heisst: duty = 1023 * (1 - cos(2*pi*i/N)) / 2.")
+            #  14:14/14:15: das Modell schrieb „cos(2*pi*i/100)" mit undefiniertem i und ohne import — der Hinweis
+            #  nannte die Formel, nicht die Schleife. Jetzt steht die ganze Schleife da.
+            return (f"Bei {float(f):g} Hz Atmen dauert eine Periode {1/float(f):g} s. Sinusfoermig mit 100 Stufen je Periode, "
+                    f"vollstaendig: import math, time; pwm = machine.PWM(machine.Pin(2), freq=1000); while True: for i in range(100): "
+                    f"pwm.duty(int(1023 * (1 - math.cos(2 * math.pi * i / 100)) / 2)); time.sleep({1/float(f)/100:g}). "
+                    f"Mit duty_u16() statt duty() ist der Vollausschlag 65535 statt 1023.")
         if f:
             pause = 1 / (2 * float(f))
             return (f"Bei {float(f):g} Hz besteht eine Blinkperiode aus zwei Pausen von je "
@@ -638,6 +885,14 @@ class Sitzung:
 
     def _durchlaufen(self, text: str) -> str:
         modell, werkzeuge, namen, laut = self.modell, self.werkzeuge, self.namen, self.laut
+        if len(self.verlauf) > 14:
+            #  Ein langes Gespraech macht ein kleines Modell langsam und unscharf: Am 05.10.2026 (12:14 bis
+            #  12:19) brauchte das 3B-Modell in der sechsten Anweisung fuenf Minuten je Antwort, weil der
+            #  ganze Verlauf mit allen Werkzeugergebnissen jedes Mal neu gelesen wurde. Zu Beginn jeder
+            #  Anweisung wird das Fruehere zu einem Absatz mit den Tatsachen, die der Agent ohnehin
+            #  festhaelt (Dateien, Abnahmen, Erwartung, Anschluesse); die letzte Anweisung bleibt im Wortlaut.
+            self.verlauf = self._verdichten(self.verlauf)
+            notieren(f"VERLAUF verdichtet auf {len(self.verlauf)} Nachrichten")
         sagen, verlauf = self.sagen, self.verlauf
         eigenes = self._eigenes_programm(text)
         verlauf.append({"role": "user", "content": text})
@@ -649,10 +904,19 @@ class Sitzung:
             return drehbuch(werkzeuge, laut=laut, melden=self.melden)
 
         getan_hier: list = []
+        gelungen_hier: list = []                   # davon die, deren Ergebnis kein FEHLER war (05.10.2026, 12:20:
+                                                   #  ein fehlgeschlagenes esp32_uebertragen gab FERTIG frei)
         getan_dateien: list = []                   # in dieser Anweisung geschriebene Dateien, in Reihenfolge
+        self.gesehen = {}                          # gleiche Fehlschlaege zaehlen je Anweisung
         abweisungen, selbst_geprueft = 0, False
         warteschlange: list = []
         for schritt in range(1, MAX_SCHRITTE + 1):
+            if len(verlauf) > 24:
+                #  Auch innerhalb einer Anweisung waechst der Verlauf (13:34 bis 13:45: drei bis vier Minuten je Antwort).
+                #  Aeltere Werkzeugergebnisse dieser Anweisung werden zu je einer Zeile; die letzten acht Nachrichten
+                #  bleiben im Wortlaut. Der Zustand (Dateien, Abnahmen) liegt ohnehin beim Agenten.
+                self.verlauf = verlauf = self._verdichten_mitte(verlauf)
+                notieren(f"VERLAUF innerhalb der Anweisung verdichtet auf {len(verlauf)} Nachrichten")
             if self._zwischenrufe_aufnehmen():
                 #  Ein Zwischenruf geht vor: Was das Modell schon vorhatte, wird mit dem neuen
                 #  Wissen neu entschieden — die Warteschlange verfaellt.
@@ -708,15 +972,68 @@ class Sitzung:
                     #  Je ANWEISUNG, nicht je Sitzung: Am 04.10.2026 (20:10) sagte das Modell „auf dem ESP32
                     #  geladen", weil frueher im Gespraech einmal uebertragen worden war — in dieser Anweisung
                     #  lief nichts. Was die Anweisung verlangt (laden, nachlesen), muss in ihr gelaufen sein.
-                    behauptet_geraet = re.search(r"ueberspielt|überspielt|geflasht|geladen|auf den ESP32|auf das Ger", antwort, re.I)
+                    #  12:43: „Es ist nun moeglich, das Programm auf den ESP32 zu uebertragen" ist keine Behauptung —
+                    #  sie wurde als eine behandelt, und das Modell plapperte danach die Ruege nach.
+                    behauptet_geraet = (re.search(r"ueberspielt|überspielt|geflasht|geladen|auf den ESP32|auf das Ger", antwort, re.I)
+                                        and not re.search(r"steht aus|noch nicht|nicht (uebertragen|übertragen|geladen|geflasht)|m[oö]e?glich|"
+                                                          r"\bkann\b|k[oö]e?nnte|zu (uebertragen|übertragen|laden|flashen)|n[aä]e?chste[rn]? Schritt",
+                                                          antwort, re.I))
                     verlangt_laden = re.search(r"\b(lade|laden|laedt|lädt|uebertrag|übertrag|flash|auf den ESP32|auf das Ger)", text, re.I)
                     verlangt_lesen = re.search(r"\b(nachles|nachlies|lies .{0,30}nach|zurueckles|zurücklies|zurueck ?lesen|rücklesen)", text, re.I)
                     fehlt_geraet = []
-                    if (verlangt_laden or behauptet_geraet) and "esp32_uebertragen" not in getan_hier:
+                    #  Fehlend ist ein Geraeteschritt, der nicht gelungen ist — es sei denn, er wurde versucht und
+                    #  das Modell behauptet nichts (ohne Geraet ist „steht aus" die wahre Antwort). Versucht und
+                    #  gescheitert, aber „geladen" behauptet: fehlt.
+                    behauptet_messung = re.search(r"blinkt|gemessen|nachgelesen|am Ger[aä]e?t", antwort, re.I)
+                    if ((verlangt_laden or behauptet_geraet) and "esp32_uebertragen" not in gelungen_hier
+                            and (behauptet_geraet or "esp32_uebertragen" not in getan_hier)):
                         fehlt_geraet.append("esp32_uebertragen")
-                    if verlangt_lesen and "esp32_nachlesen" not in getan_hier:
+                    if (verlangt_lesen and "esp32_nachlesen" not in gelungen_hier
+                            and (behauptet_messung or "esp32_nachlesen" not in getan_hier)):
                         fehlt_geraet.append("esp32_nachlesen")
                     behauptet_arbeit = re.search(r"geschrieben|gepr[uü]e?ft|getestet|blinkt|l[aä]e?uft ohne Fehler", antwort, re.I)
+                    verlangt_etwas = bool(re.findall(r"\b([\w-]+\.py)\b", text)) or bool(
+                        re.search(r"\b(schreib|programmier|erstell|lade|lad|uebertrag|übertrag|flash|pruef|prüf|test|aender|änder|"
+                                  r"richte|installier|sieh nach|zeig|lies|mach)\w*", text, re.I))
+                    geraetedatei = self._geraetedatei(text)
+                    if (fehlt_geraet and self.genannte_ports and abweisungen < 3
+                            and not (self.letzter_befund and geraetedatei not in self.abgenommen)):
+                        #  Verlangt ist ein Geraeteschritt, der Anschluss ist bekannt, die Datei abgenommen. Vor dem
+                        #  allgemeinen Fokus, denn dessen Hinweis („fuer ein Programm: schreib_datei") liess das Modell
+                        #  am 05.10.2026 (12:03) blink.py umschreiben statt zu uebertragen. Nennt das Modell auch ohne
+                        #  Vorgeschichte nicht den verlangten Aufruf, fuehrt der Agent ihn selbst aus — der Schritt
+                        #  ist eindeutig: diese Datei, dieser Anschluss, die Erwartung des Menschen.
+                        abweisungen += 1
+                        uebertragen_gescheitert = "esp32_uebertragen" in getan_hier and "esp32_uebertragen" not in gelungen_hier
+                        eigene = ([] if fehlt_geraet[0] in getan_hier or (fehlt_geraet[0] == "esp32_nachlesen" and uebertragen_gescheitert)
+                                  else self._geraeteaufrufe(fehlt_geraet, geraetedatei))
+                        hinweis = (f"Die Datei {geraetedatei} ist geprueft und abgenommen. Der naechste Schritt ist "
+                                   f"{eigene[0]}" if eigene else "Der naechste Schritt ist der Geraeteschritt.")
+                        fokus = self._fokus(text, hinweis, meldung=(
+                            "Verlangt ist ein Schritt am Geraet, und er ist nicht gelaufen. Der Agent fragt das Modell ohne "
+                            "Vorgeschichte nach genau diesem Aufruf."))
+                        teile = zerlegen(fokus, werkzeuge)
+                        if teile and heraus(teile[0], werkzeuge)[0] == fehlt_geraet[0]:
+                            warteschlange = teile[:5] + warteschlange
+                        elif eigene:
+                            notieren(f"AGENT FUEHRT SELBST AUS {eigene[0][:120]}")
+                            sagen("hinweis", text=f"Das Modell nannte nicht den verlangten Schritt. Der Agent fuehrt ihn selbst aus: {eigene[0]}")
+                            warteschlange = eigene + warteschlange
+                        continue
+                    if not getan_hier and verlangt_etwas and not behauptet_arbeit and abweisungen < 3:
+                        #  „FERTIG — bereit fuer die naechste Anweisung", zwei Sekunden nach einer Aufgabe, kein
+                        #  Werkzeug (05.10.2026, 11:09): kein Erzaehlen, nur Ausweichen. Sofort ohne Vorgeschichte
+                        #  nach dem ersten Aufruf fragen — das Muster bricht nur der kurze Verlauf.
+                        abweisungen += 1
+                        erw = json.dumps(self.feste_erwartung) if self.feste_erwartung else '{"pins": [2], "takt_hz": 1.0}'
+                        hinweis = ("Die Anweisung verlangt eine Taetigkeit, und noch kein Werkzeug ist gelaufen. Nenne den ersten "
+                                   f"Schritt als Aufruf; fuer ein Programm: schreib_datei, danach programm_testen mit erwartet {erw}.")
+                        verlauf.append({"role": "user", "content": "Das war kein Ergebnis: Es ist nichts geschehen. " + hinweis})
+                        fokus = self._fokus(text, hinweis)
+                        teile = zerlegen(fokus, werkzeuge)
+                        if teile and heraus(teile[0], werkzeuge)[0] is not None:
+                            warteschlange = teile[:5] + warteschlange
+                        continue
                     if behauptet_arbeit and not getan_hier and abweisungen < 3:
                         #  „Ich habe das Programm geschrieben und geprueft … die LED blinkt" — und kein einziges
                         #  Werkzeug lief (05.10.2026, 9:26, Qwen2.5-Coder-3B). Das ist keine Antwort, das ist
@@ -736,20 +1053,6 @@ class Sitzung:
                             warteschlange = teile[:5] + warteschlange
                             continue
                         continue
-                    if fehlt_geraet and not getan_hier and self.genannte_ports and abweisungen < 3:
-                        #  Verlangt ist ein Geraeteschritt, nichts lief, der Anschluss ist bekannt: ohne
-                        #  Vorgeschichte nach genau diesem Aufruf fragen.
-                        abweisungen += 1
-                        port = sorted(self.genannte_ports)[0]
-                        datei = (self.verlangt[-1] if self.verlangt else "blink.py")
-                        hinweis = (f"Der naechste Schritt ist WERKZEUG: {fehlt_geraet[0]} " +
-                                   (json.dumps({"port": port, "datei": datei}) if fehlt_geraet[0] == "esp32_uebertragen"
-                                    else json.dumps({"port": port, "sekunden": 6})) + ".")
-                        fokus = self._fokus(text, hinweis)
-                        teile = zerlegen(fokus, werkzeuge)
-                        if teile and heraus(teile[0], werkzeuge)[0] is not None:
-                            warteschlange = teile[:5] + warteschlange
-                        continue
                     if fehlt_geraet and abweisungen < 3:
                         abweisungen += 1
                         port_satz = (f"Anschluss, den der Mensch genannt hat: {', '.join(sorted(self.genannte_ports))}"
@@ -761,12 +1064,15 @@ class Sitzung:
                             f"Fuehre den fehlenden Schritt aus oder sage ehrlich, dass er noch aussteht."})
                         continue
                     if fehlt_geraet and abweisungen >= 3:
-                        grund = (f"{' und '.join(fehlt_geraet)} nicht gelaufen" if getan_hier
+                        grund = (f"{' und '.join(fehlt_geraet)} nicht gelungen" if getan_hier
                                  else "kein einziges Werkzeug gelaufen — die Arbeit war erfunden")
                         notieren(f"NICHT ABGENOMMEN {grund} — FERTIG dreimal zurueckgewiesen")
                         sagen("abbruch", text=f"Nicht abgenommen: {grund}. Das Modell hat dreimal FERTIG gesagt, ohne den verlangten Schritt zu tun.")
                         return f"Nicht abgenommen: {grund}."
-                    fehlend = [n for n in self.verlangt if n not in self.geschrieben]
+                    #  Verlangt ist, was DIESE Anweisung nennt — nicht eine Datei aus einer frueheren, die nie
+                    #  geschrieben wurde (05.10.2026, 11:33: „blink.py nie geschrieben" blockierte „sieh nach den Anschluessen").
+                    verlangt_hier = re.findall(r"\b([\w-]+\.py)\b", text)
+                    fehlend = [n for n in verlangt_hier if n not in self.geschrieben]
                     if (self.ungeprueft or self.letzter_befund or fehlend) and abweisungen >= 3:
                         grund = (f"{', '.join(sorted(self.ungeprueft))} ungeprueft" if self.ungeprueft
                                  else f"letzte Pruefung: {self.letzter_befund}" if self.letzter_befund
@@ -799,11 +1105,28 @@ class Sitzung:
                             f"schreib_datei — aendere wirklich etwas, derselbe Text fuehrt zum "
                             f"selben Ergebnis — und pruefe danach erneut mit programm_testen. "
                             + self._takt_hinweis()})
+                        berichtigung = self._berichtigungsfokus(text, werkzeuge)
+                        if berichtigung:
+                            warteschlange = berichtigung + warteschlange
                         continue
                     if laut:
                         print(f"\n=== fertig nach {len(getan_hier)} Werkzeugaufrufen ===\n{antwort.strip()}")
                     notieren("FERTIG")
-                    sagen("fertig", text=antwort.strip(), aufrufe=len(getan_hier))
+                    gemessen = self._gemessen_zeile(getan_hier, gelungen_hier)
+                    if self._nachgeplappert(antwort):
+                        #  „FERTIG — Die letzte Pruefung war erfolgreich (die Abnahme ist durchgefallen). Ein Programm,
+                        #  das die Pruefung nicht besteht, gilt nicht als geliefert …" (05.10.2026, 12:01): das Modell
+                        #  gab die Ruege des Agenten als eigenen Schlusssatz wieder. Solch ein Text sagt dem Menschen
+                        #  nichts Wahres; an seine Stelle tritt, was die Werkzeuge getan und gemessen haben.
+                        notieren("NACHGEPLAPPERT Abschlusstext aus Agentensaetzen ersetzt")
+                        sagen("hinweis", text="Der Abschlusstext des Modells war leer oder bestand aus Saetzen des Agenten, nicht aus dem, "
+                                              "was geschah. Der Agent ersetzt ihn durch das Getane und Gemessene.")
+                        antwort = "FERTIG\n\n" + self._eigener_abschluss(getan_hier, gelungen_hier)
+                    widerspruch = self._widerspruch(antwort)
+                    if widerspruch:
+                        notieren("ANMERKUNG " + widerspruch[:160])
+                        sagen("hinweis", text="Anmerkung des Agenten: " + widerspruch)
+                    sagen("fertig", text=antwort.strip(), aufrufe=len(getan_hier), gemessen=gemessen)
                     return antwort
                 #  Eine Antwort in Worten ist eine Antwort — an den Menschen, nicht an den Agenten.
                 #  Bis zum 05.10.2026 wurde sie mit „Das war kein Werkzeugaufruf" zurueckgewiesen; der
@@ -883,6 +1206,12 @@ class Sitzung:
                                      "sondern eine Traegerfrequenz. Die Erwartung meint, wie oft je Sekunde die LED sichtbar "
                                      "an- und abschwillt oder blinkt (zum Beispiel 1.0). Frage den Menschen, wenn es unklar ist.")
                         del eingabe["erwartet"]["takt_hz"]; del neu["takt_hz"]
+                    if "form" in neu and not re.search(r"sinus|dreieck|pwm|atme|hell|dimm|weich", text, re.I):
+                        #  14:26: zwei.py (Ein/Aus, zwei LEDs) bekam vom Modell „form: sinusfoermig" mit — ein Erbe aus dem
+                        #  Atmen davor. Eine Kurvenform legt nur der Mensch fest; ohne sein Wort dazu gibt es keine.
+                        nachsatz += ("\n\nHINWEIS: Die Anweisung nennt keine Kurvenform; \"form\" wurde aus der Erwartung gestrichen. "
+                                     "Gemessen werden Anschluesse und Takt.")
+                        del eingabe["erwartet"]["form"]; del neu["form"]
                     if neu:
                         self.feste_erwartung = {**(self.feste_erwartung or {}), **neu}
                         notieren(f"ERWARTUNG ERGAENZT (vom Modell genannt) {json.dumps(neu)}")
@@ -909,10 +1238,14 @@ class Sitzung:
             ergebnis = vorab if vorab else ausfuehren(name, eingabe, werkzeuge)
             if nachsatz:
                 ergebnis += nachsatz
+            if not ergebnis.startswith("FEHLER"):
+                gelungen_hier.append(name)
             if name == "esp32_uebertragen" and "RUECKLESEN NACH DEM NEUSTART" in ergebnis:
                 #  Die Uebertragung hat selbst am Geraet nachgelesen — das zaehlt als esp32_nachlesen
                 #  (05.10.2026, 10:25: „esp32_nachlesen nicht gelaufen", obwohl gemessen worden war).
                 self.getan.append("esp32_nachlesen"); getan_hier.append("esp32_nachlesen")
+                if not ergebnis.startswith("FEHLER"):
+                    gelungen_hier.append("esp32_nachlesen")
             if name == "schreib_datei" and not ergebnis.startswith("FEHLER") and eingabe.get("name"):
                 self.geschrieben.add(eingabe["name"]); self.abgenommen.discard(eingabe["name"])
                 getan_dateien.append(eingabe["name"])
@@ -924,6 +1257,8 @@ class Sitzung:
                                  f"{eingabe['name']}. Verwende den Namen aus dem Auftrag.")
                 if eingabe["name"].endswith(".py"):
                     self.ungeprueft.add(eingabe["name"])
+            if name in ("programm_testen", "programm_ausfuehren", "esp32_nachlesen") and not vorab:
+                self._messung_merken(name, eingabe, ergebnis)
             if name in ("programm_testen", "programm_ausfuehren") and not vorab:
                 self.ungeprueft.discard(eingabe.get("datei", ""))
                 abweisungen = 0                   # eine neue Pruefung eroeffnet drei neue Versuche
@@ -944,6 +1279,11 @@ class Sitzung:
 
             # Den Stand der letzten Pruefung merken — daran haengt, ob FERTIG gilt.
             if name in ("programm_testen", "programm_ausfuehren"):
+                self.letzte_pruefdatei = eingabe.get("datei") or self.letzte_pruefdatei
+                self.letzter_befund_zeilen = "\n".join(
+                    z.rstrip() for z in ergebnis.splitlines()
+                    if "NICHT ERFUELLT" in z or "Error" in z or z.startswith("FEHLER") or "Meldung des Programms" in z)
+                self.letzter_befund_pwm = "PWM an Pin" in ergebnis
                 self.letzter_befund = (None if ("ABNAHME BESTANDEN" in ergebnis or "LAUF BESTANDEN" in ergebnis)
                                        else "die Abnahme ist durchgefallen"
                                        if "ABNAHME NICHT BESTANDEN" in ergebnis
@@ -952,9 +1292,17 @@ class Sitzung:
                                        else ergebnis.splitlines()[0][:120] if ergebnis.startswith("FEHLER")
                                        else None)
 
-            schluessel = (name, ergebnis[:80])
-            self.gesehen[schluessel] = self.gesehen.get(schluessel, 0) + 1
-            if self.gesehen[schluessel] >= 3:
+            #  Gezaehlt werden nur Fehlschlaege, und zwar an der Zeile, die den Grund nennt (05.10.2026,
+            #  11:39: der Hinweis „dritter gleicher Fehlschlag" stand unter einer BESTANDENEN Abnahme,
+            #  weil die ersten 80 Zeichen eines bestandenen und eines durchgefallenen Laufs gleich sind
+            #  und der Zaehler die Anweisung davor noch mitzaehlte).
+            urteil_hier = beurteilen(ergebnis)
+            grundzeile = next((z for z in ergebnis.splitlines()
+                               if "NICHT ERFUELLT" in z or "Error" in z or z.startswith("FEHLER")), ergebnis[:80])
+            schluessel = (name, grundzeile.strip()[:120])
+            if urteil_hier["fehler"] or urteil_hier["abnahme"] == "durchgefallen":
+                self.gesehen[schluessel] = self.gesehen.get(schluessel, 0) + 1
+            if self.gesehen.get(schluessel, 0) >= 3:
                 ergebnis += ("\n\nHINWEIS: Das ist der dritte gleiche Fehlschlag mit "
                              f"{name}. Rufe dieses Werkzeug nicht noch einmal so auf. "
                              "Entweder behebst du zuerst die genannte Ursache mit einem "
@@ -966,7 +1314,14 @@ class Sitzung:
                       else "  | ABNAHME NICHT BESTANDEN" if "ABNAHME NICHT BESTANDEN" in ergebnis else "")
             notieren(f"ERGIBT {ergebnis.splitlines()[0] if ergebnis else ''}{urteil}")
             sagen("ergibt", schritt=schritt, werkzeug=name, text=ergebnis, **beurteilen(ergebnis))
-            verlauf.append({"role": "user", "content": f"Ergebnis von {name}:\n{kuerzen(ergebnis)}"})
+            fuers_gedaechtnis = ergebnis
+            if name == "schreib_datei" and "So steht es jetzt in der Datei:" in ergebnis:
+                #  Den Abdruck der Datei hat das Modell selbst geschrieben; im Gedaechtnis kostet er nur Platz
+                #  (05.10.2026: fuenf Minuten je Antwort im langen Gespraech). Hinweise darunter bleiben.
+                kopfzeile, rest = ergebnis.split("So steht es jetzt in der Datei:", 1)
+                hinweise = [z for z in rest.splitlines() if z.strip() and not re.match(r"\s*\d+ \| ", z)]
+                fuers_gedaechtnis = kopfzeile.strip() + ("\n" + "\n".join(hinweise) if hinweise else "")
+            verlauf.append({"role": "user", "content": f"Ergebnis von {name}:\n{kuerzen(fuers_gedaechtnis)}"})
 
         notieren(f"ABBRUCH {MAX_SCHRITTE} Schritte erreicht, ohne dass FERTIG kam")
         sagen("abbruch", text=f"{MAX_SCHRITTE} Schritte erreicht, ohne dass FERTIG kam.")

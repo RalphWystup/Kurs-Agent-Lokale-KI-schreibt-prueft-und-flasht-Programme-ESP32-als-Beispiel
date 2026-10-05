@@ -79,7 +79,12 @@ pr("Anweisung 5: geprueft gegen pins [5] und 2 Hz aus der Eingabe, bestanden, FE
 # 5b. Behauptung je Anweisung: frueher wurde uebertragen; jetzt verlangt die Anweisung Laden, das Modell behauptet es nur
 antworten[:] = ["FERTIG. Auf den ESP32 geladen.", "FERTIG. Geladen.", "FERTIG. Wirklich.", "FERTIG. Ja."]
 r5b = s.anweisung("Lade mein.py auf den ESP32 an COM3.")
-pr("Anweisung 5b: Laden verlangt, nur behauptet -> Fokus, dreimal abgewiesen, dann NICHT ABGENOMMEN (erfunden)", r5b.startswith("Nicht abgenommen") and ("nicht gelaufen" in r5b or "erfunden" in r5b), repr(r5b[:70]))
+# seit 05.10.2026: Anschluss genannt, mein.py abgenommen -> der Agent uebertraegt selbst; ohne Geraet schlaegt das fehl
+# und ein fehlgeschlagener Schritt gibt kein FERTIG frei
+rufe5b = [e for e in ev if e["art"] == "ruft" and e["werkzeug"] == "esp32_uebertragen" and e["eingabe"].get("datei") == "mein.py"]
+fert5b = [e for e in ev if e["art"] == "fertig"]
+pr("Anweisung 5b: Laden verlangt, nur behauptet -> Agent uebertraegt mein.py an COM3 selbst (einmal); ohne Geraet steht unter FERTIG 'esp32_uebertragen: fehlgeschlagen'",
+   len(rufe5b) == 1 and r5b.startswith("FERTIG") and "esp32_uebertragen: fehlgeschlagen" in fert5b[-1].get("gemessen", ""), repr(fert5b[-1].get("gemessen", "")[:80]))
 
 # 5c. Gruss: das Modell antwortet in Worten, der Agent nimmt es als Antwort (kein Nachhaken, keine Vorgabe)
 antworten[:] = ["Ja, ich bin bereit. Was soll ich tun?"]
@@ -104,6 +109,110 @@ antworten[:] = ["FERTIG. Ich habe f.py geschrieben und geprueft, LAUF BESTANDEN.
 r5g = s.anweisung("Schreibe f.py, LED an GPIO 5 mit 1 Hz, und pruefe es.")
 pr("5g: erfundene Arbeit -> Fokus ohne Vorgeschichte liefert schreib_datei, dann Test, FERTIG echt", zustand["fokus"] >= 1 and "f.py" in s.abgenommen and r5g.startswith("FERTIG. f.py"), f"(Fokus {zustand['fokus']}x, {r5g[:50]!r})")
 modell.fragen = fragen
+# 5h. leeres FERTIG auf eine Aufgabe (kein Werkzeug, keine Behauptung): Fokus liefert den Aufruf
+zustand["fokus"] = 0
+def leer(v, **k):
+    if len(v) == 2:
+        zustand["fokus"] += 1
+        return schreib("leer.py", 5, 0.5) if zustand["fokus"] == 1 else test("leer.py", '{"pins": [5], "takt_hz": 1.0}')
+    return antworten.pop(0) if antworten else "FERTIG. leer.py geschrieben und geprueft."
+modell.fragen = leer
+antworten[:] = ["FERTIG\n\nBereit fuer die naechste Anweisung."]
+r5h = s.anweisung("Schreibe leer.py, LED an GPIO 5 mit 1 Hz, und pruefe es.")
+pr("5h: leeres FERTIG -> Fokus sofort, Datei geschrieben und bestanden, FERTIG echt", zustand["fokus"] >= 1 and "leer.py" in s.abgenommen and r5h.startswith("FERTIG. leer.py"), f"(Fokus {zustand['fokus']}x)")
+# 5i. eine fruehere, nie geschriebene Datei blockiert eine andere Anweisung nicht
+modell.fragen = lambda v, **k: "FERTIG. Ich habe nachgesehen: keine Anschluesse."
+s.verlangt.append("nie.py")
+r5i = s.anweisung("Wie viele Anschluesse gibt es? Antworte kurz.")
+pr("5i: 'nie.py' aus frueherer Anweisung blockiert eine Frage nicht", r5i.startswith("FERTIG. Ich habe nachgesehen"))
+modell.fragen = fragen
+
+# 5j. Zaehler „dritter gleicher Fehlschlag": zaehlt nur Fehlschlaege, nie eine bestandene Abnahme
+modell.fragen = fragen
+antworten[:] = [schreib("z.py", 6, 0.5), test("z.py", '{"pins": [6], "takt_hz": 2.0}'),
+                schreib("z.py", 6, 0.5), test("z.py", '{"pins": [6], "takt_hz": 2.0}'),
+                schreib("z.py", 6, 0.25), test("z.py", '{"pins": [6], "takt_hz": 2.0}'), "FERTIG. z.py blinkt mit einer Periode von 2 Sekunden."]
+ab = len(ev)
+r5j = s.anweisung("Schreibe z.py, LED an GPIO 6 mit 2 Hz (pins [6], takt_hz 2.0), und pruefe es.")
+erg = [e for e in ev[ab:] if e["art"] == "ergibt" and e["werkzeug"] == "programm_testen"]
+pr("5j: bestandene Abnahme traegt keinen Hinweis 'dritter gleicher Fehlschlag'", len(erg) == 3 and erg[-1]["abnahme"] == "bestanden" and "dritte gleiche" not in erg[-1]["text"], f"({len(erg)} Pruefungen)")
+# 5k. FERTIG mit falscher Zahl: der Agent haengt die Messung an und merkt den Widerspruch an
+fert = [e for e in ev[ab:] if e["art"] == "fertig"]
+anm = [e for e in ev[ab:] if e["art"] == "hinweis" and "Anmerkung des Agenten" in e.get("text", "")]
+pr("5k: unter FERTIG steht, was das Werkzeug gemessen hat (Takt, bestanden)", bool(fert) and "Takt" in fert[-1].get("gemessen", "") and "bestanden" in fert[-1].get("gemessen", ""), (fert[-1].get("gemessen", "")[:90] if fert else ""))
+pr("5k: 'Periode von 2 Sekunden' bei 2 Hz bekommt eine sichtbare Anmerkung", bool(anm) and "Periode" in anm[-1]["text"] and "0.50 s" in anm[-1]["text"], (anm[-1]["text"][:100] if anm else ""))
+
+# 5l. Nach NICHT BESTANDEN behauptet das Modell „wurde korrigiert" (kein Werkzeug): Berichtigungsfokus
+#     liefert die Datei neu, der Agent haengt die Pruefung an, am Ende echtes FERTIG
+antworten[:] = [schreib("k.py", 7, 0.5), test("k.py", '{"pins": [7], "takt_hz": 2.0}'),
+                "FERTIG\n\nDie Zeile time.sleep(0.5) wurde korrigiert auf time.sleep(0.25).",
+                schreib("k.py", 7, 0.25),                     # Antwort auf den Fokus (ohne Vorgeschichte)
+                "FERTIG. k.py blinkt mit 2 Hz."]
+ab = len(ev)
+r5l = s.anweisung("Schreibe k.py, LED an GPIO 7 mit 2 Hz (pins [7], takt_hz 2.0), und pruefe es.")
+rufe = [(e["werkzeug"], e["eingabe"].get("name") or e["eingabe"].get("datei")) for e in ev[ab:] if e["art"] == "ruft"]
+fok = [e for e in ev[ab:] if e["art"] == "hinweis" and "Berichtigung" in e.get("text", "") or "berichtigte Datei" in e.get("text", "")]
+pr("5l: behauptete Korrektur -> Fokus mit Datei und Befund, schreib_datei + Pruefung vom Agenten, FERTIG echt",
+   bool(fok) and rufe[-2:] == [("schreib_datei", "k.py"), ("programm_testen", "k.py")] and "k.py" in s.abgenommen and r5l.startswith("FERTIG. k.py"), str(rufe))
+
+# 5l-b. der Fokus-Prompt rechnet die Ersetzung vor
+gesehen = {"prompts": []}
+_fragen_alt = modell.fragen
+def mitlesen(v, **k):
+    gesehen["prompts"].append(v[-1]["content"]); return _fragen_alt(v, **k)
+modell.fragen = mitlesen
+antworten[:] = [schreib("kb.py", 9, 0.5), test("kb.py", '{"pins": [9], "takt_hz": 0.5}'),
+                "FERTIG\n\nDie Taktperiode sollte 2 s sein.", schreib("kb.py", 9, 1.0), "FERTIG. kb.py blinkt mit 0.5 Hz."]
+r5lb = s.anweisung("Schreibe kb.py, LED an GPIO 9 genau 1 s an und 1 s aus (pins [9], takt_hz 0.5), und pruefe es.")
+fokusprompt = [p_ for p_ in gesehen["prompts"] if "Rechnung des Agenten" in p_]
+pr("5l-b: der Berichtigungsfokus rechnet vor: Ersetze time.sleep(0.5) durch time.sleep(1)", bool(fokusprompt) and "Ersetze time.sleep(0.5) durch time.sleep(1)" in fokusprompt[0] and r5lb.startswith("FERTIG. kb.py"), (fokusprompt[0][fokusprompt[0].find("Rechnung"):][:120] if fokusprompt else r5lb[:80]))
+modell.fragen = _fragen_alt
+# 5l-c. „Es ist nun moeglich, das Programm auf den ESP32 zu uebertragen" ist keine Behauptung
+antworten[:] = [schreib("kc.py", 10, 0.5), test("kc.py", '{"pins": [10], "takt_hz": 1.0}'),
+                "FERTIG\n\nDie Pruefung war erfolgreich. Es ist nun moeglich, das Programm auf den ESP32 zu uebertragen und dort zu testen."]
+r5lc = s.anweisung("Schreibe kc.py, LED an GPIO 10 mit 1 Hz (pins [10], takt_hz 1.0), und pruefe es.")
+pr("5l-c: Moeglichkeitsform 'auf den ESP32 zu uebertragen' wird nicht als Behauptung zurueckgewiesen", r5lc.startswith("FERTIG") and "moeglich" in r5lc, r5lc[:80])
+
+# 5l-d. das Modell bringt „form: sinusfoermig" in ein Ein/Aus-Programm ohne Wort des Menschen zur Form -> gestrichen
+antworten[:] = [schreib("zw.py", 11, 0.25), test("zw.py", '{"pins": [11], "takt_hz": 2.0, "form": "sinusfoermig"}'), "FERTIG. zw.py blinkt."]
+ab = len(ev)
+r5ld = s.anweisung("Schreibe zw.py: LED an GPIO 11 zweimal je Sekunde. Pruefe gegen pins [11].")
+t5ld = [e for e in ev[ab:] if e["art"] == "ruft" and e["werkzeug"] == "programm_testen"]
+pr("5l-d: 'form' vom Modell ohne Wort des Menschen wird gestrichen; Erwartung pins [11], 2 Hz; FERTIG", bool(t5ld) and "form" not in t5ld[0]["eingabe"]["erwartet"] and s.feste_erwartung == {"pins": [11], "takt_hz": 2.0} and r5ld.startswith("FERTIG"), str(s.feste_erwartung))
+
+# 5l-e. allgemeines Programm nach ESP32-Anweisungen: der Pruefweg richtet sich nach der Datei (programm_ausfuehren), nicht nach der alten Erwartung
+antworten[:] = ['WERKZEUG: schreib_datei {"name": "rech.py", "inhalt": "print(1/0)"}', 'WERKZEUG: programm_ausfuehren {"datei": "rech.py", "sekunden": 5}',
+                "FERTIG. Der Rechner steht.", 'WERKZEUG: schreib_datei {"name": "rech.py", "inhalt": "print(2+3)"}', "FERTIG. rech.py rechnet 2+3."]
+ab = len(ev)
+r5le = s.anweisung("Programmiere rech.py, das 2+3 ausgibt, und fuehre es mit programm_ausfuehren aus.")
+rufe5le = [(e["werkzeug"], e["eingabe"].get("datei")) for e in ev[ab:] if e["art"] == "ruft" and e["werkzeug"] in ("programm_testen", "programm_ausfuehren")]
+pr("5l-e: nach ESP32-Anweisungen prueft der Agent ein gewoehnliches Programm mit programm_ausfuehren, nie mit programm_testen gegen Pins",
+   rufe5le and all(w == "programm_ausfuehren" for w, _ in rufe5le) and r5le.startswith("FERTIG. rech.py"), str(rufe5le))
+
+# 5m. Abschlusstext aus Agentensaetzen („Die letzte Pruefung war erfolgreich (die Abnahme ist durchgefallen) …")
+antworten[:] = [schreib("m.py", 8, 0.5), test("m.py", '{"pins": [8], "takt_hz": 1.0}'),
+                "FERTIG\n\nDie letzte Pruefung war erfolgreich (die Abnahme ist durchgefallen). Ein Programm, das die Pruefung nicht besteht, gilt nicht als geliefert."]
+ab = len(ev)
+r5m = s.anweisung("Schreibe m.py, LED an GPIO 8 mit 1 Hz (pins [8], takt_hz 1.0), und pruefe es.")
+fert = [e for e in ev[ab:] if e["art"] == "fertig"]
+pr("5m: nachgeplapperter Abschlusstext wird durch den eigenen Abschluss des Agenten ersetzt",
+   bool(fert) and "gilt nicht als geliefert" not in fert[-1]["text"] and "m.py wurde geschrieben" in fert[-1]["text"] and "bestanden" in fert[-1]["text"]
+   and any(e["art"] == "hinweis" and "Abschlusstext" in e.get("text", "") for e in ev[ab:]), fert[-1]["text"][:120] if fert else "")
+
+# 5n. „Lade k.py auf den ESP32 an COM9 und lies nach": Modell erzaehlt, Fokus liefert das Falsche (schreib_datei)
+#     -> der Agent fuehrt esp32_uebertragen mit Datei, Anschluss und Erwartung selbst aus (k.py ist abgenommen)
+antworten[:] = ["FERTIG. k.py wurde auf den ESP32 geladen und die LED blinkt.",
+                schreib("k.py", 7, 0.25),                      # falsche Antwort auf den Fokus
+                "FERTIG", "FERTIG", "FERTIG", "FERTIG"]
+ab = len(ev)
+r5n = s.anweisung("Lade k.py auf den ESP32 an COM9 und lies am Geraet nach, ob die LED so blinkt.")
+rufe5n = [e for e in ev[ab:] if e["art"] == "ruft"]
+pr("5n: Geraeteschritt verlangt, Modell liefert ihn nicht -> Agent ruft esp32_uebertragen k.py COM9 mit Erwartung selbst, genau einmal",
+   len(rufe5n) == 1 and rufe5n[0]["werkzeug"] == "esp32_uebertragen" and rufe5n[0]["eingabe"].get("datei") == "k.py"
+   and rufe5n[0]["eingabe"].get("port") == "COM9" and rufe5n[0]["eingabe"].get("erwartet") == s.feste_erwartung, str([(r["werkzeug"], r["eingabe"].get("datei")) for r in rufe5n]))
+pr("5n: ohne Geraet endet die Anweisung ehrlich: Nachlesen verlangt, nicht gelungen -> Nicht abgenommen (oder FERTIG mit 'fehlgeschlagen')",
+   (r5n.startswith("Nicht abgenommen") and "nicht gelungen" in r5n) or ("fehlgeschlagen" in r5n), r5n[:120])
+
 # 6. Zwischenruf: Modell fragt nach dem Anschluss, der Mensch ruft "COM7" dazwischen, naechster Aufruf darf COM7
 def mit_zwischenruf(v, **k):
     a = antworten.pop(0) if antworten else "FERTIG"
@@ -115,11 +224,16 @@ antworten[:] = ['WERKZEUG: esp32_nachlesen {"port": "COM7", "sekunden": 2}', "__
                 'WERKZEUG: esp32_nachlesen {"port": "COM7", "sekunden": 2}', "FERTIG. Nachgelesen."]
 r6 = s.anweisung("Lies am Geraet nach, ob die LED blinkt.")
 erg = [e for e in ev if e["art"] == "ergibt" and e["werkzeug"] == "esp32_nachlesen"]
-pr("Zwischenruf: COM7 zuerst abgewiesen (nicht genannt), nach dem Zwischenruf 'COM7' zugelassen", len(erg) >= 2 and "nicht genannt" in erg[-2]["text"] and "nicht genannt" not in erg[-1]["text"] and "COM7" in s.genannte_ports)
+com7 = [e for e in erg if e["eingabe"].get("port") == "COM7"] if all("eingabe" in e for e in erg) else []
+rufe7 = [e for e in ev if e["art"] == "ruft" and e["werkzeug"] == "esp32_nachlesen" and e["eingabe"].get("port") == "COM7"]
+pr("Zwischenruf: COM7 zuerst abgewiesen (nicht genannt), nach dem Zwischenruf 'COM7' zugelassen", len(rufe7) >= 2 and any("nicht genannt" in e["text"] for e in erg) and "nicht genannt" not in erg[-1]["text"] and "COM7" in s.genannte_ports and s.letzter_port == "COM7", str(len(rufe7)))
 pr("Zwischenruf erscheint als Auftrag-Ereignis mit Marke", any(e["art"] == "auftrag" and e.get("zwischenruf") for e in ev))
 modell.fragen = fragen
 pr("Modellserver in der ersten Sitzung genau einmal gestartet", starts["n"] == 1, f"({starts[chr(110)]})")
-pr("Sitzung haelt den Verlauf (mehr als 20 Nachrichten)", len(s.verlauf) > 20)
+# seit 05.10.2026 wird der Verlauf zu Beginn jeder Anweisung verdichtet: Anweisung des Agenten, ein Absatz Tatsachen,
+# die letzte Anweisung im Wortlaut — der Zusammenhang bleibt ueber den Zustand des Agenten, nicht ueber den Wortlaut
+zus = [m for m in s.verlauf if m["role"] == "user" and m["content"].startswith("Bisheriger Verlauf")]
+pr("Sitzung haelt den Zusammenhang verdichtet: Zusammenfassung nennt Dateien, Erwartung und Anschluesse", bool(zus) and "blink.py" in zus[-1]["content"] and "COM3" in zus[-1]["content"] and "Erwartung" in zus[-1]["content"] and len(s.verlauf) < 40, f"({len(s.verlauf)} Nachrichten)")
 s.schliessen()
 # 5d. ohne Erwartung des Menschen: die erste des Modells wird festgehalten, die zweite ueberschrieben
 s3 = agent.Sitzung(agent.sammlung(), laut=False, melden=ev.append)
@@ -140,7 +254,7 @@ s5.schliessen(); modell.fragen = fragen
 pr("je Sitzung ein Modellstart (drei Sitzungen)", starts["n"] == 3, f"({starts[chr(110)]})")
 
 prot = (pathlib.Path(w) / "ablage" / "protokoll.txt").read_text(encoding="utf-8")
-pr("Protokoll: SITZUNG BEGINNT, AUFTRAG-Zeilen aller Sitzungen, ENDE", prot.count("AUFTRAG ") == 13 and "SITZUNG BEGINNT" in prot and prot.rstrip().endswith("ENDE"))
+pr("Protokoll: SITZUNG BEGINNT, AUFTRAG-Zeilen aller Sitzungen, ENDE", prot.count("AUFTRAG ") == 23 and "SITZUNG BEGINNT" in prot and prot.rstrip().endswith("ENDE"))
 # Gegenproben zu erwartung_aus
 pr("erwartung_aus: '5-mal pro Sekunde' -> 5 Hz", agent.erwartung_aus("blinke 5-mal pro Sekunde") == {"takt_hz": 5.0})
 pr("erwartung_aus: 'GPIO 4 und GPIO 2' -> pins [2, 4]", agent.erwartung_aus("LED an GPIO 4 und GPIO 2") == {"pins": [2, 4]})
