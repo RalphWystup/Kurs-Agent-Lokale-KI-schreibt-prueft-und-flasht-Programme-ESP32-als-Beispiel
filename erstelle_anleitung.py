@@ -106,6 +106,23 @@ SCHAUBILD = '''
 </svg>'''
 
 
+def blatt_aus_md(name: str) -> str:
+    """Ein Manuskriptblatt (AUFGABE, ANFORDERUNGEN, PRUEFPROTOKOLL) als HTML-Teil — unveraendert aus der .md,
+    mit pandoc gewandelt. Anweisung des Auftraggebers (05.10.2026): „denk bitte an das Manuskript, in diese HTML
+    einzuarbeiten." Die Blaetter bleiben die Quelle; hier werden sie nur gezeigt."""
+    import subprocess
+    q = HIER / name
+    if not q.is_file():
+        return f"<p>({name} fehlt.)</p>"
+    r = subprocess.run(["pandoc", str(q), "-f", "markdown", "-t", "html", "--wrap=none"], capture_output=True, text=True, timeout=120)
+    if r.returncode != 0:
+        return f"<p>({name} liess sich nicht wandeln: {r.stderr[:200]})</p>"
+    html = r.stdout
+    # Die erste Ueberschrift ist der Blattname; der Reiter traegt ihn schon
+    html = html.replace('<h1 id="', '<h2 id="md-', 1).replace("</h1>", "</h2>", 1)
+    return f'<p class="klein">Dieses Blatt ist die Datei <code>{name}</code> des Pakets, unveraendert; sie liegt auch als PDF bei.</p>\n' + html
+
+
 def neun_fragen() -> str:
     """Tabelle der neun festen Anfragen (agent/auftraege.json), live am Laptop mit Coder-3B und ESP32 an COM3,
     aus pruefstand/lauf_neun_fragen.json (vom Prüfstandsskript aus den Ereignissen des Agenten erzeugt)."""
@@ -328,6 +345,9 @@ wird installiert, kein Netz wird gebraucht, keine Adminrechte.</p>
  <button role="tab" aria-selected="false" data-z="bs">Stand und Grenzen</button>
  <button role="tab" aria-selected="false" data-z="b5">Was der Rechner merkt</button>
  <button role="tab" aria-selected="false" data-z="b6">Wenn es klemmt</button>
+ <button role="tab" aria-selected="false" data-z="bq">Aufgabe</button>
+ <button role="tab" aria-selected="false" data-z="bn">Anforderungen</button>
+ <button role="tab" aria-selected="false" data-z="bk">Prüfprotokoll</button>
 </div>
 
 <div class="blatt" id="b1">
@@ -1100,6 +1120,21 @@ Aufräumen mit gelöscht — wer es behalten will, kopiert es vorher heraus.</p>
 python agent\\agent.py --probe                jedes einmal aufrufen
 python agent\\pfade.py                        was im Paket fehlt
 python agent\\werkzeuge\\ports_zeigen.py "{{}}"  ein Werkzeug einzeln</code></pre>
+</div>
+
+<div class="blatt" id="bq" hidden>
+<h2>Aufgabe — das Manuskriptblatt</h2>
+{blatt_aus_md("AUFGABE.md")}
+</div>
+
+<div class="blatt" id="bn" hidden>
+<h2>Anforderungen — das Manuskriptblatt</h2>
+{blatt_aus_md("ANFORDERUNGEN.md")}
+</div>
+
+<div class="blatt" id="bk" hidden>
+<h2>Prüfprotokoll — das Manuskriptblatt</h2>
+{blatt_aus_md("PRUEFPROTOKOLL.md")}
 </div>
 
 <footer>

@@ -111,6 +111,9 @@ wird installiert, kein Netz wird gebraucht, keine Adminrechte.</p>
  <button role="tab" aria-selected="false" data-z="bs">Stand und Grenzen</button>
  <button role="tab" aria-selected="false" data-z="b5">Was der Rechner merkt</button>
  <button role="tab" aria-selected="false" data-z="b6">Wenn es klemmt</button>
+ <button role="tab" aria-selected="false" data-z="bq">Aufgabe</button>
+ <button role="tab" aria-selected="false" data-z="bn">Anforderungen</button>
+ <button role="tab" aria-selected="false" data-z="bk">Prüfprotokoll</button>
 </div>
 
 <div class="blatt" id="b1">
@@ -1007,6 +1010,1993 @@ Aufräumen mit gelöscht — wer es behalten will, kopiert es vorher heraus.</p>
 python agent\agent.py --probe                jedes einmal aufrufen
 python agent\pfade.py                        was im Paket fehlt
 python agent\werkzeuge\ports_zeigen.py "{}"  ein Werkzeug einzeln</code></pre>
+</div>
+
+<div class="blatt" id="bq" hidden>
+<h2>Aufgabe — das Manuskriptblatt</h2>
+<p class="klein">Dieses Blatt ist die Datei <code>AUFGABE.md</code> des Pakets, unveraendert; sie liegt auch als PDF bei.</p>
+<h2 id="md-kurs-agent-die-aufgabe">Kurs-Agent — die Aufgabe</h2>
+<p>Gesetzt vom Auftraggeber am 04.10.2026, 12:40 Uhr, wörtlich (Tippfehler bereinigt). Dieses Blatt ist die Quelle; <code>ANFORDERUNGEN.md</code> und <code>PRUEFPROTOKOLL.md</code> tragen denselben Text als ersten Kasten, und <code>pruefe_alles.py</code> (Prüfung Z0) schlägt an, sobald er irgendwo fehlt oder abweicht. Er muss nach keinem Absturz neu geschrieben werden.</p>
+<blockquote>
+<p>„Ziel der Kurs-KI ist es, auf einem Ordner ein SLM oder kleines LLM speziell für die Python-Programmierung zusammen mit einem dafür passenden Agenten und den Python-Werkzeugen auf einen einzigen Ordner zu installieren. Das System soll Python-Programme auf Anforderung schreiben und selbst testen können, um Syntaxfehler über den Agenten selbst zu korrigieren, dann entweder simulieren oder direkt auf die Hardware laden. Das alles muss so geschehen, dass der Anwender nichts laden muss; es muss ohne Internetzugang funktionieren, auch alle Treiber müssen vorhanden sein. Es wird nichts installiert außer eventuell nötigen Treibern, und alles läuft nur mit den Werkzeugen auf dem besagten Ordner; es wird kein schon vorhandenes Python verwendet, keine Libs, die irgendwo gefunden wurden, nichts sonst — alles muss mitgeliefert werden. Ich will nicht sehen: ‚es muss noch nachgeladen werden‘.”</p>
+</blockquote>
+<h2 id="was-daraus-unmittelbar-folgt">Was daraus unmittelbar folgt</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Satz der Aufgabe</th>
+<th style="text-align: left;">Folge für das Paket</th>
+<th style="text-align: left;">gemessen durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">SLM/LLM <strong>speziell für die Python-Programmierung</strong></td>
+<td style="text-align: left;">ein Coder-Modell (Qwen2.5-Coder) ist gesetzt, nicht Option; Instruct bleibt nur, wenn Coder beim Werkzeugprotokoll messbar schlechter ist</td>
+<td style="text-align: left;">Vergleich auf dem Prüfstand: Schritte bis FERTIG, Abnahmen, Formatfehler</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">dafür passender Agent, Python-Werkzeuge, <strong>ein einziger Ordner</strong></td>
+<td style="text-align: left;">alles unter einer Wurzel, kein Pfad außerhalb</td>
+<td style="text-align: left;"><code>pruefe_unversehrtheit.py</code>, Nachweis vorher/nachher</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">schreibt auf Anforderung, <strong>testet selbst</strong>, korrigiert Syntaxfehler über den Agenten</td>
+<td style="text-align: left;"><code>programm_testen</code> mit Erwartung, Berichtigungsschleife, FERTIG erst nach bestandener Abnahme</td>
+<td style="text-align: left;">G2–G4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">dann <strong>simulieren oder direkt auf die Hardware</strong></td>
+<td style="text-align: left;">virtuelle LED und echter ESP32 (flashen, übertragen)</td>
+<td style="text-align: left;">Säulen Agent und Hardware im Prüfprotokoll</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Anwender lädt nichts, <strong>kein Internet</strong>, alle Treiber dabei</td>
+<td style="text-align: left;">Vorrat statt Netz; CH340-Treiber im Paket; nichts installiert außer eventuell dem Treiber</td>
+<td style="text-align: left;">A1–A3, E5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><strong>kein vorhandenes Python</strong>, keine fremden Libs, alles mitgeliefert</td>
+<td style="text-align: left;">nur <code>paket\python</code>, nur Räder aus <code>paket\</code>; das Selbstfüllen über ein fremdes Python ist ein <strong>Vorbereitungsschritt des Dozenten mit Netz</strong>, nie ein Schritt im Kurs</td>
+<td style="text-align: left;">A4, C5, E5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">nie zu sehen: „es muss noch nachgeladen werden”</td>
+<td style="text-align: left;">im Kursbetrieb (volles Paket) erscheint keine Nachlade-Meldung; fehlt etwas, sagt START.bat <strong>was</strong> fehlt und dass der Dozent das Paket füllt</td>
+<td style="text-align: left;">F-Gruppe, Lauf auf <code>C:\Kurs_Agent</code></td>
+</tr>
+</tbody>
+</table>
+<p>Maßstab bleibt der Satz vom 04.10.2026, 1:30 Uhr: alles muss echt auf dem Rechner des Auftraggebers laufen — LLM, Agent, Werkzeuge, Hardware.</p>
+
+</div>
+
+<div class="blatt" id="bn" hidden>
+<h2>Anforderungen — das Manuskriptblatt</h2>
+<p class="klein">Dieses Blatt ist die Datei <code>ANFORDERUNGEN.md</code> des Pakets, unveraendert; sie liegt auch als PDF bei.</p>
+<h2 id="md-kurs-agent-anforderungen">Kurs-Agent — Anforderungen</h2>
+<p>Stand 05.10.2026. 106 Punkte in elf Gruppen. Jede Anforderung ist so gefasst, dass sie <strong>scheitern kann</strong>: es steht dabei, woran man sie misst. Was nur maschinell prüfbar ist, prüft <code>pruefe_alles.py</code>.</p>
+<blockquote>
+<p><strong>Die Aufgabe — gesetzt am 04.10.2026, 12:40 Uhr (Quelle: <code>AUFGABE.md</code>):</strong> „Ziel der Kurs-KI ist es, auf einem Ordner ein SLM oder kleines LLM speziell für die Python-Programmierung zusammen mit einem dafür passenden Agenten und den Python-Werkzeugen auf einen einzigen Ordner zu installieren. Das System soll Python-Programme auf Anforderung schreiben und selbst testen können, um Syntaxfehler über den Agenten selbst zu korrigieren, dann entweder simulieren oder direkt auf die Hardware laden. Das alles muss so geschehen, dass der Anwender nichts laden muss; es muss ohne Internetzugang funktionieren, auch alle Treiber müssen vorhanden sein. Es wird nichts installiert außer eventuell nötigen Treibern, und alles läuft nur mit den Werkzeugen auf dem besagten Ordner; es wird kein schon vorhandenes Python verwendet, keine Libs, die irgendwo gefunden wurden, nichts sonst — alles muss mitgeliefert werden. Ich will nicht sehen: ‚es muss noch nachgeladen werden‘.”</p>
+</blockquote>
+<blockquote>
+<p><strong>Der Maßstab über allem — gesetzt am 04.10.2026:</strong> „Alles muss echt laufen auf meinem Rechner, alles inklusive LLM, Agent, Werkzeugen, Hardware. Das ist gesetzt.” Keine Anforderung dieses Blatts gilt als erfüllt, solange sie nur unter Wine, im Simulator, im Browser-Nachbau oder auf dem Linux-Prüfstand bestanden hat. Erfüllt heißt: <strong>auf <code>C:\Kurs_Agent</code>, mit Protokoll und Bildschirmfoto.</strong> Den Stand je Säule führt <code>PRUEFPROTOKOLL.md</code> an erster Stelle; am 04.10.2026 fehlt darin noch das Sprachmodell (Smart App Control sperrt llama.cpp auf diesem Rechner).</p>
+</blockquote>
+<hr />
+<h2 id="a-autarkie">A — Autarkie</h2>
+<p>Der Kursrechner hat <strong>Windows und sonst nichts</strong>. Kein Python, kein Netz, keine Adminrechte.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A1</td>
+<td>Das Paket bringt alles mit, was es braucht: Python, pip, Pakete, Firmware, Sprachmodell, Treiber.</td>
+<td><code>agent/pfade.py</code> meldet jeden Teil als „gefunden”</td>
+</tr>
+<tr class="even">
+<td>A2</td>
+<td>Im Kurs wird <strong>nichts</strong> aus dem Netz geholt.</td>
+<td>Lauf mit getrennter Verbindung</td>
+</tr>
+<tr class="odd">
+<td>A3</td>
+<td>Es wird nichts installiert: kein Installationsprogramm, keine Registrierung, kein Dienst, keine Adminrechte.</td>
+<td>Durchsicht aller Programmtexte; <code>nachweis_autark</code></td>
+</tr>
+<tr class="even">
+<td>A4</td>
+<td><strong>Im Kursbetrieb</strong> wird ein vorhandenes Python nicht gesucht und nicht benutzt. Jeder Aufruf geht über das Python aus dem Paket.</td>
+<td><code>pruefe_alles.py</code> A4: keine Suche außerhalb des Füllzweigs, das gefundene Python nur für <code>hole_paket.py</code>, <code>python_exe()</code> zeigt stets in die Ablage — mit Gegenprobe</td>
+</tr>
+<tr class="odd">
+<td>A5</td>
+<td>Kein fester Pfad und kein fester Laufwerksbuchstabe. Alles leitet sich vom Ort der <code>START.bat</code> ab.</td>
+<td>Suche nach <code>C:\</code> in allen Programmtexten</td>
+</tr>
+<tr class="even">
+<td>A6</td>
+<td>Ohne Sprachmodell läuft alles Übrige weiter — Werkzeuge, Abnahme, virtuelle LED, Flashen, Nachweis, Aufräumen.</td>
+<td><code>agent.py --drehbuch</code></td>
+</tr>
+<tr class="odd">
+<td>A7</td>
+<td><strong>Doppelklick genügt auch beim ersten Mal.</strong> Ist das Paket leer oder unvollständig, sagt <code>START.bat</code> das, sucht für diesen einen Schritt ein Python mit pip — <strong>jeden</strong> Fundort, nicht nur den ersten; der Platzhalter des Windows-Stores wird am Namen übersprungen —, nennt es und füllt. Keine Kommandozeile, kein getippter Befehl.</td>
+<td><code>pruefe_alles.py</code> F8; Lauf unter Wine; erster echter Windows-Lauf 03./04.10.2026</td>
+</tr>
+<tr class="even">
+<td>A8</td>
+<td><strong>Vollständig heißt alle Teile.</strong> Ob zu füllen ist, entscheidet nicht eine Datei (Python), sondern die Liste aller Bestandteile in <code>agent/pfade.py</code> (<code>--fehlt</code>). Ein halb gefülltes Paket geht nie stillschweigend ins Menü.</td>
+<td><code>pfade.py --fehlt</code> liefert 1, solange etwas fehlt; START.bat fragt danach vor jedem Start</td>
+</tr>
+<tr class="odd">
+<td>A9</td>
+<td><strong>Der Vorrat kommt vor dem Netz — für jede Datei.</strong> Was schon auf dem Rechner liegt (Paket nebenan, <code>X:\Kurs_Agent\paket</code> auf jedem Laufwerk, <code>C:\Projekte\Kurs_Agent\paket</code>, Downloads), wird kopiert, nicht geladen; ohne Netz wird gar kein Download versucht. Liegt irgendwo ein volles Paket, füllt sich ein neues <strong>ohne Internet</strong>.</td>
+<td>Gegenprobe in <code>hole_paket.py</code> (Vorrat ohne Netz → kopiert; nichts im Vorrat ohne Netz → klare Abweisung)</td>
+</tr>
+<tr class="even">
+<td>A10</td>
+<td><strong>Laden heißt fertig laden.</strong> Eine Datei gilt erst als da, wenn sie vollständig ist (<code>.teil</code> bis zum Schluss); ein Abbruch wird an derselben Stelle fortgesetzt (HTTP Range), drei Anläufe je Datei, und ein gescheiterter Schritt reißt die übrigen nicht mit.</td>
+<td><code>laden()</code>; Füllprotokoll</td>
+</tr>
+<tr class="odd">
+<td>A11</td>
+<td><strong>Eine Signaturpflicht des Rechners (Smart App Control) wird vor dem Start erkannt und in Worten gemeldet</strong> — nicht erst durch ein Fehlerfenster. Sperrt sie llama.cpp, läuft der Agent <strong>von selbst ohne Modell weiter</strong> (A6), mit demselben Ablauf und derselben Abnahme; Grund und Ausweg stehen in der Oberfläche.</td>
+<td><code>modell.signaturpflicht()</code>; <code>pruefe_rechner.py --kurz</code>; Ereignis <code>kein_modell</code> in der Oberfläche</td>
+</tr>
+<tr class="even">
+<td>A12</td>
+<td><strong>Jeder Lauf hinterlässt eine Spur.</strong> <code>START.bat</code> schreibt <code>letzter_lauf.txt</code> mit Marke an jeder Weggabelung, <code>hole_paket.py</code> schreibt <code>fuellen_protokoll.txt</code> samt vollständigem Fehlerbericht. Ein Lauf, der keine Spur hinterlässt, lässt sich nicht beurteilen.</td>
+<td>beide Dateien nach jedem Lauf im Paketordner</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Was der erste echte Windows-Lauf lehrte (03./04.10.2026):</strong> Unter Wine war all das geprüft und grün. Auf dem echten Rechner scheiterte der erste Start an vier Dingen, die Wine nicht kennt — dem Store-Platzhalter von <code>where python</code>, einer Zeitüberschreitung bei GitHub, dem „fertig”-Kriterium am halb gefüllten Paket und der Signaturpflicht von Smart App Control. Keines davon war ein Fehler des Konzepts; jedes war ein Fehler darin, was als geprüft galt. Daraus A8–A12.</p>
+<p><strong>Ausnahme, benannt und eng gefasst:</strong> Das <strong>Füllen</strong> des leeren Pakets braucht einmalig ein Python mit pip und eine Internetverbindung — im leeren Paket liegt ja noch keines. Diese eine Stelle sucht eines, prüft ob pip darin läuft, nennt es beim Namen und fragt, bevor sie etwas holt. Sie benutzt es <strong>ausschließlich</strong> für <code>hole_paket.py</code>; jeder andere Aufruf im ganzen Vorgang geht über das Python aus dem Paket. Auch dabei bleibt der Rechner unberührt: <code>PIP_CACHE_DIR</code> und <code>PYTHONNOUSERSITE</code> zeigen in den Kursordner, nicht ins Benutzerprofil (B3, B4). Das geschieht auf dem Vorbereitungsrechner, nie auf dem Kursrechner — dorthin wandert der <strong>gefüllte</strong> Ordner.</p>
+<p><strong>Nicht Teil des Pakets:</strong> Die Prüfbrücke, über die dieses Paket während der Erprobung aus der Ferne beobachtet wird, gehört nicht dazu. Das Paket kennt sie nicht, braucht sie nicht und läuft ohne sie; nachgeprüft: kein Programmtext des Pakets nennt sie.</p>
+<hr />
+<h2 id="b-keine-störung-dessen-was-schon-da-ist">B — Keine Störung dessen, was schon da ist</h2>
+<p>Läuft auf dem Rechner bereits Thonny, eine Arduino-Umgebung oder ein eigenes Python, darf der Kurs daran nichts ändern und nichts blockieren.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>B1</td>
+<td>Ein vorhandenes Python wird nicht gestartet, nicht gelesen, nicht verändert.</td>
+<td>A4</td>
+</tr>
+<tr class="even">
+<td>B2</td>
+<td>Dessen <code>site-packages</code> bleiben unberührt; es wird nie dorthin installiert.</td>
+<td><code>nachweis_autark</code> vorher/nachher</td>
+</tr>
+<tr class="odd">
+<td>B3</td>
+<td>Das Benutzer-Paketverzeichnis (<code>%APPDATA%\Python</code>) wird nicht beschrieben.</td>
+<td><code>PYTHONNOUSERSITE=1</code> in <code>umgebung()</code></td>
+</tr>
+<tr class="even">
+<td>B4</td>
+<td>Der pip-Zwischenspeicher des Benutzers wird nicht benutzt.</td>
+<td><code>PIP_CACHE_DIR</code> zeigt in die Ablage</td>
+</tr>
+<tr class="odd">
+<td>B5</td>
+<td><code>PATH</code> und die Umgebungsvariablen des Rechners bleiben unverändert.</td>
+<td><code>setlocal</code> in <code>START.bat</code>; <code>nachweis_autark</code></td>
+</tr>
+<tr class="even">
+<td>B6</td>
+<td>Ein belegter Netzwerkport wird nicht übernommen, sondern ausgewichen.</td>
+<td>Gegenprobe: Port besetzen, Oberfläche starten</td>
+</tr>
+<tr class="odd">
+<td>B7</td>
+<td>Ein belegter COM-Anschluss wird nicht erzwungen; es wird gemeldet, wer ihn hält.</td>
+<td>Fehlermeldung von <code>esp32_firmware</code></td>
+</tr>
+<tr class="even">
+<td>B8</td>
+<td>Zwei gleichzeitige Läufe im selben Ordner werden verhindert, nicht geduldet.</td>
+<td>Sperrdatei; Gegenprobe</td>
+</tr>
+<tr class="odd">
+<td>B10</td>
+<td><strong>Jeder</strong> Programmstart reicht die abgeschirmte Umgebung weiter — ein einziger ohne sie genügt für ein halb fremdes Python.</td>
+<td><code>pruefe_alles.py</code> B10, mit Gegenprobe</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="c-nur-im-kursordner-schreiben">C — Nur im Kursordner schreiben</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>C1</td>
+<td>Geschrieben wird ausschließlich in <code>&lt;Kursordner&gt;\ablage\</code>.</td>
+<td><code>in_der_ablage()</code> im Werkzeugrahmen</td>
+</tr>
+<tr class="even">
+<td>C2</td>
+<td>Ein Pfad, der aus der Ablage hinausführt, wird abgewiesen — auch über <code>..</code>.</td>
+<td>Gegenproben mit <code>../../tmp</code>, <code>/etc</code>, <code>C:\Windows</code></td>
+</tr>
+<tr class="odd">
+<td>C3</td>
+<td>Absolute Pfade werden abgewiesen, nicht stillschweigend umgedeutet.</td>
+<td>Gegenprobe</td>
+</tr>
+<tr class="even">
+<td>C4</td>
+<td>Während eines vollständigen Laufs entsteht außerhalb des Kursordners keine Datei und ändert sich keine.</td>
+<td><code>beweis.py</code>: Dateisystem vorher/nachher</td>
+</tr>
+<tr class="odd">
+<td>C5</td>
+<td>Das mitgelieferte <code>paket\</code> wird nur gelesen, nie beschrieben.</td>
+<td>Prüfsumme vorher/nachher</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ausnahme, benannt:</strong> Öffnet die Oberfläche den Browser, schreibt <strong>der Browser</strong> in sein eigenes Profil (Verlauf, Zwischenspeicher). Das ist eine Spur außerhalb des Kursordners, die nicht vom Paket stammt, aber von ihm ausgelöst wird. Wer das nicht will, ruft die Adresse von Hand auf.</p>
+<p><strong>Zweite Ausnahme, benannt:</strong> Der Wächter lässt <code>%TEMP%</code> zu (<code>waechter._erlaubt</code>). Nicht aus Nachlässigkeit, sondern weil Python selbst dort arbeitet — beim Entpacken, beim Übersetzen, bei jedem <code>tempfile</code>. Ein Schreibversuch dorthin wird also <strong>nicht</strong> gemeldet. Windows räumt diesen Ordner selbst auf; eine bleibende Veränderung am Rechner entsteht nicht. Wer es genau wissen will: <code>pruefe_unversehrtheit.py</code> zählt auch die Spuren in <code>%TEMP%</code> mit und nennt sie einzeln.</p>
+<hr />
+<h2 id="d-restlos-entfernbar">D — Restlos entfernbar</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>D1</td>
+<td>Alles Erzeugte liegt in <strong>einem</strong> Ordner und wird mit einem Befehl gelöscht.</td>
+<td><code>aufraeumen</code></td>
+</tr>
+<tr class="even">
+<td>D2</td>
+<td>Nach dem Löschen wird nachgezählt; Reste werden mit Grund gemeldet.</td>
+<td><code>aufraeumen</code> zählt nach</td>
+</tr>
+<tr class="odd">
+<td>D3</td>
+<td>Ein Programm, das eine Datei offen hält (der Modellserver), wird vorher beendet — und nur dieses.</td>
+<td>Prozessnummer aus <code>llama.pid</code>, Gegenprobe</td>
+</tr>
+<tr class="even">
+<td>D4</td>
+<td>Nach dem Aufräumen ist der Rechner nachweislich im Ausgangszustand.</td>
+<td><code>nachweis_autark</code> vorher/nachher</td>
+</tr>
+<tr class="odd">
+<td>D5</td>
+<td>Derselbe Ordner läuft danach wieder, beliebig oft.</td>
+<td>drei volle Zyklen, Prüfsumme gleich</td>
+</tr>
+<tr class="even">
+<td>D6</td>
+<td>Bei Betrieb aus der Kopie löscht sich der Arbeitsordner selbst.</td>
+<td><code>START.bat</code>, Betriebsart [2]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="e-weitergabe">E — Weitergabe</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>E1</td>
+<td>Das Paket läuft vom USB-Stick und von der Festplatte, ohne Änderung.</td>
+<td>A5</td>
+</tr>
+<tr class="even">
+<td>E2</td>
+<td>Ein Befehl stellt den weitergabefertigen Ordner zusammen, ohne Entwicklungsreste.</td>
+<td><code>baue_stick.py</code></td>
+</tr>
+<tr class="odd">
+<td>E3</td>
+<td>Fehlt etwas im Paket, wird es beim Bauen und beim Start gemeldet, nicht erst im Kurs.</td>
+<td><code>pfade.bericht()</code>, <code>baue_stick.py</code></td>
+</tr>
+<tr class="even">
+<td>E4</td>
+<td>Derselbe Stick startet auf Rechnern verschiedener Größe; das Modell wird beim Start gewählt.</td>
+<td><code>modell.waehlen()</code>, Gegenproben bei 52/7,5/5/3/1 GB</td>
+</tr>
+<tr class="odd">
+<td>E5</td>
+<td>Der Vorrat ist vollständig: jedes erlaubte Paket liegt bei, und jede geltende Abhängigkeit davon.</td>
+<td><code>pruefe_alles.py</code> E5 rechnet die Metadaten durch; Gegenprobe</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="f-bedienung">F — Bedienung</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>F1</td>
+<td>Doppelklick auf <code>START.bat</code> genügt; keine Kommandozeile nötig.</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>F2</td>
+<td>Die Aufgaben sind anklickbar, nicht zu tippen.</td>
+<td>Oberfläche, vier Karten</td>
+</tr>
+<tr class="odd">
+<td>F3</td>
+<td>Jeder Schritt ist sichtbar: Werkzeug, Werte, Ergebnis, Urteil.</td>
+<td>Oberfläche</td>
+</tr>
+<tr class="even">
+<td>F4</td>
+<td>Ein gesperrter Knopf sagt, warum.</td>
+<td>Oberfläche sperrt während des Laufs, Ampel zeigt „läuft”</td>
+</tr>
+<tr class="odd">
+<td>F5</td>
+<td>Jede Fehlermeldung nennt die Ursache <strong>und</strong> den nächsten Schritt.</td>
+<td>Durchsicht aller Meldungen</td>
+</tr>
+<tr class="even">
+<td>F6</td>
+<td>Löschen wird bestätigt, bevor es geschieht.</td>
+<td>Rückfrage im Browser</td>
+</tr>
+<tr class="odd">
+<td>F7</td>
+<td>Die Anleitung nennt dieselben Menünummern wie <code>START.bat</code> — wer ihr folgt, drückt die richtige Taste.</td>
+<td><code>pruefe_alles.py</code> F7, mit Gegenprobe</td>
+</tr>
+<tr class="even">
+<td>F8</td>
+<td>Die Kurs-Seite (Anleitung) enthält eine <strong>genaue Beschreibung mit Funktionsskizze</strong>: was das Sprachmodell tut, was der Agent tut (Schleife, Regeln, Abnahme, Gedächtnis des Gesprächs), was jedes Werkzeug tut, wie Erwartung, Prüfung und Gerät zusammenhängen — als beschriftete Zeichnung, nicht als Aufzählung. Anweisung vom 04.10.2026: „im Kurs-HTML auch später die genaue Beschreibung mit schöner Funktionsskizze hinterlegen: Beschreibung des LLM, des Agenten, der Werkzeuge etc.” <strong>Offen.</strong></td>
+<td>Durchsicht der Anleitung; die Skizze wird aus den Werkzeugbeschreibungen erzeugt, nicht abgeschrieben</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="g-der-lehrinhalt">G — Der Lehrinhalt</h2>
+<p>Das Paket zeigt denselben Entwicklungsprozess, mit dem auch ernsthafte Arbeit entsteht.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G1</td>
+<td>Das Modell schreibt das Programm, prüft es selbst und liefert erst dann aus.</td>
+<td>Anweisung, Drehbuch, echter Lauf</td>
+</tr>
+<tr class="even">
+<td>G2</td>
+<td>Der Prüfschritt ist eine <strong>Abnahme gegen eine vorher genannte Erwartung</strong>, keine Vorführung.</td>
+<td><code>erwartet</code>-Feld; ohne Erwartung sagt das Werkzeug das</td>
+</tr>
+<tr class="odd">
+<td>G3</td>
+<td>Die Abnahme kann durchfallen — und tut es bei falschem Takt, falschem Anschluss, fehlendem Takt, Absturz.</td>
+<td>vier Gegenproben</td>
+</tr>
+<tr class="even">
+<td>G4</td>
+<td>Ein Agent darf sich <strong>nicht</strong> für fertig erklären, solange die letzte Prüfung fehlschlug.</td>
+<td><code>pruefe_schleife.py</code>, acht Punkte</td>
+</tr>
+<tr class="odd">
+<td>G5</td>
+<td>Ein Fehler ist eine Nachricht, kein Abbruch: das Modell bekommt ihn und berichtigt.</td>
+<td>echter Lauf: NICHT BESTANDEN → berichtigt → BESTANDEN</td>
+</tr>
+<tr class="even">
+<td>G6</td>
+<td>Dieselbe Datei, die geprüft wurde, geht unverändert auf die Hardware.</td>
+<td><code>programm_testen</code> ändert den Quelltext nicht</td>
+</tr>
+<tr class="odd">
+<td>G7</td>
+<td>Die <strong>Erwartung setzt der Mensch</strong>: steht sie im Auftrag (<code>pins</code>, <code>takt_hz</code>), gilt genau sie. Das Modell kann sie nicht umschreiben, damit sein Programm besteht.</td>
+<td><code>pruefstand/pruefe_regeln.py</code>: Modell nennt 0,5 Hz, Auftrag 1,0 Hz → geprüft wird 1,0 Hz, Hinweis an das Modell</td>
+</tr>
+<tr class="even">
+<td>G8</td>
+<td>Eine Änderung, die seit der letzten Prüfung <strong>nicht geprüft</strong> wurde, oder eine durchgefallene letzte Prüfung lässt kein FERTIG zu. Das Modell wird bis zu dreimal zurückgewiesen; dann endet der Lauf als <strong>NICHT ABGENOMMEN</strong>, nie als FERTIG.</td>
+<td><code>pruefstand/pruefe_ungeprueft.py</code>: ungeprüfte Fassung → abgewiesen → geprüft → FERTIG; dreimal FERTIG ohne Prüfung → NICHT ABGENOMMEN</td>
+</tr>
+<tr class="odd">
+<td>G9</td>
+<td>Geprüft wird nur, was <strong>in diesem Lauf</strong> geschrieben wurde; eine Datei aus einem früheren Lauf kann kein Ergebnis liefern.</td>
+<td><code>pruefe_regeln.py</code>: <code>programm_testen fremd.py</code> → FEHLER „noch nicht geschrieben”</td>
+</tr>
+<tr class="even">
+<td>G10</td>
+<td>Ein Werkzeugaufruf wird auch dann erkannt, wenn ein kleines Modell das Wort <code>WERKZEUG:</code> weglässt — der Name eines bekannten Werkzeugs am Zeilenanfang mit JSON genügt; ein Name mitten im Satz nicht.</td>
+<td><code>pruefe_regeln.py</code>, vier Fälle mit Gegenproben</td>
+</tr>
+<tr class="odd">
+<td>G11</td>
+<td><code>aufraeumen</code> steht dem Modell <strong>nicht</strong> zur Verfügung: Es beendet den Modellserver und löscht die Ablage samt Protokoll. Ruft das Modell es dennoch auf, bekommt es eine Abweisung, der Lauf geht weiter. Aufgeräumt wird am Kursende über den Knopf.</td>
+<td><code>pruefe_regeln.py</code>: Aufruf abgewiesen, Ablage und Protokoll bleiben</td>
+</tr>
+<tr class="even">
+<td>G12</td>
+<td>Das <strong>Modell</strong> im Paket ist ein Coder-Modell (Qwen2.5-Coder, 3B/7B), weil die Aufgabe ein Modell speziell für Python verlangt; bei gleicher Größe wird es dem Instruct-Modell vorgezogen. Instruct bleibt Rückfall.</td>
+<td><code>hole_paket.py --modell passend</code> holt Coder; <code>modell.waehlen</code> sortiert Coder vor; Messreihe 04.10.2026</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="h-hardware">H — Hardware</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>H1</td>
+<td>Der ESP32 darf fabrikneu oder beliebig vorprogrammiert sein.</td>
+<td><code>erase_flash</code> + Zustandsbericht</td>
+</tr>
+<tr class="even">
+<td>H2</td>
+<td>Vor dem Schreiben wird geprüft, ob dort überhaupt ein ESP32 antwortet.</td>
+<td><code>esp32_firmware</code>, Abbruch ohne Antwort</td>
+</tr>
+<tr class="odd">
+<td>H3</td>
+<td>Der Anschluss wird nie geraten; <code>ports_zeigen</code> schlägt vor, der Mensch bestätigt.</td>
+<td>Werkzeugtext</td>
+</tr>
+<tr class="even">
+<td>H4</td>
+<td>Die USB-Treiber liegen im Paket, von der Herstellerseite, mit Prüfsummen.</td>
+<td><code>paket\treiber\LIESMICH.md</code></td>
+</tr>
+<tr class="odd">
+<td>H5</td>
+<td>Der Agent installiert <strong>keinen</strong> Treiber; das entscheidet ein Mensch.</td>
+<td>kein Werkzeug dafür</td>
+</tr>
+<tr class="even">
+<td>H6</td>
+<td>Ohne Hardware läuft die ganze Kette bis zur Abnahme.</td>
+<td>Beispiel 2</td>
+</tr>
+<tr class="odd">
+<td>H7</td>
+<td><strong>Vom Gerät zurücklesen:</strong> ob die LED wirklich blinkt, wird auf dem ESP32 selbst gemessen (Pegel, Wechsel, Takt) und gegen dieselbe Erwartung gehalten — der zweite, unabhängige Weg neben <code>programm_testen</code>.</td>
+<td><code>esp32_nachlesen</code>; 04.10.2026 an COM3: 1,04 Hz bestanden, Gegenprobe gegen 2 Hz durchgefallen, 2-Hz-Programm 2,10 Hz</td>
+</tr>
+<tr class="even">
+<td>H8</td>
+<td>Das Rücklesen misst Flanken per Interrupt mit dem Mikrosekundenzähler des Geräts, nicht durch Abtasten.</td>
+<td>Laptop 04.10.2026: 2,0000 s / 0,500 Hz</td>
+</tr>
+<tr class="odd">
+<td>H9</td>
+<td><code>esp32_uebertragen</code> liest nach dem Neustart am Gerät nach, wenn eine Erwartung bekannt ist.</td>
+<td>Werkzeugtext</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Benannt und gewollt:</strong> Der ESP32 <strong>wird</strong> verändert — sein Speicher wird gelöscht und neu beschrieben. Das ist die einzige bleibende Änderung, die das Paket macht, und sie trifft das Steckbrett, nicht den Rechner.</p>
+<hr />
+<h2 id="i-ferndiagnose">I — Ferndiagnose</h2>
+<p>Im Kurs sitzt niemand daneben, der erklärt, was er sieht. Es muss eine Datei geben, die das für ihn tut.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>I1</td>
+<td>Ein Befehl erzeugt <strong>eine</strong> Datei, die zur Beurteilung von außen genügt: Rechner, Paket, Selbstprüfung, Werkzeugprobe, Protokoll, Ablage.</td>
+<td><code>sammle_bericht.py</code>, sechs Abschnitte</td>
+</tr>
+<tr class="even">
+<td>I2</td>
+<td>Der Bericht nennt weder Benutzer- noch Rechnernamen.</td>
+<td>Gegenprobe: Rechnername im Bericht suchen</td>
+</tr>
+<tr class="odd">
+<td>I3</td>
+<td>Fehlt etwas — ein Werkzeug, das eigene Python, das Modell — steht das <strong>im</strong> Bericht, statt den Bericht scheitern zu lassen.</td>
+<td>Lauf ohne gefülltes Paket</td>
+</tr>
+<tr class="even">
+<td>I4</td>
+<td>Die Frage „veraendert das meinen Rechner?“ lässt sich <strong>selbst</strong> beantworten, ohne uns zu fragen.</td>
+<td><code>pruefe_unversehrtheit.py</code>: Durchsicht, Verbotsliste und gemessener Lauf</td>
+</tr>
+<tr class="odd">
+<td>I5</td>
+<td>Bricht der Agent ab, bleibt ein <strong>Fehlerbericht</strong> (<code>ablage\fehlerbericht.txt</code>): Auftrag, Fehler, Rückverfolgung, Modell, Signaturpflicht, die letzten 40 Protokollzeilen, was zu tun ist. Das Protokoll endet mit ABBRUCH und ENDE, nie mitten im Satz.</td>
+<td><code>pruefe_regeln.py</code>: erzwungener Abbruch → Bericht und Protokollende vorhanden</td>
+</tr>
+<tr class="even">
+<td>I6</td>
+<td>Ist das Kontextfenster des Modells voll, endet der Lauf nicht: ältere Schritte werden zusammengefasst, der Lauf geht weiter. Werkzeugergebnisse gehen gekürzt ins Gedächtnis des Modells, vollständig ins Protokoll.</td>
+<td><code>pruefe_regeln.py</code>: KontextVoll → Zusammenfassung → FERTIG</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Benannt:</strong> Ein Bericht wandert zu jemandem, der ihn liest. Er soll sagen, was das Paket tut, und nicht, wem der Rechner gehört.</p>
+<h2 id="j-das-gespräch">J — Das Gespräch</h2>
+<p>Anweisung des Auftraggebers (04.10.2026): „Am Ende muss wie auch hier immer die Möglichkeit zur Eingabe der nächsten Anweisung bestehen … unten immer das Eingabefeld, oben der Kopf, und das Fenster mit der Ausgabe wird gescrollt bei Bedarf … ein Test ist dann, über die Eingabe zu sagen: verwende einen anderen Pin, oder ändere die Blinkfrequenz, oder prüfe zuerst, bevor du das Programm runterlädst, oder ich gebe selbst ein Programm ein zum Überprüfen.”</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>J1</td>
+<td>Die Oberfläche ist ein Gespräch: Kopf oben, Verlauf in der Mitte (scrollt, folgt dem Leser), Eingabefeld immer unten. Nach jeder Anweisung ist die nächste möglich.</td>
+<td>Browser-Prüfung (Playwright): Lage der drei Bereiche, Eingabe nach dem Ende frei, Verlauf folgt bis unten</td>
+</tr>
+<tr class="even">
+<td>J2</td>
+<td>Der Agent behält den <strong>Zusammenhang</strong>: Verlauf, geschriebene und abgenommene Dateien, genannte Anschlüsse, die Erwartung; der Modellserver wird nicht je Anweisung neu geladen.</td>
+<td><code>pruefstand/pruefe_gespraech.py</code>: sechs Anweisungen, ein Modellstart, Verlauf &gt; 20 Nachrichten</td>
+</tr>
+<tr class="odd">
+<td>J3</td>
+<td><strong>Anderer Pin / andere Frequenz</strong> aus einem Satz („Nimm GPIO 4”, „10 Hz”, „5-mal pro Sekunde”): die Erwartung wird Stück für Stück fortgeführt, die betroffene Datei gilt als neu zu prüfen, FERTIG erst nach bestandenem Test gegen die neue Erwartung.</td>
+<td><code>pruefe_gespraech.py</code> Anweisungen 2, 2b, 3; Browser mit Coder-3B 1 Hz → GPIO 4 → 10 Hz</td>
+</tr>
+<tr class="even">
+<td>J4</td>
+<td><strong>Erst prüfen, dann laden:</strong> <code>esp32_uebertragen</code> nimmt nur eine Datei, die zuletzt geprüft und bestanden hat und seitdem unverändert ist.</td>
+<td><code>pruefe_gespraech.py</code> Anweisung 4</td>
+</tr>
+<tr class="odd">
+<td>J5</td>
+<td><strong>Der Anschluss kommt vom Menschen:</strong> ein Anschluss, den keine Anweisung genannt hat, wird nicht verwendet; der Agent soll fragen.</td>
+<td><code>pruefe_gespraech.py</code> Anweisung 4 (COM9 abgewiesen, COM3 genannt)</td>
+</tr>
+<tr class="even">
+<td>J6</td>
+<td><strong>Eigenes Programm:</strong> steht in der Anweisung ein Codeblock (<code></code>), schreibt der Agent ihn wörtlich in die Werkstatt — kein Abschreiben durch das Modell —, und das Modell prüft nur noch.</td>
+<td><code>pruefe_gespraech.py</code> Anweisung 5: Inhalt byteweise gleich</td>
+</tr>
+<tr class="odd">
+<td>J7</td>
+<td>Mehrere Werkzeugaufrufe in einer Antwort werden der Reihe nach ausgeführt; ein Aufruf ohne JSON gilt als leere Eingabe; ein FERTIG, das etwas behauptet, was kein Werkzeug getan hat („auf den ESP32 überspielt”), wird zurückgewiesen.</td>
+<td><code>pruefe_regeln.py</code></td>
+</tr>
+<tr class="even">
+<td>J8</td>
+<td>Agent und Modellanbindung lassen sich im Stillstand <strong>neu laden</strong> (<code>/neuladen</code>), die Seite wird je Aufruf gelesen — Korrekturen des Dozenten brauchen keinen Neustart.</td>
+<td>04.10.2026: dreimal angewendet</td>
+</tr>
+<tr class="odd">
+<td>J9</td>
+<td>Sagt das Modell ein zweites Mal FERTIG, ohne die geänderte Datei geprüft zu haben, <strong>prüft der Agent selbst</strong> — einmal je Anweisung, sichtbar als eigener Aufruf, mit der Erwartung des Menschen (ESP32-Programm → <code>programm_testen</code>, sonst <code>programm_ausfuehren</code>). Der Prüfschritt ist nicht verhandelbar.</td>
+<td><code>pruefe_ungeprueft.py</code>; Browser 04.10.2026 15:09: „AGENT PRUEFT SELBST blink.py” → BESTANDEN → FERTIG</td>
+</tr>
+<tr class="even">
+<td>J10</td>
+<td><strong>Quereingabe:</strong> Das Eingabefeld bleibt während des Laufs offen; eine Eingabe wird als Zwischenruf eingereiht und beim nächsten Schritt aufgenommen (Anschluss nennen, Erwartung ändern, korrigieren). Anschlüsse gelten auch als „com 3”.</td>
+<td><code>pruefe_gespraech.py</code></td>
+</tr>
+<tr class="odd">
+<td>J11</td>
+<td>Was eine Anweisung verlangt (laden, nachlesen), muss <strong>in dieser Anweisung</strong> gelaufen sein; eine Behauptung im FERTIG ohne Werkzeug wird zurückgewiesen, dreimal: NICHT ABGENOMMEN.</td>
+<td><code>pruefe_gespraech.py</code> 5b</td>
+</tr>
+<tr class="even">
+<td>J12</td>
+<td>Die Oberfläche zeigt bei länger laufenden Werkzeugen einen <strong>Fortschrittsbalken</strong> aus der erwarteten Dauer („den Download anzeigen”).</td>
+<td>Browser</td>
+</tr>
+<tr class="odd">
+<td>J13</td>
+<td><strong>Ergebnisoffen:</strong> Das Modell antwortet frei. Gruß, Frage, Bemerkung werden in Worten beantwortet, eine Aufgabe mit Werkzeugen. Der Agent steuert nicht (kein Zwang zum Werkzeugaufruf, kein Nachhaken), er wacht über die Ehrlichkeit: Erwartung des Menschen bleibt, nichts wird behauptet, kein Anschluss geraten, nur Geprüftes aufs Gerät. Anlass 05.10.2026: „hallo bist du bereit?” wurde zu einem erfundenen Blinkauftrag; „keine ergebnisoffene Eingabe, sondern alles vorgegeben, das war nicht der Sinn der Übung”.</td>
+<td><code>pruefe_gespraech.py</code> 5c; Laptop-Gespräch</td>
+</tr>
+<tr class="even">
+<td>J14</td>
+<td>Was der Mensch an der Erwartung nicht festlegt, legt der <strong>erste</strong> Aufruf des Modells fest und bleibt (sonst wandert sie von 10 Hz zu 1 Hz, je nach Programm).</td>
+<td><code>pruefe_gespraech.py</code> 5d</td>
+</tr>
+<tr class="odd">
+<td>J15</td>
+<td>Der Agent <strong>kennt die Werkzeuge und die Methode</strong> (schreiben, prüfen, berichtigen, ausliefern, nachlesen) und stellt sie dem Modell je nach dessen Fähigkeit bereit: als Beschreibung in der Anweisung, als Vorschlag im Ergebnis („NÄCHSTER SCHRITT”), als vorgerechnete Zahl (Takt) — und übernimmt den Prüfschritt selbst, wenn das Modell ihn auslässt. <strong>Das gehört ins Manuskript</strong> (Anweisung 05.10.2026).</td>
+<td>Anweisungstext, Hinweise, <code>pruefe_ungeprueft.py</code>; Manuskript F8</td>
+</tr>
+<tr class="even">
+<td>J16</td>
+<td><strong>Fokus:</strong> Erzählt das Modell Arbeit, die kein Werkzeug getan hat, oder verlangt die Anweisung einen Geräteschritt und nichts lief, fragt der Agent das Modell <strong>ohne die lange Vorgeschichte</strong> nur nach dem nächsten Werkzeugaufruf (Anweisung + Aufgabe + ein Satz). Kleine Modelle folgen so, wo das Gespräch sie in Prosa hält.</td>
+<td><code>pruefe_gespraech.py</code> 5g</td>
+</tr>
+<tr class="odd">
+<td>J17</td>
+<td>Fehlt im Prüfaufruf die Datei, nimmt der Agent die zuletzt geschriebene dieser Anweisung und sagt es; eine Behauptung in freier Rede ohne Beleg bekommt eine sichtbare Anmerkung des Agenten.</td>
+<td><code>pruefe_gespraech.py</code> 5f; Laptop 05.10.2026 9:55</td>
+</tr>
+<tr class="even">
+<td>J18</td>
+<td>Die Erwartung des Menschen wird aus seinen Worten gelesen, auch Zahlwörter („eine Periode pro Sekunde”, „zweimal je Sekunde”) und die Kurvenform („sinusförmig”). Was er nicht festlegt, legt der erste Aufruf des Modells fest — außer unsichtbare Takte (&gt; 50 Hz, Trägerfrequenz) und <code>mindestens_wechsel</code>.</td>
+<td><code>erwartung_aus</code>-Proben; Laptop 05.10.2026 9:44 (1000 Hz) und 10:17 (10 Wechsel)</td>
+</tr>
+<tr class="odd">
+<td>J19</td>
+<td><strong>Leeres FERTIG auf eine Aufgabe</strong> („FERTIG — bereit für die nächste Anweisung”, kein Werkzeug, keine Behauptung) wird sofort zum Fokus: das Modell wird ohne Vorgeschichte nach dem ersten Aufruf gefragt. Eine früher verlangte, nie geschriebene Datei blockiert eine andere Anweisung nicht.</td>
+<td><code>pruefe_gespraech.py</code> 5h, 5i</td>
+</tr>
+<tr class="even">
+<td>J20</td>
+<td><strong>Berichtigungsfokus:</strong> Sagt das Modell nach einer durchgefallenen Prüfung FERTIG, ohne etwas geändert zu haben („die Zeile wurde korrigiert”), zeigt ihm der Agent ohne Vorgeschichte die Datei, wie sie wirklich dasteht, und den Befund, und verlangt nur die berichtigte Datei; die Prüfung hängt er selbst an. Liefert das Modell dieselbe Datei Zeichen für Zeichen, wird sie nicht noch einmal geprüft.</td>
+<td><code>pruefe_gespraech.py</code> 5l; <code>pruefe_schleife.py</code>, <code>pruefe_ungeprueft.py</code>, <code>pruefe_regeln.py</code></td>
+</tr>
+<tr class="odd">
+<td>J21</td>
+<td><strong>Unter jedem FERTIG steht, was die Werkzeuge gemessen haben</strong> (Anschlüsse, Takt, Form, Abnahme; Geräteschritte mit Ausgang) — Zahlen aus dem Werkzeug, nicht Sätze des Modells. Nennt das Modell eine Zahl, die der Messung widerspricht („Periode von 2 Sekunden” bei 2 Hz), merkt der Agent es sichtbar an. Ein Abschlusstext, der leer ist oder aus den Sätzen des Agenten besteht, wird durch den Abschluss des Agenten ersetzt.</td>
+<td><code>pruefe_gespraech.py</code> 5k, 5m</td>
+</tr>
+<tr class="even">
+<td>J22</td>
+<td><strong>Geräteschritt verlangt, Anschluss genannt, Datei abgenommen:</strong> Der Agent fragt ohne Vorgeschichte nach genau diesem Aufruf; nennt das Modell ihn nicht, führt der Agent ihn selbst aus (einmal). Ein fehlgeschlagener Geräteschritt gilt nicht als gelaufen; „geladen” behauptet nach einem Fehlschlag wird zurückgewiesen, „steht aus” angenommen. Der zuletzt genannte Anschluss gilt.</td>
+<td><code>pruefe_gespraech.py</code> 4, 5b, 5n, 6</td>
+</tr>
+<tr class="odd">
+<td>J23</td>
+<td>Der Hinweis „dritter gleicher Fehlschlag” zählt nur Fehlschläge, an der Zeile mit dem Grund, und je Anweisung neu — nie unter einer bestandenen Abnahme.</td>
+<td><code>pruefe_gespraech.py</code> 5j</td>
+</tr>
+<tr class="even">
+<td>J24</td>
+<td><strong>Verdichteter Verlauf:</strong> Zu Beginn jeder Anweisung wird das Frühere zu einem Absatz aus dem Zustand des Agenten (Dateien mit Stand, Erwartung, Anschlüsse, Messungen, Geräteschritte); die letzte Anweisung bleibt im Wortlaut. Grund: fünf Minuten je Antwort in der sechsten Anweisung (05.10.2026, 12:14–12:19).</td>
+<td><code>pruefe_gespraech.py</code></td>
+</tr>
+<tr class="odd">
+<td>J26</td>
+<td>Der <strong>Prüfweg richtet sich nach der Datei</strong>, nicht nach der Vorgeschichte: ein Programm ohne <code>machine</code> prüft der Agent mit <code>programm_ausfuehren</code> (Fenster erkannt an tkinter), auch wenn aus ESP32-Anweisungen davor eine Erwartung steht. Anlass 05.10.2026, 14:50: rechner.py (tkinter) wurde gegen pins [2, 4] geprüft.</td>
+<td><code>pruefe_gespraech.py</code> 5l-e</td>
+</tr>
+<tr class="even">
+<td>J27</td>
+<td>Eine <strong>Kurvenform erbt nicht</strong> auf ein neues Programm — weder aus der Erwartung davor noch aus dem Aufruf des Modells; nur ein Wort des Menschen (sinusförmig, dreieckig, PWM, atmen) setzt sie. Anlass 13:33 und 14:26: zwei.py (Ein/Aus, zwei LEDs) sollte „sinusförmig“ sein.</td>
+<td><code>pruefe_regeln.py</code>, <code>pruefe_gespraech.py</code> 5l-d</td>
+</tr>
+<tr class="odd">
+<td>J25</td>
+<td>Die Kopfzeile zeigt, <strong>ob ein ESP32 angeschlossen ist</strong> (serielle Anschlüsse alle 5 s, nie während ein Werkzeug läuft, Wandler erkannt); jeder laufende Werkzeugaufruf trägt einen <strong>Fortschrittsbalken</strong> mit Sekunden und erwarteter Dauer.</td>
+<td>Laptop 05.10.2026</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="k-allgemeine-python-programme">K — Allgemeine Python-Programme</h2>
+<p>Anweisung des Auftraggebers (04.10.2026): „oder programmier mir mal einen einfachen Taschenrechner mit graphischer Ausgabe.” Die Aufgabe verlangt Python-Programme auf Anforderung — nicht nur für den ESP32.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft durch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>K1</td>
+<td><code>programm_ausfuehren</code> führt ein beliebiges Programm aus der Werkstatt mit dem Paket-Python aus: Ausgabe, Fehlerausgabe, Rückgabewert, Zeitgrenze, Text für <code>input()</code>. Urteil LAUF BESTANDEN / NICHT BESTANDEN.</td>
+<td>Prüfstand: gutes, kaputtes und lesendes Programm</td>
+</tr>
+<tr class="even">
+<td>K2</td>
+<td>Ein Programm mit <strong>Fenster</strong> (tkinter) wird gestartet und beobachtet: läuft es, zeigt es ein Fenster (Titel über die Prozessnummer)? Mit <code>offen_lassen</code> bleibt es für den Menschen offen.</td>
+<td>Laptop 04.10.2026, 14:42: „Fensterprobe Kurs-Agent” erkannt, LAUF BESTANDEN</td>
+</tr>
+<tr class="odd">
+<td>K3</td>
+<td><strong>tkinter liegt im Paket</strong> (<code>paket\tkinter-8.6.13-py3.12-win-amd64.zip</code>, 3,1 MB, aus conda-forge, Lizenzen dabei); <code>umgebung_anlegen</code> entpackt es ins eigene Python und prüft <code>import tkinter</code>. Nichts davon berührt das System.</td>
+<td>Laptop 04.10.2026: „Gegenprobe tkinter: Tk 8.6”</td>
+</tr>
+<tr class="even">
+<td>K4</td>
+<td><code>programm_ausfuehren</code> zählt als Prüfung wie <code>programm_testen</code>: ein kaputter Lauf sperrt FERTIG, ein guter gibt frei; nur in dieser Sitzung Geschriebenes wird ausgeführt.</td>
+<td><code>pruefe_regeln.py</code></td>
+</tr>
+<tr class="odd">
+<td>K5</td>
+<td><code>programm_testen</code> misst bei PWM die <strong>Hüllkurve</strong> des Tastgrads: Periode, Takt, Form (sinusförmig oder dreieckig, Abweichung zu beiden Bezugsformen); die Form ist Abnahmekriterium, wenn der Mensch sie nennt — „Dreieck ist kein Sinus”. PWM-Durchgänge zählen als Zustandswechsel.</td>
+<td><code>pruefstand/pruefe_pwm.py</code> 7/7</td>
+</tr>
+<tr class="even">
+<td>K6</td>
+<td>Der Nachbau rechnet mit einer <strong>gedachten Uhr</strong>: <code>time.sleep</code> rückt sie vor statt zu warten. Grund: Windows hält 10 ms Schlaf nicht ein (bis 15,6 ms), der ESP32 schon; ein richtiges 1-Hz-Atmen lief auf dem PC mit 0,64 Hz. Zeitstempel und Zeitgrenze folgen der gedachten Uhr; ein Lauf dauert Bruchteile einer Sekunde. Rechenbibliotheken <code>math</code>, <code>random</code>, <code>struct</code> sind erlaubt.</td>
+<td><code>pruefe_pwm.py</code>, <code>pruefe_alles.py</code> 19/19</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">K7 | <code>programm_testen</code> nennt bei PWM mit zu kleinem Hub (unter 10 %) die Ursache: Vollausschlag bei <code>duty()</code> 1023, bei <code>duty_u16()</code> 65535 — Anlass 05.10.2026, 12:08: <code>duty_u16(1023 * …)</code>, Hub 1,6 %. Das Brettwissen nennt <code>time.sleep</code>/<code>time.sleep_ms</code> als einzige Wartefunktionen (<code>machine.delay</code> gibt es nicht). | <code>pruefe_pwm.py</code> 8/8 |</div>
+<h2 id="was-ausdrücklich-nicht-gilt">Was ausdrücklich <strong>nicht</strong> gilt</h2>
+<ul>
+<li>Das Paket ist <strong>kein Schutz gegen einen Angreifer.</strong> Der Syntaxprüfer in <code>programm_testen</code> schützt gegen ein Modell, das sich vertut — nicht gegen jemanden, der ihn umgehen will. Wer das braucht, führt fremden Quelltext gar nicht aus.</li>
+<li>Die <strong>Windows-Registrierung wird nicht gemessen</strong>, sondern begründet: nichts im Paket ruft etwas auf, das dort schriebe. Begründet ist nicht gemessen.</li>
+<li>Es ist <strong>keine Entwicklungsumgebung.</strong> Es zeigt einen Vorgang an einer kleinen Aufgabe.</li>
+</ul>
+<hr />
+<p>Prof. Dr.-Ing. Ralph Wystup M.Sc. — erstellt mit KI und Agent (Claude Code, Anthropic)</p>
+
+</div>
+
+<div class="blatt" id="bk" hidden>
+<h2>Prüfprotokoll — das Manuskriptblatt</h2>
+<p class="klein">Dieses Blatt ist die Datei <code>PRUEFPROTOKOLL.md</code> des Pakets, unveraendert; sie liegt auch als PDF bei.</p>
+<h2 id="md-kurs-agent-prüfprotokoll">Kurs-Agent — Prüfprotokoll</h2>
+<p>Stand 04.10.2026, 13:30 Uhr. Geprüft gegen <code>ANFORDERUNGEN.md</code>, 96 Punkte in elf Gruppen.</p>
+<hr />
+<h2 id="der-maßstab-gesetzt-am-04.10.2026-130-uhr">Der Maßstab — gesetzt am 04.10.2026, 1:30 Uhr</h2>
+<blockquote>
+<p><strong>Die Aufgabe — gesetzt am 04.10.2026, 12:40 Uhr (Quelle: <code>AUFGABE.md</code>):</strong> „Ziel der Kurs-KI ist es, auf einem Ordner ein SLM oder kleines LLM speziell für die Python-Programmierung zusammen mit einem dafür passenden Agenten und den Python-Werkzeugen auf einen einzigen Ordner zu installieren. Das System soll Python-Programme auf Anforderung schreiben und selbst testen können, um Syntaxfehler über den Agenten selbst zu korrigieren, dann entweder simulieren oder direkt auf die Hardware laden. Das alles muss so geschehen, dass der Anwender nichts laden muss; es muss ohne Internetzugang funktionieren, auch alle Treiber müssen vorhanden sein. Es wird nichts installiert außer eventuell nötigen Treibern, und alles läuft nur mit den Werkzeugen auf dem besagten Ordner; es wird kein schon vorhandenes Python verwendet, keine Libs, die irgendwo gefunden wurden, nichts sonst — alles muss mitgeliefert werden. Ich will nicht sehen: ‚es muss noch nachgeladen werden‘.”</p>
+</blockquote>
+<blockquote>
+<p><strong>„Alles muss echt laufen auf meinem Rechner, alles inklusive LLM, Agent, Werkzeugen, Hardware. Das ist gesetzt.”</strong> — Anweisung des Auftraggebers</p>
+</blockquote>
+<p>Nichts gilt als fertig, was nur unter Wine, im Simulator, im Browser-Nachbau oder auf dem Linux-Prüfstand lief. Der Nachweis ist <strong>ein vollständiger Lauf auf <code>C:\Kurs_Agent</code></strong> mit Protokoll (<code>letzter_lauf.txt</code>, <code>ablage\protokoll.txt</code>) und Bildschirmfoto — für jede der vier Säulen einzeln. Dieses Blatt führt den Stand dazu an erster Stelle, vor allem anderen:</p>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Säule</th>
+<th style="text-align: center;">Linux-Prüfstand</th>
+<th style="text-align: center;">Wine</th>
+<th style="text-align: left;"><strong>echtes Windows, Rechner des Auftraggebers</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Werkzeuge</strong> (9)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: left;"><strong>✓</strong> 04.10., 1:10 — 8 Aufrufe im Drehbuch, esptool/mpremote aus den mitgelieferten Rädern</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Agent</strong> (Schleife, Abnahme, Nachweis, Oberfläche)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: left;"><strong>✓</strong> 04.10., 1:11 — ABNAHME BESTANDEN, virtuelle LED, Nachweis „nichts verändert”</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Hardware</strong> (ESP32 flashen, Programm übertragen)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: left;"><strong>✓</strong> 04.10., 1:22 — COM3, MicroPython in 41 s, <code>blink.py</code> übertragen, <strong>LED blinkt</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Sprachmodell</strong> (llama.cpp, Qwen2.5 3B/7B)</td>
+<td style="text-align: center;">✓ 02.10., 7B fertig nach 2 Aufrufen; 04.10. 3B-Instruct und 3B-Coder</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: left;"><strong>✓</strong> 04.10., 12:56 — Smart App Control EIN, <strong>signierter</strong> llama-server (Ollama Inc./DigiCert) lädt Qwen2.5-3B in 8 s; 23 Schritte mit echten Werkzeugaufrufen. Der Auftrag selbst wurde in diesem Lauf nicht sauber erfüllt (sieben Befunde, unten) — das Modell lief, der Agent wurde daran berichtigt</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Rücklesen am Gerät</strong> (<code>esp32_nachlesen</code>)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: left;"><strong>✓</strong> 04.10., 13:17–13:19 — COM3: 1-Hz-Programm 1,04 Hz BESTANDEN; Gegenprobe gegen 2 Hz NICHT BESTANDEN; 2-Hz-Programm aufgespielt, 2,10 Hz gemessen; zurück auf 1 Hz, 1,04 Hz. <strong>Die LED blinkt, und das Gerät sagt es selbst</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Alle Säulen tragen auf dem echten Rechner ✓ (04.10.2026, 13:19 Uhr). Offen ist nicht mehr, <strong>ob</strong> die Kette läuft, sondern wie gut das Modell sie führt — siehe den Lauf von 12:56 und die Messreihe auf dem Prüfstand. Ein vollständiger Lauf mit dem berichtigten Agenten auf <code>C:\Kurs_Agent</code> steht als Nächstes an (Agent neu starten, Karte 2 mit Hardware).</p>
+<hr />
+<h2 id="womit-geprüft-wurde">Womit geprüft wurde</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Umgebung</th>
+<th>was darin lief</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Linux</strong> (20 Kerne, 67 GB)</td>
+<td><code>pruefe_alles.py</code> (14 Prüfungen), <code>agent/pruefe_schleife.py</code> (8 Punkte), echte Agentenläufe mit Qwen2.5-7B über llama.cpp</td>
+</tr>
+<tr class="even">
+<td><strong>Windows unter Wine 10.0</strong> (eigener Bereich, kein fremdes Präfix angefasst)</td>
+<td>das <strong>mitgelieferte</strong> Windows-Python 3.12.10, <code>START.bat</code> über <code>cmd</code>, alle neun Werkzeuge, pip, esptool-Bau aus Quelltext, die Weboberfläche</td>
+</tr>
+<tr class="odd">
+<td><strong>Browser</strong> (Chromium über Playwright)</td>
+<td>die Anleitungsseite, die Weboberfläche, die virtuelle LED</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Grenze, die dazugehört:</strong> Wine ist nicht Windows. Es bildet das Verhalten nach, nicht jede Eigenheit. Was hier läuft, läuft sehr wahrscheinlich auch dort — bewiesen ist es erst auf einem echten Windows-Rechner. Die Punkte, die davon berührt sind, stehen unten unter „offen”.</p>
+<p><strong>Seit 04.10.2026 wird nicht mehr unter Wine geprüft</strong> (Grundsatz 33): Wine-Starts füllten zweimal die Prozesstabelle des Arbeitsbereichs, und der echte Windows-Lauf fand vier Fehler, die Wine nicht zeigte. Windows-Dinge laufen jetzt auf dem Rechner des Auftraggebers über die Brücke; die Wine-Spalte oben ist Vorgeschichte. Eine eigene Windows-VM folgt, sobald der Admin sie einrichtet.</p>
+<hr />
+<h2 id="a-autarkie">A — Autarkie</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A1</td>
+<td>Paket bringt alles mit</td>
+<td><code>pfade.bericht()</code> unter Wine</td>
+<td><strong>erfüllt</strong> — Python, pip, 25 Paketdateien, Treiber gefunden; Modell fehlt noch (nicht geladen)</td>
+</tr>
+<tr class="even">
+<td>A2</td>
+<td>im Kurs nichts aus dem Netz</td>
+<td>Netzwächter (<code>socket.connect</code>) während eines vollen Laufs</td>
+<td><strong>erfüllt</strong> — keine Verbindung nach außen; Gegenprobe mit <code>pypi.org</code> und <code>1.1.1.1</code> schlug an</td>
+</tr>
+<tr class="odd">
+<td>A3</td>
+<td>nichts installiert</td>
+<td>Durchsicht + <code>nachweis_autark</code> unter Wine</td>
+<td><strong>erfüllt</strong> — kein Installationsprogramm, keine Registrierung, keine Adminrechte</td>
+</tr>
+<tr class="even">
+<td>A4</td>
+<td>im Kursbetrieb kein fremdes Python</td>
+<td><code>pruefe_alles.py</code> A4</td>
+<td><strong>erfüllt</strong> — keine Suche außerhalb des Füllzweigs; das gefundene Python nur für <code>hole_paket.py</code> und die pip-Probe. Gegenprobe: ein <code>where</code> an anderer Stelle eingesetzt — die Prüfung nannte die Zeilennummer</td>
+</tr>
+<tr class="odd">
+<td>A5</td>
+<td>kein fester Pfad</td>
+<td><code>pruefe_alles.py</code> A5</td>
+<td><strong>erfüllt</strong> — Lauf aus <code>C:\Stick</code> ohne Änderung</td>
+</tr>
+<tr class="even">
+<td>A6</td>
+<td>ohne Modell läuft der Rest</td>
+<td><code>agent.py --drehbuch</code> unter Wine</td>
+<td><strong>erfüllt</strong> — alle sieben Schritte, Abnahme bestanden</td>
+</tr>
+<tr class="odd">
+<td>A7</td>
+<td>Doppelklick genügt auch beim ersten Mal</td>
+<td><code>START.bat</code> auf leerem Ordner unter Wine, vier Fälle</td>
+<td><strong>erfüllt</strong> — siehe unten</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zu A7 — vier Fälle am leeren Ordner geprüft:</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Fall</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>kein Python auf dem Rechner</td>
+<td>nennt zwei Wege: gefüllten Ordner kopieren, oder Python installieren</td>
+</tr>
+<tr class="even">
+<td>Python gefunden, aber ohne pip</td>
+<td>erkannt und abgewiesen — „darin läuft kein pip”, mit dem Hinweis auf den Store-Platzhalter</td>
+</tr>
+<tr class="odd">
+<td>Python mit pip, Antwort <strong>n</strong></td>
+<td>„Abgebrochen — es wurde nichts geholt und nichts geändert”</td>
+</tr>
+<tr class="even">
+<td>Python mit pip, Eingabetaste</td>
+<td>füllt, und läuft danach weiter, als wäre gerade gestartet worden</td>
+</tr>
+</tbody>
+</table>
+<p>Dabei gemessen: <code>PIP_CACHE_DIR</code> zeigte auf <code>C:\LeerTest\ablage\pip_zwischenspeicher</code>, <code>PYTHONNOUSERSITE</code> auf 1 — der Zwischenspeicher des Benutzers bleibt also auch beim Füllen unberührt.</p>
+<p><strong>Der erste Lauf fiel durch:</strong> ein verdoppeltes Caret (<code>2^^&gt;nul</code> statt <code>2^&gt;nul</code>) zerriss den Batch-Block. Die Folge war schlimmer als ein Abbruch — das Skript übersprang den Füllzweig <strong>stillschweigend</strong> und meldete danach ein Python, das es nicht gab. Durch Lesen war das nicht zu sehen.</p>
+<h2 id="b-keine-störung-dessen-was-schon-da-ist">B — keine Störung dessen, was schon da ist</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>B1</td>
+<td>fremdes Python unberührt</td>
+<td>A4</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>B2</td>
+<td>fremde <code>site-packages</code> unberührt</td>
+<td><code>nachweis_autark</code> vorher/nachher unter Wine</td>
+<td><strong>erfüllt</strong> — „Nichts außerhalb des Paketordners hat sich verändert”</td>
+</tr>
+<tr class="odd">
+<td>B3–5</td>
+<td>Benutzerpakete, pip-Cache, PYTHON-Variablen abgeschirmt</td>
+<td><code>pruefe_alles.py</code> B3-5</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>B6</td>
+<td>belegter Port wird nicht übernommen</td>
+<td>Port 8777 besetzt, Oberfläche gestartet</td>
+<td><strong>erfüllt</strong> — wich auf 8778 aus</td>
+</tr>
+<tr class="odd">
+<td>B7</td>
+<td>belegter COM-Anschluss</td>
+<td>—</td>
+<td><strong>offen</strong> (keine Hardware)</td>
+</tr>
+<tr class="even">
+<td>B8</td>
+<td>zwei gleichzeitige Läufe</td>
+<td><code>pruefe_alles.py</code> B8</td>
+<td><strong>erfüllt</strong> — der zweite wird abgewiesen</td>
+</tr>
+<tr class="odd">
+<td>B9</td>
+<td>eine fremde Umgebung stört uns nicht</td>
+<td><code>PYTHONPATH</code>, <code>PYTHONHOME</code>, <code>PIP_INDEX_URL</code>, <code>PYTHONSTARTUP</code>, <code>PYTHONUSERBASE</code> gesetzt</td>
+<td><strong>teilweise</strong> — siehe unten</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zu B9:</strong> <code>PIP_INDEX_URL</code>, <code>PYTHONSTARTUP</code> und <code>PYTHONUSERBASE</code> stören nicht. Bei <code>PYTHONPATH</code> wird ein fremdes Modul <strong>einmal geladen</strong>, bevor eine eigene Zeile läuft; der eingebaute Selbst-Neustart (<code>agent/sauber.py</code>) sorgt dann für einen sauberen Durchgang — die Abnahme stimmte. <code>PYTHONHOME</code> verhindert, dass Python überhaupt startet; das kann kein Python-Code heilen, deshalb räumt <code>START.bat</code> beide Variablen vor dem Start weg.</p>
+<h2 id="c-nur-im-kursordner-schreiben">C — nur im Kursordner schreiben</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>C1</td>
+<td>Wächter meldet Schreibversuche draußen</td>
+<td><code>pruefe_alles.py</code> C1</td>
+<td><strong>erfüllt</strong> — meldet den verbotenen, lässt den erlaubten durch</td>
+</tr>
+<tr class="even">
+<td>C2–3</td>
+<td>Ausbruch und absolute Pfade abgewiesen</td>
+<td><code>pruefe_alles.py</code> C2-3</td>
+<td><strong>erfüllt</strong> — 3 von 3 abgewiesen</td>
+</tr>
+<tr class="odd">
+<td>C4</td>
+<td>nichts außerhalb während eines Laufs</td>
+<td><code>nachweis_autark</code> unter Wine</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>C5</td>
+<td><code>paket\</code> bleibt unverändert</td>
+<td><code>pruefe_alles.py</code> C5</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zu C4:</strong> Ein Vergleich des <em>gesamten</em> Dateisystems vorher/nachher war zu stumpf — er fand 19 Änderungen, alle von fremden Programmen (Entwicklungsumgebung, andere Sitzungen). Auf einem benutzten Rechner ist „nichts hat sich geändert” nicht erreichbar. Deshalb misst der Wächter am Verursacher statt am Rechner.</p>
+<h2 id="d-restlos-entfernbar">D — restlos entfernbar</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>D1–2</td>
+<td>löschen und nachzählen</td>
+<td><code>pruefe_alles.py</code> D1-2 + Wine</td>
+<td><strong>erfüllt</strong> — 3778 von 3783 Dateien gelöscht</td>
+</tr>
+<tr class="even">
+<td>D3</td>
+<td>Modellserver wird vorher beendet</td>
+<td>Gegenprobe mit Probeprozess</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="odd">
+<td>D4</td>
+<td>Rechner im Ausgangszustand</td>
+<td><code>nachweis_autark</code></td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>D5</td>
+<td>beliebig wiederholbar</td>
+<td>drei Zyklen, Prüfsumme über <code>paket\</code></td>
+<td><strong>erfüllt</strong> — <code>b7ea1793…</code> vorher wie nachher</td>
+</tr>
+<tr class="odd">
+<td>D6</td>
+<td>Selbstlöschung der Kopie</td>
+<td>—</td>
+<td><strong>offen</strong> (Betriebsart [2] nicht unter Wine erprobt)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zu D1:</strong> Die letzten fünf Dateien sind das Python, mit dem das Aufräumen gerade läuft — Windows hält <code>python.exe</code> und die DLLs fest. Das Werkzeug meldet das jetzt ehrlich und hinterlässt eine Marke; <code>START.bat</code> entfernt den Rest, sobald Python beendet ist. Nachgeprüft: danach blieb nichts.</p>
+<h2 id="e-weitergabe">E — Weitergabe</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>E1</td>
+<td>Stick und Platte gleichermaßen</td>
+<td>Lauf aus <code>C:\Stick</code></td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>E2</td>
+<td><code>baue_stick.py</code> ohne Entwicklungsreste</td>
+<td>ausgeführt</td>
+<td><strong>erfüllt</strong> — 98 Dateien, keine Arbeitsordner</td>
+</tr>
+<tr class="odd">
+<td>E3</td>
+<td>Fehlendes wird gemeldet</td>
+<td><code>pfade.bericht()</code>, <code>baue_stick.py</code></td>
+<td><strong>erfüllt</strong> — „Modell FEHLT” wird genannt</td>
+</tr>
+<tr class="even">
+<td>E4</td>
+<td>Modellwahl nach freiem Speicher</td>
+<td>Gegenproben bei 52 / 7,5 / 5 / 3 / 1 GB</td>
+<td><strong>erfüllt</strong> — 7B / 7B / 3B / keines / keines</td>
+</tr>
+</tbody>
+</table>
+<h2 id="f-bedienung">F — Bedienung</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>F1</td>
+<td>Doppelklick genügt</td>
+<td><code>START.bat</code> unter <code>cmd</code></td>
+<td><strong>erfüllt</strong> — Menü erscheint, Python wird bereitgelegt</td>
+</tr>
+<tr class="even">
+<td>F2</td>
+<td>Aufgaben anklickbar</td>
+<td>Oberfläche im Browser</td>
+<td><strong>erfüllt</strong> — vier Karten</td>
+</tr>
+<tr class="odd">
+<td>F3</td>
+<td>jeder Schritt sichtbar</td>
+<td>Oberfläche</td>
+<td><strong>erfüllt</strong> — Werkzeug, Werte, Ergebnis, Urteil</td>
+</tr>
+<tr class="even">
+<td>F4</td>
+<td>gesperrte Knöpfe erklärt</td>
+<td>Oberfläche</td>
+<td><strong>erfüllt</strong> — Ampel zeigt „läuft …”</td>
+</tr>
+<tr class="odd">
+<td>F5</td>
+<td>Fehlermeldung nennt den nächsten Schritt</td>
+<td>Durchsicht aller Meldungen</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>F6</td>
+<td>Löschen wird bestätigt</td>
+<td>Oberfläche</td>
+<td><strong>erfüllt</strong> — Rückfrage</td>
+</tr>
+<tr class="odd">
+<td>F7</td>
+<td>Anleitung und <code>START.bat</code> nennen dieselben Nummern</td>
+<td><code>pruefe_alles.py</code> F7</td>
+<td><strong>erfüllt</strong> — 9 Verweise stimmen; Gegenprobe mit verfälschter Nummer schlug an</td>
+</tr>
+</tbody>
+</table>
+<h2 id="g-der-lehrinhalt">G — der Lehrinhalt</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G1</td>
+<td>schreiben, prüfen, erst dann ausliefern</td>
+<td>echter Lauf mit 7B</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>G2–3</td>
+<td>Abnahme besteht bei richtig, fällt bei falsch durch</td>
+<td><code>pruefe_alles.py</code> G2-3</td>
+<td><strong>erfüllt</strong> — vier Fälle</td>
+</tr>
+<tr class="odd">
+<td>G4</td>
+<td>FERTIG gilt nicht nach fehlgeschlagener Prüfung</td>
+<td><code>pruefe_schleife.py</code></td>
+<td><strong>erfüllt</strong> — 8 von 8</td>
+</tr>
+<tr class="even">
+<td>G5</td>
+<td>Fehler ist Nachricht, nicht Abbruch</td>
+<td>echter Lauf</td>
+<td><strong>erfüllt</strong> — NICHT BESTANDEN → berichtigt → BESTANDEN</td>
+</tr>
+<tr class="odd">
+<td>G6</td>
+<td>geprüfter Quelltext bleibt unverändert</td>
+<td><code>pruefe_alles.py</code> G6</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>G7</td>
+<td>Erwartung aus dem Auftrag, nicht vom Modell</td>
+<td><code>pruefstand/pruefe_regeln.py</code></td>
+<td><strong>erfüllt</strong> — 0,5 Hz des Modells durch 1,0 Hz des Auftrags ersetzt, Hinweis im Ergebnis (04.10., 13:10)</td>
+</tr>
+<tr class="odd">
+<td>G8</td>
+<td>ungeprüfte Änderung oder durchgefallene Prüfung → kein FERTIG; nach drei Abweisungen NICHT ABGENOMMEN</td>
+<td><code>pruefstand/pruefe_ungeprueft.py</code>, 5 Punkte</td>
+<td><strong>erfüllt</strong> — FERTIG genau einmal angenommen (nach bestandenem Test); dreimal FERTIG ohne Test → „Nicht abgenommen”, kein FERTIG im Protokoll</td>
+</tr>
+<tr class="even">
+<td>G9</td>
+<td>nur in diesem Lauf Geschriebenes wird geprüft</td>
+<td><code>pruefe_regeln.py</code></td>
+<td><strong>erfüllt</strong> — <code>fremd.py</code> abgewiesen</td>
+</tr>
+<tr class="odd">
+<td>G10</td>
+<td>Aufruf ohne <code>WERKZEUG:</code> erkannt, Satzmitte nicht</td>
+<td><code>pruefe_regeln.py</code></td>
+<td><strong>erfüllt</strong> — 4 Fälle</td>
+</tr>
+<tr class="even">
+<td>G11</td>
+<td>aufraeumen nicht fürs Modell</td>
+<td><code>pruefe_regeln.py</code></td>
+<td><strong>erfüllt</strong> — abgewiesen, Lauf endet regulär, Ablage bleibt (Prüfstand 11:21: das 3B-Modell hatte es als 9. Schritt gerufen, Server weg, Protokoll weg)</td>
+</tr>
+<tr class="odd">
+<td>G12</td>
+<td>Coder-Modell im Paket</td>
+<td>Messreihe 2 (unten), <code>modell.waehlen</code></td>
+<td><strong>erfüllt</strong> — Coder-3B nach <code>C:\Kurs_Agent\paket\modell</code> übertragen (04.10., 13:40), wirksam nach Neustart des Agenten</td>
+</tr>
+</tbody>
+</table>
+<h2 id="h-hardware">H — Hardware</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>H1–H3</td>
+<td>fabrikneu oder vorprogrammiert, Antwort vor dem Schreiben, kein Raten</td>
+<td>Werkzeugtexte, Abbruch ohne Antwort</td>
+<td><strong>teilweise</strong> — die Logik greift, der Fall ohne ESP32 ist geprüft</td>
+</tr>
+<tr class="even">
+<td>H4</td>
+<td>Treiber im Paket mit Prüfsummen</td>
+<td><code>paket\treiber\LIESMICH.md</code></td>
+<td><strong>erfüllt</strong> — CH341SER, CH343SER; CP210x fehlt (Silabs sperrt diese Umgebung)</td>
+</tr>
+<tr class="odd">
+<td>H5</td>
+<td>der Agent installiert keinen Treiber</td>
+<td>Durchsicht</td>
+<td><strong>erfüllt</strong> — es gibt kein Werkzeug dafür</td>
+</tr>
+<tr class="even">
+<td>H6</td>
+<td>ohne Hardware bis zur Abnahme</td>
+<td>voller Lauf unter Wine</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="odd">
+<td>H7</td>
+<td>vom Gerät zurücklesen</td>
+<td><code>esp32_nachlesen</code> an COM3, über die Brücke ausgelöst, 7 Schritte</td>
+<td><strong>erfüllt</strong> — 1,04 Hz / 2,10 Hz / 1,04 Hz, Gegenproben durchgefallen wo sie mussten (04.10., 13:17–13:19)</td>
+</tr>
+<tr class="even">
+<td>H8</td>
+<td>Rücklesen mit <strong>Flankeninterrupt und Mikrosekundenzähler</strong> des Geräts statt Abtastschleife („die Quarzfrequenz ist doch bekannt”)</td>
+<td>Laptop 20:15, 1-s/1-s-Programm</td>
+<td><strong>erfüllt</strong> — 2,0000 s zwischen Einschaltvorgängen, 0,500 Hz (vorher per Abtastung 1,937 s, 0,52 Hz)</td>
+</tr>
+<tr class="odd">
+<td>H9</td>
+<td><code>esp32_uebertragen</code> liest nach dem Neustart selbst am Gerät nach, wenn eine Erwartung bekannt ist („das muss man doch durch Rücklesen rausfinden”)</td>
+<td>Werkzeugbeschreibung, Agent reicht die Erwartung durch</td>
+<td><strong>eingebaut</strong>, am Gerät noch nicht einzeln gemessen</td>
+</tr>
+<tr class="even">
+<td>H10</td>
+<td>Zweiter unabhängiger Weg für das Verhalten nach dem Neustart: Programm meldet jedes Schalten seriell, die Brücke liest nur mit (Öffnen = Boot)</td>
+<td>20:08, blink_diag.py</td>
+<td><strong>erfüllt</strong> — „AN n” alle 500 ms fortlaufend; die Beobachtung „1 Hz” war nicht das Gerät</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="i-ferndiagnose">I — Ferndiagnose</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>I1</td>
+<td>ein Befehl, eine Datei, sechs Abschnitte</td>
+<td><code>sammle_bericht.py</code> auf Linux</td>
+<td><strong>erfüllt</strong> — 9 kB: Rechner, Paket, Selbstprüfung, Werkzeugprobe, Protokoll, Ablage</td>
+</tr>
+<tr class="even">
+<td>I2</td>
+<td>kein Benutzer-, kein Rechnername</td>
+<td>Gegenprobe: Rechnername im Bericht gesucht</td>
+<td><strong>erfüllt</strong> — nicht gefunden</td>
+</tr>
+<tr class="odd">
+<td>I3</td>
+<td>Fehlendes steht im Bericht, statt ihn scheitern zu lassen</td>
+<td>Lauf ohne Modell, mit nicht startbarem Python</td>
+<td><strong>erfüllt</strong> — „Das eigene Python ließ sich nicht starten (PermissionError). Der Bericht wurde deshalb mit /usr/bin/python3 erstellt.”</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">I5 | Fehlerbericht bei Abbruch, Protokoll endet mit ABBRUCH/ENDE | <code>pruefe_regeln.py</code>, erzwungener RuntimeError | <strong>erfüllt</strong> — <code>fehlerbericht.txt</code> mit Rückverfolgung und 40 Protokollzeilen |<br />
+I6 | volles Kontextfenster beendet den Lauf nicht | <code>pruefe_regeln.py</code>, KontextVoll am ersten Schritt | <strong>erfüllt</strong> — zusammengefasst, Lauf endet mit FERTIG |</div>
+<p><strong>Zu I3:</strong> Das Werkzeug entstand am 02.10.2026 um 09:57, unmittelbar vor dem Abbruch der Sitzung, und war bis zur Wiederaufnahme <strong>nie ausgeführt worden</strong>. Beim ersten Lauf zeigte sich, dass es richtig arbeitet — und dass es im Anforderungsblatt gefehlt hatte. Gruppe I ist deshalb nachgetragen; aus 47 Punkten wurden 50.</p>
+<hr />
+<h2 id="j-das-gespräch">J — das Gespräch</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>J1</td>
+<td>Kopf oben, Verlauf scrollt, Eingabe unten, nächste Anweisung immer möglich</td>
+<td>Playwright gegen die Oberfläche auf dem Prüfstand (Coder-3B)</td>
+<td><strong>erfüllt</strong> — Lage der drei Bereiche gemessen, Eingabe nach dem Ende frei, Verlauf folgt bis unten (Abstand 0 px), 0 Skriptfehler</td>
+</tr>
+<tr class="even">
+<td>J2</td>
+<td>Zusammenhang über Anweisungen, ein Modellstart</td>
+<td><code>pruefe_gespraech.py</code> 19/19</td>
+<td><strong>erfüllt</strong> — sechs Anweisungen, Modellserver einmal gestartet</td>
+</tr>
+<tr class="odd">
+<td>J3</td>
+<td>anderer Pin / andere Frequenz aus einem Satz</td>
+<td><code>pruefe_gespraech.py</code>; Browser mit Coder-3B: 1 Hz → „Nimm jetzt GPIO 4 statt 2” → „10 Hz”</td>
+<td><strong>erfüllt</strong> — Erwartung {pins [4], 1 Hz} dann {pins [4], 10 Hz}; 10 Hz erst NICHT BESTANDEN, mit vorgerechneter Pause (0,05 s) BESTANDEN</td>
+</tr>
+<tr class="even">
+<td>J4</td>
+<td>erst prüfen, dann laden</td>
+<td><code>pruefe_gespraech.py</code> Anweisung 4</td>
+<td><strong>erfüllt</strong> — ungeprüfte Fassung wird nicht übertragen</td>
+</tr>
+<tr class="odd">
+<td>J5</td>
+<td>Anschluss vom Menschen</td>
+<td><code>pruefe_gespraech.py</code>; Browser: Modell wollte COM5</td>
+<td><strong>erfüllt</strong> — „COM5 wurde vom Menschen nicht genannt — geraten wird nicht”</td>
+</tr>
+<tr class="even">
+<td>J6</td>
+<td>eigenes Programm wörtlich</td>
+<td><code>pruefe_gespraech.py</code> Anweisung 5</td>
+<td><strong>erfüllt</strong> — Inhalt byteweise gleich, Modell prüft nur</td>
+</tr>
+<tr class="odd">
+<td>J7</td>
+<td>mehrere Aufrufe, Aufruf ohne JSON, Behauptung im FERTIG</td>
+<td><code>pruefe_regeln.py</code> 27/27</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>J8</td>
+<td>Neuladen ohne Neustart</td>
+<td>dreimal am 04.10. angewendet</td>
+<td><strong>erfüllt</strong> — <code>/neuladen</code> meldet die Dateizeiten; die Seite wird je Aufruf gelesen</td>
+</tr>
+<tr class="odd">
+<td>J9</td>
+<td>Agent prüft selbst nach FERTIG ohne Prüfung</td>
+<td><code>pruefe_ungeprueft.py</code> 6/6; Browser mit Coder-3B</td>
+<td><strong>erfüllt</strong> — 13:04 Prüfstandzeit: viermal geschrieben, nie geprüft → „Nicht abgenommen”; nach der Korrektur 13:09: Selbstprüfung gegen pins [4], BESTANDEN, FERTIG</td>
+</tr>
+<tr class="even">
+<td>J10</td>
+<td>Quereingabe während des Laufs (Zwischenruf), „com 3” = COM3</td>
+<td><code>pruefe_gespraech.py</code> 24/24</td>
+<td><strong>erfüllt</strong> — Eingabefeld bleibt offen, Zwischenruf wird beim nächsten Schritt aufgenommen; Anlass 19:57: „nein es ist com 3 nicht com 5” wurde nicht erkannt</td>
+</tr>
+<tr class="odd">
+<td>J11</td>
+<td>Behauptung und Verlangen <strong>je Anweisung</strong>: „lade”, „lies nach” müssen in dieser Anweisung gelaufen sein</td>
+<td><code>pruefe_gespraech.py</code> 5b</td>
+<td><strong>erfüllt</strong> — Anlass 20:10: „erfolgreich auf dem ESP32 geladen” ohne Übertragung in dieser Anweisung</td>
+</tr>
+<tr class="even">
+<td>J12</td>
+<td><strong>Live am Laptop, 20:01–20:04 Uhr (Coder-3B):</strong> blink.py 2 Hz (erst 1 Hz durchgefallen, berichtigt, bestanden); Modell wollte COM5, abgewiesen, fragt; „Der Anschluss ist COM3. Lade … und lies nach”: <code>esp32_uebertragen</code> COM3, <code>esp32_nachlesen</code> 2,06 Hz BESTANDEN, ehrliches FERTIG; Taschenrechner (tkinter, 37 Zeilen) als Fenster offen, Nutzer: „der Taschenrechner funktioniert”</td>
+<td>Gespräch über die Brücke, Nutzer am Bildschirm</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="odd">
+<td>J13–J18</td>
+<td>ergebnisoffen, Methode bereitstellen, Fokus, fehlende Datei, Anmerkung, Erwartung aus Worten</td>
+<td><code>pruefe_gespraech.py</code> 30/30, Laptop-Gespräche 05.10.2026 9:09–10:20</td>
+<td><strong>erfüllt</strong> — „hallo bist du bereit?” → „Ja, ich bin bereit”; erfundene Arbeit („geschrieben, geprüft, übertragen” ohne Werkzeug) wird als unwahr zurückgewiesen, Fokus liefert den Aufruf; keine Behauptung ging als abgenommen durch</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">J19 | leeres FERTIG → Fokus; alte, nie geschriebene Datei blockiert nicht | <code>pruefe_gespraech.py</code> 5h, 5i; Laptop 11:09/11:36 | <strong>erfüllt</strong> — 11:09: viermal „FERTIG — Bereit für die nächste Anweisung” → Nicht abgenommen; nach der Korrektur 11:36: Fokus liefert schreib_datei im ersten Anlauf |<br />
+J20 | Berichtigungsfokus nach durchgefallener Prüfung | <code>pruefe_gespraech.py</code> 5l; <code>pruefe_schleife.py</code> 8 Aufrufe; Laptop 11:50/12:00 | <strong>erfüllt</strong> — 11:50: dreimal „Die Zeile time.sleep(1) wurde korrigiert” ohne Werkzeug → Nicht abgenommen; nach der Korrektur 12:00: Datei + Befund ohne Vorgeschichte → berichtigt, vom Agenten geprüft, bestanden |<br />
+J21 | gemessene Zeile unter FERTIG, Widerspruch angemerkt, nachgeplapperter Text ersetzt | <code>pruefe_gespraech.py</code> 5k, 5m; Laptop 11:40/12:01 | <strong>erfüllt</strong> — 11:40: „Periode von 2 Sekunden” bei gemessenen 1,99 Hz; 12:01: der Rügetext des Agenten als Schlusssatz des Modells |<br />
+J22 | Geräteschritt: Fokus auf genau diesen Aufruf, sonst führt der Agent ihn aus; Fehlschlag zählt nicht als gelaufen | <code>pruefe_gespraech.py</code> 4, 5b, 5n, 6; Laptop 12:03 | <strong>erfüllt</strong> — 12:03: „Lade blink.py auf den ESP32 an COM3” ließ das Modell blink.py umschreiben (PWM!) statt zu übertragen, weil der Fokus-Hinweis pauschal schreib_datei nannte |<br />
+J23 | „dritter gleicher Fehlschlag” nur bei Fehlschlägen, je Anweisung | <code>pruefe_gespraech.py</code> 5j; Laptop 11:39 | <strong>erfüllt</strong> — der Hinweis stand unter einer BESTANDENEN Abnahme |<br />
+J24 | verdichteter Verlauf je Anweisung | <code>pruefe_gespraech.py</code> (Zusammenfassung nennt Dateien, Erwartung, Anschlüsse) | <strong>erfüllt</strong> im Prüfstand; Anlass Laptop 12:14–12:19: fünf Minuten je Antwort in der sechsten Anweisung |<br />
+J26 | Prüfweg nach der Datei, nicht nach der alten Erwartung | <code>pruefe_gespraech.py</code> 5l-e; Laptop 14:50 → 15:40 | <strong>erfüllt</strong> — 14:50: rechner.py mit programm_testen gegen pins [2, 4] (FEHLER „importiert tkinter“, Abbruch nach 25 Schritten); nach der Korrektur 15:40: programm_ausfuehren, Fenster „Taschenrechner“, LAUF BESTANDEN |<br />
+J27 | Kurvenform erbt nicht auf ein neues Programm | <code>pruefe_regeln.py</code>, <code>pruefe_gespraech.py</code> 5l-d; Laptop 13:33/14:26 | <strong>erfüllt</strong> im Prüfstand; am Laptop nicht erneut gemessen (Frage 7 scheitert ohnehin an den zwei Takten) |<br />
+J25 | Geräteanzeige in der Kopfzeile, Fortschrittsbalken je Aufruf | Laptop | wirksam nach Neustart des Agenten (<code>oberflaeche.py</code> ist der Server selbst) — Rüge 12:15: „sehe nie einen Fortschrittsbalken zur Übertragung und nie, ob der ESP32 überhaupt verbunden ist” |</div>
+<h2 id="k-allgemeine-python-programme">K — allgemeine Python-Programme</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Anforderung</th>
+<th>geprüft</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>K1</td>
+<td><code>programm_ausfuehren</code>: Ausgabe, Fehler, Rückgabewert, Eingabe</td>
+<td>Prüfstand Linux: <code>rechne.py</code> (2+3=5, BESTANDEN), <code>kaputt.py</code> (ZeroDivisionError, NICHT BESTANDEN), <code>lies.py</code> mit Eingabe 21 → 42</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>K2</td>
+<td>Fensterprogramm starten und beobachten</td>
+<td>Laptop 14:42 über die Brücke: <code>gui_probe.py</code></td>
+<td><strong>erfüllt</strong> — „Nach 3,0 s läuft es noch; Fenster: ‘Fensterprobe Kurs-Agent’“, LAUF BESTANDEN</td>
+</tr>
+<tr class="odd">
+<td>K3</td>
+<td>tkinter im Paket, ins eigene Python entpackt</td>
+<td><code>umgebung_anlegen</code> am Laptop</td>
+<td><strong>erfüllt</strong> — 944 Dateien, „Gegenprobe tkinter: Tk 8.6”, Python 3.12.10 (python.org) mit <code>_tkinter.pyd</code> aus conda-forge</td>
+</tr>
+<tr class="even">
+<td>K4</td>
+<td>Lauf zählt als Prüfung</td>
+<td><code>pruefe_regeln.py</code></td>
+<td><strong>erfüllt</strong> — kaputter Lauf sperrt FERTIG, guter gibt frei</td>
+</tr>
+<tr class="odd">
+<td>K5</td>
+<td>PWM-Hüllkurve, Form als Kriterium</td>
+<td><code>pruefe_pwm.py</code> 7/7; Laptop 10:17: Modellprogramm sinusförmig 0,97 Hz erkannt</td>
+<td><strong>erfüllt</strong></td>
+</tr>
+<tr class="even">
+<td>K6</td>
+<td>gedachte Uhr im Nachbau</td>
+<td><code>pruefe_pwm.py</code>, <code>pruefe_alles.py</code> 19/19</td>
+<td><strong>erfüllt</strong> — Läufe in 0,6 s statt 4 × 4 s; Takt unabhängig von der Windows-Uhr</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">K7 | PWM mit zu kleinem Hub: Befund nennt 1023/65535; <code>time.sleep</code> im Brettwissen | <code>pruefe_pwm.py</code> 8/8; Laptop 12:08 | <strong>erfüllt</strong> — Anlass: <code>duty_u16(1023 * …)</code>, Hub 1,6 %, Befund „fest bei 2 %” führte nicht zur Ursache; 11:36: <code>machine.delay(1000)</code> dreimal |</div>
+<p><strong>Der Nachmittag des 05.10.2026 — die neun festen Anfragen, Endlauf (Coder-3B, Laptop, ESP32 an COM3; Tabelle in <code>pruefstand/lauf_neun_fragen.json</code> und im Reiter „Stand und Grenzen“):</strong> Vorgabe: „Die vorgefertigten Fragen müssen durchlaufen, und zwar ohne eine Fake-Sache … der Agent soll die Realität prüfen, nicht das Wunschdenken.“ Ergebnis: <strong>1</strong> Gruß → Antwort in Worten; <strong>2</strong> blink 1 Hz → FERTIG (erste Fassung 0,5 Hz durchgefallen, Berichtigungsfokus, 1,00 Hz gemessen, 63 s); <strong>3</strong> 2 Hz → FERTIG (1,99 Hz, 111 s); <strong>4</strong> 0,5 Hz → FERTIG (0,50 Hz, 51 s); <strong>5</strong> auf den ESP32 an COM3 und nachlesen → FERTIG, der Agent führte <code>esp32_uebertragen</code> selbst aus, Rücklesung am Gerät 0,5 Hz (35 s); <strong>6</strong> Sinus-Atmen → Lauf E bestanden (Form sinusförmig, 1,00 Hz, 12 min), Lauf F nicht abgenommen (<code>cos</code> ohne import, <code>i</code> ohne Definition, dreimal dieselbe Datei; 14 min); <strong>7</strong> zwei LEDs → Abbruch nach 25 Schritten in allen Läufen (schwere Karte); <strong>8</strong> Taschenrechner → im Lauf F am Agentenfehler J26 gescheitert, nach der Korrektur LAUF BESTANDEN mit Fenster „Taschenrechner“ (2,8 min); <strong>9</strong> Anschlüsse → FERTIG in 38 s (Python da, esptool 5.4.0 aus dem Vorrat, COM3 CH340). Unter jedem FERTIG stand die vom Werkzeug gemessene Zeile; kein Satz des Modells ging ungeprüft als Ergebnis durch. In jeder Anfrage mit Programm griff der Agent mindestens einmal ein (Fokus oder Berichtigung). Nicht erneut gemessen nach der letzten Korrektur: Frage 6 mit dem vollständigen Schleifen-Hinweis.</p>
+<p><strong>Der Vormittag des 05.10.2026 im Gespräch (Coder-3B, Laptop):</strong> Begrüßung und Fragen in Worten beantwortet (Hardwarefrage falsch: „LED am Bildschirm”); Blinkauftrag zunächst mit erfundener Arbeit beantwortet (viermal „geschrieben, geprüft, übertragen” ohne ein Werkzeug) — vom Agenten abgefangen, danach Fokus eingebaut; Atem-Aufgabe: 1. Anlauf PWM-Trägerfrequenz als Takt (1000 Hz) festgehalten, Dreieck statt Sinus; 2.–4. Anlauf deckten Lücken im Prüfwerkzeug auf (keine Hüllkurve, <code>math</code> verboten, Windows-Uhr, stilles blink.py, Wechselzahl bei PWM); 5. Anlauf läuft mit allen Korrekturen. Messreihe 3 (Coder-3B gegen Coder-7B, acht Anweisungen, derselbe Agent) läuft auf dem Prüfstand.</p>
+<p><strong>K erfüllt am Laptop, 20:05 Uhr:</strong> „Programmiere einen einfachen Taschenrechner rechner.py mit grafischer Oberfläche” ergab 37 Zeilen tkinter; <code>programm_ausfuehren</code> mit fenster und offen_lassen; Fenster „Taschenrechner” 320×239 erkannt; Nutzer: „der Taschenrechner funktioniert”.</p>
+<hr />
+<h2 id="der-erste-lauf-mit-modell-auf-windows-04.10.2026-1256-bis-1304">Der erste Lauf mit Modell auf Windows — 04.10.2026, 12:56 bis 13:04</h2>
+<p>Smart App Control EIN. Der signierte llama-server aus dem Ollama-Archiv lädt Qwen2.5-3B-Instruct in 8 s. Karte 1 („LED blinken lassen, nur geprüft”), über die Brücke gestartet, aus dem Arbeitsbereich mitgelesen. 23 Schritte, dann HTTP 400 vom Server. Was der Lauf zeigte, und was daraus wurde — jede Korrektur hat eine Gegenprobe in <code>pruefstand/pruefe_regeln.py</code> oder <code>pruefe_ungeprueft.py</code>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Befund im Lauf</th>
+<th style="text-align: left;">Korrektur</th>
+<th style="text-align: left;">Anforderung</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Schritte 1–3: das Modell schrieb <code>schreib_datei {…}</code> ohne <code>WERKZEUG:</code>; nichts wurde ausgeführt</td>
+<td style="text-align: left;">Name eines bekannten Werkzeugs am Zeilenanfang mit JSON gilt als Aufruf</td>
+<td style="text-align: left;">G10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Schritt 4: <code>programm_testen blink.py</code> prüfte eine <strong>alte</strong> blink.py aus der Nacht (1 Hz) — und bestand</td>
+<td style="text-align: left;">geprüft wird nur, was in diesem Lauf geschrieben wurde</td>
+<td style="text-align: left;">G9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Schritte 17–21: das Modell schrieb die Erwartung von 1,0 auf 0,5 Hz um</td>
+<td style="text-align: left;">Erwartung kommt aus dem Auftrag und ist nicht verhandelbar</td>
+<td style="text-align: left;">G7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Schritt 19/22: FERTIG mit falscher Begründung („0,5 s + 0,5 s = 1 Hz, nicht 0,5 Hz”)</td>
+<td style="text-align: left;">wird durch G7/G8 gegenstandslos; FERTIG nach durchgefallener Prüfung wird weiter abgewiesen (G4)</td>
+<td style="text-align: left;">G4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Schritt 23: HTTP 400 — Kontextfenster 8192 voll (jeder Testlauf liefert &gt;120 Zeilen Zeitachse)</td>
+<td style="text-align: left;">Kontext 16384; Werkzeugergebnisse gekürzt ins Modellgedächtnis; bei KontextVoll zusammenfassen statt abbrechen</td>
+<td style="text-align: left;">I6</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Protokoll endete 13:03:43, der Abbruch um 13:04:18 stand nirgends</td>
+<td style="text-align: left;"><code>fehlerbericht.txt</code>, Protokollzeilen ABBRUCH/FEHLERBERICHT/ENDE</td>
+<td style="text-align: left;">I5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Prüfstand 11:14: dritte Fassung geschrieben, nicht geprüft, FERTIG angenommen</td>
+<td style="text-align: left;">ungeprüfte Änderung sperrt FERTIG</td>
+<td style="text-align: left;">G8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Laptop Schritt 9 / Prüfstand 11:21: das Modell rief <code>aufraeumen</code> mitten im Auftrag — Server beendet, Ablage und Protokoll gelöscht, „Connection refused”</td>
+<td style="text-align: left;"><code>aufraeumen</code> nicht in der Werkzeugliste des Modells; Aufruf wird abgewiesen</td>
+<td style="text-align: left;">G11</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Startfenster warnte „llama.cpp ist nicht signiert” — stimmte nicht mehr</td>
+<td style="text-align: left;"><code>pruefe_rechner.py</code> fragt die Datei nach ihrer Signatur</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">jeder Testlauf öffnete einen neuen Browser-Reiter „Virtuelle LED”</td>
+<td style="text-align: left;">unter der Oberfläche kein eigener Reiter mehr; die Oberfläche zeigt die LED selbst</td>
+<td style="text-align: left;">F</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Messreihe Prüfstand (Linux, 20 Kerne), Karte 1, alter Agent:</strong> Qwen2.5-3B-Instruct 3 × schreiben, 2 × prüfen (1 durchgefallen, 1 bestanden), FERTIG nach 83 s — mit ungeprüfter dritter Fassung. Qwen2.5-Coder-3B-Instruct 2 × schreiben, 2 × prüfen (1 durchgefallen, 1 bestanden), FERTIG nach 67 s, geprüfte Fassung geliefert.</p>
+<p><strong>Messreihe 2 (berichtigter Agent, 11:25–11:33 Prüfstandzeit = 13:25–13:33):</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Modell</th>
+<th style="text-align: left;">Karte 1 „blink.py, 1 Hz”</th>
+<th style="text-align: left;">Karte 3 „zwei.py, zwei LEDs”</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Qwen2.5-3B-Instruct</td>
+<td style="text-align: left;"><strong>bestanden</strong>, aber 16 Werkzeugaufrufe, 95 s: nach der bestandenen Prüfung noch 14 Aufrufe ins Leere (ports, esptool, pipx, requirements.txt, COM5 …)</td>
+<td style="text-align: left;">nicht bestanden: Datei „two.py” statt zwei.py, 2 × Syntaxfehler, 3 × Absturz, 4. Fassung ungeprüft, FERTIG beim zweiten Anlauf durchgerutscht (seither: drei Abweisungen, dann NICHT ABGENOMMEN)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Qwen2.5-Coder-3B-Instruct</td>
+<td style="text-align: left;"><strong>bestanden</strong>, 4 Werkzeugaufrufe, 83 s: schreiben → NICHT BESTANDEN → berichtigen → BESTANDEN → FERTIG</td>
+<td style="text-align: left;">nicht bestanden: Datei „two.py”, Programm blockiert in der ersten Blinkschleife, Pin 4 nie geschaltet — dreimal dieselbe Diagnose, nicht berichtigt</td>
+</tr>
+</tbody>
+</table>
+<p>Folgerung: Karte 1 kann das Coder-3B sauber, das Instruct-3B nur mit Umwegen; Karte 3 (zwei Takte gleichzeitig, nicht blockierend) überfordert beide 3B-Modelle — sie gehört zum 7B oder wird als „schwere Karte” ausgewiesen. Das Coder-Modell ist seither die Wahl (G12); beide Modelle nannten die Datei anders als der Auftrag, der Agent weist jetzt darauf hin.</p>
+<hr />
+<h2 id="die-scharfe-prüfung-vom-02.10.2026-bleibt-der-zielrechner-unversehrt">Die scharfe Prüfung vom 02.10.2026: Bleibt der Zielrechner unversehrt?</h2>
+<p>Auf Weisung eigens geprüft, mit <code>pruefe_unversehrtheit.py</code> — drei Wege, die einander nicht glauben müssen:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Weg</th>
+<th style="text-align: left;">Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Durchsicht</strong> jeder schreibenden Zeile</td>
+<td style="text-align: left;">52 gefunden, <strong>alle</strong> führen in den Kursordner. Das Werkzeug löst dafür Namen auf, statt zu raten: <code>PID_DATEI</code> → <code>ABLAGE</code> → <code>WURZEL</code>.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Verbotsliste</strong>: 15 Befehle, die Windows verändern</td>
+<td style="text-align: left;">keiner kommt vor — keine Registrierung, kein <code>setx</code>, kein Dienst, keine Aufgabenplanung, keine Rechteänderung</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Messung</strong> eines echten Laufs</td>
+<td style="text-align: left;">159 933 Dateien außerhalb des Kursordners aufgenommen: <strong>0 neu, 0 verschwunden, 1 verändert</strong> — und das eine ist <code>vscode.lock</code> der Entwicklungsumgebung, nicht des Pakets</td>
+</tr>
+</tbody>
+</table>
+<p><code>setlocal</code> steht im Startskript: die 24 gesetzten Variablen wirken nur im eigenen Fenster.</p>
+<p><strong>Vier Fehler hat diese Prüfung gefunden</strong> — zwei im Paket, zwei in der Prüfung selbst:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Fehler</th>
+<th>Folge</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>esp32_firmware</code> lud fehlende Firmware <strong>aus dem Netz</strong> und legte sie nach <code>paket\firmware\</code></td>
+<td>verletzte A2 (kein Netz im Kurs) <strong>und</strong> C5 (<code>paket\</code> wird nur gelesen). Entfernt: fehlt sie, wird das gesagt</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><code>umgebung_anlegen</code> tat dasselbe mit Python und get-pip</td>
+<td>dito, entfernt</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><code>adafruit-ampy</code> stand auf der Erlaubnisliste, lag aber nicht im Vorrat</td>
+<td>das Modell liest diese Liste und hätte es anfordern können; im Kurs ohne Netz wäre es gescheitert. Gestrichen, und E5 prüft das jetzt</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Die Prüfung selbst übersah <code>subprocess.run(["reg","add",…])</code></td>
+<td>ein verbotener Befehl in Listenform blieb unsichtbar. Behoben; die Gegenprobe findet ihn jetzt</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Dazu drei Befunde, die bleiben und benannt sind:</strong></p>
+<ul>
+<li>Der Wächter lässt <code>%TEMP%</code> ausdrücklich zu — Python arbeitet dort selbst. Steht jetzt als zweite Ausnahme in Gruppe C.</li>
+<li>Die Wächterprobe schreibt absichtlich einmal ins Benutzerverzeichnis, um zu zeigen, dass der Wächter anschlägt. Sie räumt in jedem Fall wieder auf, auch bei einem Abbruch.</li>
+<li>Die Aussage „eine einzige Stelle startet Programme” stimmte nicht: es sind fünf. Alle fünf reichen dieselbe abgeschirmte Umgebung weiter — <strong>B10</strong> prüft das und fällt durch, sobald eine es vergisst.</li>
+</ul>
+<h3 id="was-dabei-an-prüfungen-dazukam">Was dabei an Prüfungen dazukam</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>prüft</th>
+<th>Gegenprobe</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>B10</td>
+<td>jeder Programmstart reicht <code>env=umgebung()</code> weiter</td>
+<td><code>env=</code> an einer Stelle entfernt → Zeilennummer gemeldet</td>
+</tr>
+<tr class="even">
+<td>E5</td>
+<td>jedes erlaubte Paket liegt bei, und jede <strong>geltende</strong> Abhängigkeit</td>
+<td>ein Rad aus dem Vorrat genommen → gemeldet</td>
+</tr>
+<tr class="odd">
+<td>I4</td>
+<td>die Unversehrtheitsfrage lässt sich selbst beantworten</td>
+<td>Spur ins Benutzerprofil und <code>setx</code> eingebaut → beide als schwerwiegend gemeldet</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zu E5:</strong> Die Bedingungen sind der Kern. <code>typing-extensions</code> steht in <code>cryptography</code>, aber nur für <code>python_full_version &lt; '3.11'</code>; das Paket bringt 3.12.10 mit, die Zeile gilt also nicht. Wer sie mitzählt, jagt einem Phantom nach — wer alle Bedingungen ignoriert, übersieht die echten. Geprüft: 25 Pakete, 5 erlaubte, 13 geltende Anforderungen, <strong>jede liegt bei</strong>.</p>
+<hr />
+<h2 id="fehler-die-diese-prüfung-gefunden-hat">Fehler, die diese Prüfung gefunden hat</h2>
+<p>Zwölf, keiner davon war durch Lesen zu sehen.</p>
+<h3 id="nur-unter-windows-sichtbar">Nur unter Windows sichtbar</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Fehler</th>
+<th>Folge</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>sys.path</code> hat beim eingebetteten Python nur zwei Einträge</td>
+<td><strong>Kein Werkzeug lief.</strong> „No module named <code>_muster</code>”</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><code>umgebung_anlegen</code> sprang bei vorhandenem Python heraus</td>
+<td>pip wäre nie eingerichtet worden</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><code>Cannot import 'setuptools.build_meta'</code></td>
+<td>esptool ließ sich offline nicht bauen</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><code>colorama</code> fehlte im Paket</td>
+<td><code>pip download</code> wertet Windows-Marker nach dem laufenden System aus</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Extras abgeschnitten (<code>esp-pylib[cli,ide,serial]</code>)</td>
+<td><code>websockets</code> fehlte</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><code>machine.py</code> unauffindbar — <code>._pth</code> ignoriert Arbeitsverzeichnis <strong>und</strong> <code>PYTHONPATH</code></td>
+<td>der Prüfschritt lief nicht</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td><code>for %%Z in (muster)</code> findet nichts</td>
+<td>„Das Paket ist nicht gefüllt”, obwohl es gefüllt war</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><code>Expand-Archive</code> braucht PowerShell</td>
+<td>Auspacken scheiterte; jetzt liegt Python ausgepackt im Paket</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Sonderzeichen in <code>START.bat</code></td>
+<td><code>G��</code> statt <code>—</code>; die Datei ist jetzt reines ASCII</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><strong>Ausgabe mit cp1252 gelesen, UTF-8 geschrieben</strong></td>
+<td><code>UnicodeDecodeError</code> im Nebenlauf → <strong>leere Ausgabe bei Rückgabewert 0</strong>: Das Werkzeug lief, niemand erfuhr etwas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="in-beiden-umgebungen">In beiden Umgebungen</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Fehler</th>
+<th>Folge</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>11</td>
+<td><code>nachweis_autark</code> nahm <code>sys.executable</code> als „Python des Rechners”</td>
+<td>Es maß <strong>unseren eigenen</strong> Ordner — ein beruhigendes Ergebnis ohne Bedeutung</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>Die Oberfläche beurteilte das Ergebnis ein zweites Mal, unvollständig</td>
+<td>Bei bestandener Abnahme fehlte die Marke. Die Beurteilung steht jetzt an einer Stelle</td>
+</tr>
+</tbody>
+</table>
+<p>Dazu: Das Aufräumen kann sich nicht selbst löschen; <code>webbrowser.open</code> riss die Oberfläche mit; <code>PYTHONPATH</code> lud fremden Code in unseren Prozess.</p>
+<hr />
+<h2 id="was-offen-bleibt">Was offen bleibt</h2>
+<p>Stand 05.10.2026, nachmittags. Die Säulen sind gemessen: Modell unter Smart App Control über den signierten Server, Agent, Werkzeuge, ESP32 an COM3 mit Rücklesung am Gerät. Offen ist, was ein kleines Modell nicht verlässlich kann — und was hier bewusst nicht gebaut wurde.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>warum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Das 3B-Modell</strong> trifft Zahlen nicht sicher (3 Hz, 0,5 Hz erst mit vorgerechneter Ersetzung), schreibt PWM statt Ein/Aus, kennt <code>machine.delay</code>, <code>from machine import time</code>; es erzählt Arbeit und plappert Agentensätze nach</td>
+<td>der Agent fängt jedes davon ab (J16–J24, K7), aber jede Abfangrunde kostet 10–60 s; zwei LEDs mit zwei Takten scheitern weiter</td>
+</tr>
+<tr class="even">
+<td><strong>Qwen2.5-Coder-7B</strong> ist auf dem Prüfstand ohne Grafikkarte 3- bis 5-mal langsamer und nicht besser (Messreihe 3: Atmen nach 25 Schritten abgebrochen)</td>
+<td>kein Ersatz für das 3B auf einem 8-GB-Laptop; ein 30B-A3B auf 24 GB ist nicht gemessen</td>
+</tr>
+<tr class="odd">
+<td><strong>Geräteanzeige und großer Fortschrittsbalken</strong> (J25)</td>
+<td>im Quelltext, auf C: kopiert, aber <code>oberflaeche.py</code> ist der Server selbst: wirksam erst nach Neustart des Agenten (START.bat)</td>
+</tr>
+<tr class="even">
+<td>D6 Selbstlöschung aus der Kopie</td>
+<td>Betriebsart [2] nicht am Laptop erprobt</td>
+</tr>
+<tr class="odd">
+<td>CP210x-Treiber im Vorrat</td>
+<td>Silicon Labs liefert nur an Browser; der Laptop hatte den Treiber schon</td>
+</tr>
+<tr class="even">
+<td>Lauf auf einem <strong>fremden</strong> Windows-Rechner ohne den Erbauer</td>
+<td>nur <code>fehlerbericht.txt</code> und das Protokoll stünden dann zur Verfügung; nicht erprobt</td>
+</tr>
+</tbody>
+</table>
+<p>—|—| | <strong>Lauf auf echtem Windows</strong> | Wine bildet nach, beweist aber nicht. Dies ist der wichtigste offene Punkt | | B7, H1–H3 am Gerät | kein ESP32 vorhanden | | D6 Selbstlöschung | Betriebsart [2] nicht erprobt | | CP210x-Treiber | Silicon Labs sperrt diese Umgebung; auf einem gewöhnlichen Anschluss lädt <code>hole_paket.py</code> ihn mit | | Lauf mit Modell unter Windows | das Modell wurde in den Wine-Bereich nicht geladen (4,7 GB) |</p>
+<hr />
+<p>Prof. Dr.-Ing. Ralph Wystup M.Sc. — erstellt mit KI und Agent (Claude Code, Anthropic)</p>
+
 </div>
 
 <footer>
