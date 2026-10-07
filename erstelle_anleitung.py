@@ -212,9 +212,11 @@ SKIZZE = '''
 
  <rect x="802" y="60" width="176" height="92" rx="8" fill="#fff" stroke="#805ad5" stroke-width="1.8"/>
  <text x="816" y="84" font-size="13" font-weight="600" fill="#553c9a">Sprachmodell</text>
- <text x="816" y="104" font-size="11.5" fill="#718096">Qwen2.5-Coder, lokal,</text>
- <text x="816" y="120" font-size="11.5" fill="#718096">llama-server (signiert)</text>
- <text x="816" y="136" font-size="11.5" fill="#718096">wählt Werkzeug, schreibt Code</text>
+ <text x="816" y="102" font-size="11.5" fill="#718096">Qwen2.5-Coder, lokal,</text>
+ <text x="816" y="118" font-size="11.5" fill="#718096">llama-server (signiert)</text>
+ <text x="816" y="134" font-size="11.5" fill="#718096">wählt Werkzeug, schreibt Code</text>
+ <text x="816" y="152" font-size="11" fill="#9c4221">welches Modell: wählt der Agent</text>
+ <text x="816" y="166" font-size="11" fill="#9c4221">nach freiem Speicher, nicht der Mensch</text>
 
  <line x1="192" y1="106" x2="226" y2="106" stroke="#4a5568" stroke-width="1.6" marker-end="url(#pf)"/>
  <line x1="422" y1="106" x2="456" y2="106" stroke="#4a5568" stroke-width="1.6" marker-end="url(#pf)"/>
@@ -872,8 +874,21 @@ und bekommt Text zurück. Mehr Verbindung gibt es nicht.</p>
 <tr><td>Qwen2.5-Coder-7B-Instruct (Q4_K_M)</td><td>4,68 GB</td><td>ab 16 GB</td><td>siehe Reiter „Stand und Grenzen“, Messreihe 3; schreibt Zeilenumbrüche im JSON doppelt maskiert, der Agent löst das auf</td></tr>
 <tr><td>Qwen2.5-3B/7B-Instruct</td><td>1,93 / 4,68 GB</td><td>Rückfall</td><td>16 Aufrufe statt 4 für dieselbe Karte; nicht mehr die Wahl</td></tr>
 <tr><td>Qwen3-Coder-30B-A3B</td><td>~18 GB</td><td>ab 24 GB</td><td>nicht gemessen — der ernsthafteste Kandidat für größere Rechner (3 Mrd. aktive Parameter, 30 Mrd. gesamt)</td></tr></table>
-<p>Welches Modell läuft, entscheidet sich beim Start am freien Arbeitsspeicher; bei gleicher Größe wird das Coder-Modell vorgezogen,
-weil die Aufgabe ein Modell „speziell für die Python-Programmierung“ verlangt. Keines der Modelle ist von uns nachtrainiert — kein
+<p><strong>Das Modell wählt der Agent, nicht der Mensch.</strong> Beim Start sieht er nach, wie viel Arbeitsspeicher frei ist,
+und nimmt das größte Modell, das darin läuft; bei gleicher Größe hat das Coder-Modell Vorrang, weil die Aufgabe ein Modell
+„speziell für die Python-Programmierung“ verlangt. Der Grund für diese Reihenfolge ist der Kursraum: Dort stehen Rechner mit
+8 und mit 32 GB, und derselbe Stick muss auf beiden starten. Ein Teilnehmer, der erst ein Modell aussuchen müsste, säße
+entweder vor einem Rechner, der nicht genug Speicher hat, oder vor einem, der ein zu kleines Modell quält. Deshalb gibt es
+hier keine Auswahl, sondern eine Entscheidung, und sie steht im Protokoll: <code>Modell gewählt: … (braucht … GB; frei
+sind … GB), übergangen: …</code></p>
+<div class="kasten"><p><strong>Wie der Bedarf geschätzt wird — und was daran am 07.10.2026 falsch war.</strong> Die
+Schätzung lautete <em>Dateigröße × 1,25 + 1,8 GB</em>. Damit verlangte das 3B-Modell 4,2 GB; auf einem Rechner mit 3,6 GB
+frei lehnte der Agent es ab und arbeitete ohne Modell weiter. Derselbe <code>llama-server</code> wurde daraufhin mit
+demselben Modell und demselben Kontext von Hand gestartet: Er lief und belegte <strong>1,69 GB</strong>. Der Unterschied
+kommt daher, dass llama.cpp die Modelldatei über eine Speicherabbildung liest — sie steht im Dateicache und zählt nicht voll
+zum Bedarf. Seither gilt <em>Dateigröße × 1,0 + 0,9 GB</em>. Eine zu knappe Schätzung fällt sofort auf, weil der Start
+scheitert und das gemeldet wird; eine zu großzügige fällt nie auf, sie nimmt dem Kurs nur still das bessere Modell weg.</p></div>
+<p>Keines der Modelle ist von uns nachtrainiert — kein
 LoRA, kein Feintuning. Was das Modell über Werkzeuge, Methode und Brett weiß, steht in der Anweisung des Agenten und wirkt nur im Gespräch.</p>
 <div class="kasten"><p><strong>Was ein kleines Modell kann und was nicht</strong> — gemessen am 04./05.10.2026: Es schreibt kurze
 MicroPython- und Python-Programme richtig, hält das Werkzeugformat meist ein, berichtigt nach einer durchgefallenen Abnahme. Es

@@ -27,7 +27,7 @@
  {
   "titel": "Sinusförmig atmen, 1 Hz",
   "text": "Schreibe ein Programm atmen.py, das die LED an GPIO 2 per PWM sinusfoermig atmen laesst, eine Periode pro Sekunde. Pruefe es mit programm_testen.",
-  "hinweis": "PWM-Hüllkurve: Takt und Form werden gemessen"
+  "hinweis": "PWM-Hüllkurve: Takt und Form werden gemessen; schafft das Modell es nicht in zwei Anläufen, legt ihm der Agent ein Musterprogramm vor (steht dann unter FERTIG)"
  },
  {
   "titel": "Zwei LEDs, zwei Takte",

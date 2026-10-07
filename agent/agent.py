@@ -110,8 +110,14 @@ Was du ueber das Brett weisst (ESP32-DevKit, MicroPython):
   schliesst man extern an freie Anschluesse an (z. B. GPIO 4, 5, 16-19, 21-23, 25-27, 32, 33),
   mit Vorwiderstand gegen Masse.
 - Helligkeit regelt man mit PWM: machine.PWM(machine.Pin(2), freq=1000) und duty(0 bis 1023)
-  oder duty_u16(0 bis 65535). Ein weiches Atmen ist eine Folge von duty-Werten, z. B. einer
-  Sinus-Halbwelle, im Takt der gewuenschten Periode.
+  oder duty_u16(0 bis 65535). Ein sinusfoermiges Atmen mit einer Periode je Sekunde, vollstaendig:
+      import machine, math, time
+      pwm = machine.PWM(machine.Pin(2), freq=1000)
+      while True:
+          for i in range(100):
+              pwm.duty(int(1023 * (1 - math.cos(2 * math.pi * i / 100)) / 2))
+              time.sleep(0.01)
+  Fuer eine andere Periode T ist die Pause T/100. Der Traeger (freq=1000) ist nicht der Takt.
 - Warten: import time, dann time.sleep(sekunden) oder time.sleep_ms(millisekunden). Etwas
   anderes zum Warten gibt es nicht — machine.delay oder utime.wait existieren nicht.
 - Tasten, Sensoren und Anzeigen gibt es nur, wenn der Mensch sie angeschlossen hat; frage nach,
@@ -437,6 +443,7 @@ class Sitzung:
         self.letzter_befund = None
         self.messungen: dict = {}                   # Datei -> was das Werkzeug zuletzt gemessen hat
         self.letzte_pruefdatei = None               # welche Datei zuletzt geprueft wurde
+        self.unveraendert, self.fehlversuche, self.muster_gegeben = 0, 0, False
         self.letzter_befund_zeilen = ""             # die Zeilen des Befunds, die den Grund nennen
         self.letzter_befund_pwm = False
         self.feste_erwartung = None                 # der Mensch setzt den Massstab
@@ -614,15 +621,31 @@ class Sitzung:
         except OSError:
             quelle = ""
         esp = "machine" in quelle
-        hinweis = (f"Die Datei {datei} hat die Pruefung NICHT bestanden. Befund des Werkzeugs:\n{self.letzter_befund_zeilen}\n"
-                   f"So steht {datei} jetzt wirklich da (nichts davon ist bisher geaendert worden):\n{quelle.strip()}\n\n"
-                   + (f"{self._takt_hinweis(pwm=self.letzter_befund_pwm)}\n{self._ersetzungshinweis(text, quelle)}" if esp
-                      else "Das ist ein gewoehnliches Python-Programm (kein ESP32): Die letzte Zeile der Fehlerausgabe nennt die Ursache.")
-                   + f"\nSchreibe die GANZE Datei berichtigt neu, in einer Zeile: "
-                   f"WERKZEUG: schreib_datei {{\"name\": \"{datei}\", \"inhalt\": \"<vollstaendiger berichtigter Quelltext>\"}}")
-        fokus = self._fokus(text, hinweis, meldung=(
-            "Das Modell sagt FERTIG, obwohl die letzte Pruefung durchfiel und kein Werkzeug etwas geaendert hat. Der Agent "
-            "zeigt ihm ohne Vorgeschichte die Datei und den Befund und verlangt nur die berichtigte Datei; die Pruefung haengt er selbst an."))
+        #  Letzte Stufe (05.10.2026, 21:33 bis 21:39: viermal dieselbe Datei, Knopf „Sinusfoermig atmen" lief ins Leere —
+        #  „wenn ich druecke, muss es laufen"): Nach einer unveraenderten Fassung oder drei Fehlversuchen legt der Agent
+        #  ein Musterprogramm fuer die Erwartung des Menschen vor. Das Modell schreibt es, das Werkzeug prueft es, und
+        #  unter FERTIG steht, dass das Muster vom Agenten stammt. Methode bereitstellen, nicht erfinden (J15).
+        muster = self._musterprogramm(text) if (self.unveraendert >= 1 or self.fehlversuche >= 3) else None
+        if muster:
+            self.muster_gegeben = True
+            hinweis = (f"Die Datei {datei} hat die Pruefung NICHT bestanden. Befund des Werkzeugs:\n{self.letzter_befund_zeilen}\n"
+                       f"Hier ist ein vollstaendiges Musterprogramm fuer genau diese Erwartung "
+                       f"{json.dumps(self.feste_erwartung, ensure_ascii=False)}:\n<<<\n{muster}\n>>>\n"
+                       f"Schreibe GENAU dieses Programm, Zeile fuer Zeile, mit schreib_datei als {datei}; Zeilenumbrueche als \\n: "
+                       f"WERKZEUG: schreib_datei {{\"name\": \"{datei}\", \"inhalt\": \"<das Musterprogramm>\"}}")
+            meldung = (f"Das Modell liefert keine Berichtigung. Der Agent legt ihm jetzt ein Musterprogramm fuer die Erwartung "
+                       f"{json.dumps(self.feste_erwartung, ensure_ascii=False)} vor; das Modell schreibt es, das Werkzeug prueft es. "
+                       f"Unter FERTIG steht, dass das Muster vom Agenten stammt.")
+        else:
+            hinweis = (f"Die Datei {datei} hat die Pruefung NICHT bestanden. Befund des Werkzeugs:\n{self.letzter_befund_zeilen}\n"
+                       f"So steht {datei} jetzt wirklich da (nichts davon ist bisher geaendert worden):\n{quelle.strip()}\n\n"
+                       + (f"{self._takt_hinweis(pwm=self.letzter_befund_pwm)}\n{self._ersetzungshinweis(text, quelle)}" if esp
+                          else "Das ist ein gewoehnliches Python-Programm (kein ESP32): Die letzte Zeile der Fehlerausgabe nennt die Ursache.")
+                       + f"\nSchreibe die GANZE Datei berichtigt neu, in einer Zeile: "
+                       f"WERKZEUG: schreib_datei {{\"name\": \"{datei}\", \"inhalt\": \"<vollstaendiger berichtigter Quelltext>\"}}")
+            meldung = ("Das Modell sagt FERTIG, obwohl die letzte Pruefung durchfiel und kein Werkzeug etwas geaendert hat. Der Agent "
+                       "zeigt ihm ohne Vorgeschichte die Datei und den Befund und verlangt nur die berichtigte Datei; die Pruefung haengt er selbst an.")
+        fokus = self._fokus(text, hinweis, meldung=meldung)
         teile = zerlegen(fokus, werkzeuge)
         if not teile:
             return []
@@ -632,6 +655,7 @@ class Sitzung:
         if str(eingabe["inhalt"]).replace("\\n", "\n").strip() == quelle.strip():
             #  12:09, 12:14, 12:20: dreimal Zeichen fuer Zeichen dieselbe Datei. Das ist keine Berichtigung;
             #  sie zu pruefen aendert nichts, und das Modell bekommt es gesagt.
+            self.unveraendert += 1
             notieren("FOKUS lieferte dieselbe Datei unveraendert")
             self.sagen("hinweis", text=f"Das Modell liefert {datei} Zeichen fuer Zeichen unveraendert. Das ist keine Berichtigung; der Agent prueft sie nicht noch einmal.")
             self.verlauf.append({"role": "user", "content": f"Die Datei {datei}, die du soeben geschrieben hast, ist Zeichen fuer Zeichen die alte. "
@@ -639,6 +663,42 @@ class Sitzung:
             return []
         eingabe["name"] = datei
         return ["WERKZEUG: schreib_datei " + json.dumps(eingabe, ensure_ascii=False), self._pruefaufruf(datei)]
+
+    def _musterprogramm(self, text: str):
+        """Ein vollstaendiges Programm fuer die Erwartung des Menschen — nur fuer die zwei Faelle, die das Brett kennt:
+        Ein/Aus-Blinken eines oder mehrerer Anschluesse im selben Takt, und PWM-Atmen (sinus- oder dreieckfoermig).
+        Verlangt die Anweisung zwei verschiedene Takte, gibt es kein Muster (das bleibt die schwere Karte)."""
+        e = self.feste_erwartung or {}
+        pins = [int(p) for p in e.get("pins", [2])] or [2]
+        f = float(e.get("takt_hz") or 1.0)
+        if f <= 0 or f > 50:
+            return None
+        T = 1.0 / f
+        form = e.get("form")
+        if form in ("sinusfoermig", "dreieckig"):
+            if len(pins) != 1:
+                return None
+            if form == "sinusfoermig":
+                return ("import machine, math, time\n"
+                        f"pwm = machine.PWM(machine.Pin({pins[0]}), freq=1000)\n"
+                        "while True:\n"
+                        "    for i in range(100):\n"
+                        "        pwm.duty(int(1023 * (1 - math.cos(2 * math.pi * i / 100)) / 2))\n"
+                        f"        time.sleep({T / 100:g})\n")
+            return ("import machine, time\n"
+                    f"pwm = machine.PWM(machine.Pin({pins[0]}), freq=1000)\n"
+                    "while True:\n"
+                    "    for d in range(0, 1024, 21):\n"
+                    f"        pwm.duty(d); time.sleep({T / 100:g})\n"
+                    "    for d in range(1023, -1, -21):\n"
+                    f"        pwm.duty(d); time.sleep({T / 100:g})\n")
+        if re.search(r"(zweimal|dreimal|\d+\s*Hz|\d+\s*-?mal)[^.]{0,60}\b(und|,)\b[^.]{0,60}(einmal|zweimal|\d+\s*Hz|\d+\s*-?mal)", text, re.I) and len(pins) > 1:
+            return None                                  # zwei Takte: kein Muster
+        namen = [f"led{p}" for p in pins]
+        zeilen = ["import machine, time"] + [f"{n} = machine.Pin({p}, machine.Pin.OUT)" for n, p in zip(namen, pins)]
+        zeilen += ["while True:"] + [f"    {n}.value(1)" for n in namen] + [f"    time.sleep({T / 2:g})"] \
+                  + [f"    {n}.value(0)" for n in namen] + [f"    time.sleep({T / 2:g})"]
+        return "\n".join(zeilen) + "\n"
 
     def _anmerkung_zu(self, antwort: str):
         """Behauptet eine Antwort in freier Rede etwas, das kein Werkzeug der Sitzung belegt, sagt der
@@ -676,6 +736,8 @@ class Sitzung:
         for schritt in ("esp32_firmware", "esp32_uebertragen", "esp32_nachlesen"):
             if schritt in getan_hier:
                 teile.append(f"{schritt}: {'gelungen' if schritt in gelungen_hier else 'fehlgeschlagen'}")
+        if self.muster_gegeben:
+            teile.append("Musterprogramm vom Agenten vorgelegt, vom Modell geschrieben, vom Werkzeug geprueft")
         for datei, m in self.messungen.items():
             if m.get("anweisung") != self.anweisungen:
                 continue                                   # nur, was diese Anweisung gemessen hat
@@ -908,6 +970,9 @@ class Sitzung:
                                                    #  ein fehlgeschlagenes esp32_uebertragen gab FERTIG frei)
         getan_dateien: list = []                   # in dieser Anweisung geschriebene Dateien, in Reihenfolge
         self.gesehen = {}                          # gleiche Fehlschlaege zaehlen je Anweisung
+        self.unveraendert = 0                      # wie oft das Modell dieselbe Datei zurueckgab (je Anweisung)
+        self.fehlversuche = 0                      # durchgefallene oder abgebrochene Pruefungen (je Anweisung)
+        self.muster_gegeben = False                # ob der Agent ein Musterprogramm vorgelegt hat (je Anweisung)
         abweisungen, selbst_geprueft = 0, False
         warteschlange: list = []
         for schritt in range(1, MAX_SCHRITTE + 1):
@@ -1297,6 +1362,8 @@ class Sitzung:
             #  weil die ersten 80 Zeichen eines bestandenen und eines durchgefallenen Laufs gleich sind
             #  und der Zaehler die Anweisung davor noch mitzaehlte).
             urteil_hier = beurteilen(ergebnis)
+            if name in ("programm_testen", "programm_ausfuehren") and (urteil_hier["fehler"] or urteil_hier["abnahme"] == "durchgefallen"):
+                self.fehlversuche += 1
             grundzeile = next((z for z in ergebnis.splitlines()
                                if "NICHT ERFUELLT" in z or "Error" in z or z.startswith("FEHLER")), ergebnis[:80])
             schluessel = (name, grundzeile.strip()[:120])

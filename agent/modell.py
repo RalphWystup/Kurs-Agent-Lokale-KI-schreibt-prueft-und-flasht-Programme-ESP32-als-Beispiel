@@ -120,8 +120,23 @@ def bedarf_gb(gguf) -> float:
     weil der feste Anteil (Kontext, Puffer) gleich bleibt. Die Gerade durch beide Punkte
     ist Datei x 1,17 + 1,22 GB; aufgerundet auf x 1,25 + 1,3, damit kein Rechner knapp
     daneben liegt.
+
+    **Berichtigt am 07.10.2026.** Diese Schaetzung hat ein Modell abgelehnt, das laeuft.
+    Auf dem Rechner des Auftraggebers waren 3,6 GB frei; die Formel verlangte 4,2 GB fuer
+    Qwen2.5-Coder-3B (1,93 GB Datei) und der Agent arbeitete ohne Modell weiter. Derselbe
+    llama-server wurde daraufhin mit demselben Modell und demselben Kontext (16384) von Hand
+    gestartet: Er lief nach 3 s und belegte **1,69 GB** (Arbeitssatz, gemessen mit tasklist).
+    Der Unterschied kommt daher, dass llama.cpp die Modelldatei ueber eine Speicherabbildung
+    liest; sie steht im Dateicache und zaehlt nicht voll zum Bedarf. Die alten Zahlen vom
+    Pruefstand massen offenbar den belegten Gesamtspeicher, nicht den Bedarf des Programms.
+
+    Neue Gerade durch den gemessenen Punkt, mit Reserve: Datei x 1,0 + 0,9 GB. Fuer das
+    3B-Modell sind das 2,8 GB statt 4,2 GB, fuer das 7B-Modell 5,6 GB. Wer knapp daneben
+    liegt, merkt es sofort: starten() wartet ohnehin, bis der Server antwortet, und meldet
+    sonst einen Fehler — ein zu knapp geschaetztes Modell faellt also auf, ein zu grosszuegig
+    geschaetztes nicht.
     """
-    return gguf.stat().st_size / 1e9 * 1.25 + 1.8   # +0,5 GB seit Kontext 16384 (04.10.2026)
+    return gguf.stat().st_size / 1e9 * 1.0 + 0.9
 
 
 def waehlen(laut=True):

@@ -189,6 +189,33 @@ rufe5le = [(e["werkzeug"], e["eingabe"].get("datei")) for e in ev[ab:] if e["art
 pr("5l-e: nach ESP32-Anweisungen prueft der Agent ein gewoehnliches Programm mit programm_ausfuehren, nie mit programm_testen gegen Pins",
    rufe5le and all(w == "programm_ausfuehren" for w, _ in rufe5le) and r5le.startswith("FERTIG. rech.py"), str(rufe5le))
 
+# 5o. Musterprogramm als letzte Stufe: das Modell liefert zweimal dieselbe falsche Datei -> der Agent legt ein Muster vor,
+#     das Modell schreibt es, das Werkzeug prueft es; unter FERTIG steht, dass das Muster vom Agenten stammt
+falsch = "import machine, time\\npwm = machine.PWM(machine.Pin(12), freq=1000)\\nwhile True:\\n    pwm.duty(512); time.sleep(0.5)\\n"
+antworten[:] = ['WERKZEUG: schreib_datei {"name": "at.py", "inhalt": "' + falsch + '"}',
+                'WERKZEUG: programm_testen {"datei": "at.py", "sekunden": 3, "oeffnen": false, "erwartet": {"pins": [12], "takt_hz": 1.0, "form": "sinusfoermig"}}',
+                "FERTIG. at.py atmet.", 'WERKZEUG: schreib_datei {"name": "at.py", "inhalt": "' + falsch + '"}',   # Fokus 1: unveraendert
+                "FERTIG. at.py atmet.", "__MUSTER__",                                                                 # Fokus 2: Muster abschreiben
+                "FERTIG. at.py atmet sinusfoermig."]
+gesehen["prompts"] = []
+def muster_abschreiben(v, **k):
+    a = antworten.pop(0) if antworten else "FERTIG"
+    if a == "__MUSTER__":
+        p_ = v[-1]["content"]; gesehen["prompts"].append(p_)
+        code = p_.split("<<<\n", 1)[1].split("\n>>>", 1)[0]
+        return 'WERKZEUG: schreib_datei {"name": "at.py", "inhalt": ' + json.dumps(code) + '}'
+    return a
+import json
+modell.fragen = muster_abschreiben
+ab = len(ev)
+r5o = s.anweisung("Schreibe at.py, das die LED an GPIO 12 per PWM sinusfoermig atmen laesst, eine Periode pro Sekunde. Pruefe es.")
+fert5o = [e for e in ev[ab:] if e["art"] == "fertig"]
+pr("5o: Muster erst nach unveraenderter Fassung; Fokus-Prompt traegt das Musterprogramm; danach bestanden und FERTIG",
+   bool(gesehen["prompts"]) and "Musterprogramm" in gesehen["prompts"][0] and "math.cos" in gesehen["prompts"][0] and "at.py" in s.abgenommen and r5o.startswith("FERTIG"), r5o[:60])
+pr("5o: unter FERTIG steht, dass das Muster vom Agenten stammt", bool(fert5o) and "Musterprogramm vom Agenten" in fert5o[-1].get("gemessen", "") and "Form: erwartet sinusfoermig, gemessen sinusfoermig" in fert5o[-1].get("gemessen", ""), fert5o[-1].get("gemessen", "")[:120] if fert5o else "")
+pr("5o: sichtbarer Hinweis, dass ein Muster vorgelegt wurde", any(e["art"] == "hinweis" and "Musterprogramm" in e.get("text", "") for e in ev[ab:]))
+modell.fragen = fragen
+
 # 5m. Abschlusstext aus Agentensaetzen („Die letzte Pruefung war erfolgreich (die Abnahme ist durchgefallen) …")
 antworten[:] = [schreib("m.py", 8, 0.5), test("m.py", '{"pins": [8], "takt_hz": 1.0}'),
                 "FERTIG\n\nDie letzte Pruefung war erfolgreich (die Abnahme ist durchgefallen). Ein Programm, das die Pruefung nicht besteht, gilt nicht als geliefert."]
@@ -254,7 +281,7 @@ s5.schliessen(); modell.fragen = fragen
 pr("je Sitzung ein Modellstart (drei Sitzungen)", starts["n"] == 3, f"({starts[chr(110)]})")
 
 prot = (pathlib.Path(w) / "ablage" / "protokoll.txt").read_text(encoding="utf-8")
-pr("Protokoll: SITZUNG BEGINNT, AUFTRAG-Zeilen aller Sitzungen, ENDE", prot.count("AUFTRAG ") == 23 and "SITZUNG BEGINNT" in prot and prot.rstrip().endswith("ENDE"))
+pr("Protokoll: SITZUNG BEGINNT, AUFTRAG-Zeilen aller Sitzungen, ENDE", prot.count("AUFTRAG ") == 24 and "SITZUNG BEGINNT" in prot and prot.rstrip().endswith("ENDE"))
 # Gegenproben zu erwartung_aus
 pr("erwartung_aus: '5-mal pro Sekunde' -> 5 Hz", agent.erwartung_aus("blinke 5-mal pro Sekunde") == {"takt_hz": 5.0})
 pr("erwartung_aus: 'GPIO 4 und GPIO 2' -> pins [2, 4]", agent.erwartung_aus("LED an GPIO 4 und GPIO 2") == {"pins": [2, 4]})
