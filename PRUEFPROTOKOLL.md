@@ -384,6 +384,37 @@ mit; `PYTHONPATH` lud fremden Code in unseren Prozess.
 
 ---
 
+## Immer alles testen, und zwar vollständig (08.10.2026)
+
+Stehende Anweisung des Auftraggebers, nachdem ein Lauf auf seinem zweiten Rechner misslang:
+**„immer alles testen! und zwar vollständig"**.
+
+Der Anlass im Klartext: Geprüft war ein Auftrag (LED blinken, 1 Hz), mit einem Modell (Coder-3B),
+auf einem Rechner (STEINBEIS\_1), einmal. Berichtet wurde „ich habe es getestet". Beim nächsten
+Fall — Taschenrechner, Coder-7B, zweiter Rechner (ML202101) — schrieb das Modell den fertigen
+Taschenrechner (52 Zeilen, Fenster lief) nach 45 Sekunden mit einem Blinkprogramm (7 Zeilen)
+über, lieferte danach dreimal dieselbe Datei unverändert und wurde zurückgewiesen:
+`NICHT ABGENOMMEN — das Programm endete mit einem Fehler, FERTIG dreimal zurückgewiesen`.
+
+Vor jedem „getestet" steht deshalb die **Prüfmatrix**, und sie wird abgearbeitet:
+
+| Achse | hier |
+|:--|:--|
+| **Was** | jeder der neun festen Aufträge einzeln |
+| **Womit** | Coder-3B, Coder-7B, und der Lauf ohne Modell |
+| **Wo** | jeder Rechner, auf dem das Paket laufen soll |
+| **Wie oft** | mehrfach; was nur manchmal gelingt, gilt als nicht bestanden |
+
+Neun Aufträge, drei Betriebsarten, zwei Rechner sind vierundfünfzig Felder. Geprüft war eines,
+und das Urteil galt für alle. Was in der Matrix leer bleibt, steht als leer im Bericht, mit
+Begründung — ein ungeprüftes Feld ist keine Schande, ein ungeprüftes Feld, das als geprüft gilt,
+ist eine Falschaussage. Siehe `GRUNDSAETZE.md`, Grundsatz 37.
+
+**Neuer Befund aus diesem Fall, noch nicht behoben:** Das 7B-Modell fällt bei langen Gesprächen
+auf das Blinkbeispiel zurück. Unmittelbar vor dem Rückfall steht dreimal
+`VERLAUF innerhalb der Anweisung verdichtet`. Ob die Verdichtung die Ursache ist, ist zu messen,
+nicht zu vermuten.
+
 ## Was offen bleibt
 
 Stand 05.10.2026, nachmittags. Die Säulen sind gemessen: Modell unter Smart App Control über den signierten Server, Agent,

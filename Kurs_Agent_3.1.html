@@ -41,7 +41,7 @@
 </style></head><body>
 
 <h1>Kurs-Agent — Lehrbeispiel: eine lokale KI schreibt, prüft und flasht Programme</h1>
-<div class="kopf">Fassung 3.1 · 07.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.</div>
+<div class="kopf">Fassung 3.1 · 08.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.</div>
 
 <p><strong>Dieses Paket vertieft am realen System, was die veröffentlichte Seite
 <a href="https://ralphwystup.github.io/KI-steuert-lokale-Hardware-ueber-eine-Bruecke/Bruecke_KI_und_Arbeitsplatz_1.0.html#aufgabe">„KI steuert lokale Hardware über eine Brücke"</a> exemplarisch zeigt.</strong>
@@ -2968,6 +2968,42 @@ J25 | Geräteanzeige in der Kopfzeile, Fortschrittsbalken je Aufruf | Laptop | w
 </table>
 <p>Dazu: Das Aufräumen kann sich nicht selbst löschen; <code>webbrowser.open</code> riss die Oberfläche mit; <code>PYTHONPATH</code> lud fremden Code in unseren Prozess.</p>
 <hr />
+<h2 id="immer-alles-testen-und-zwar-vollständig-08.10.2026">Immer alles testen, und zwar vollständig (08.10.2026)</h2>
+<p>Stehende Anweisung des Auftraggebers, nachdem ein Lauf auf seinem zweiten Rechner misslang: <strong>„immer alles testen! und zwar vollständig”</strong>.</p>
+<p>Der Anlass im Klartext: Geprüft war ein Auftrag (LED blinken, 1 Hz), mit einem Modell (Coder-3B), auf einem Rechner (STEINBEIS_1), einmal. Berichtet wurde „ich habe es getestet”. Beim nächsten Fall — Taschenrechner, Coder-7B, zweiter Rechner (ML202101) — schrieb das Modell den fertigen Taschenrechner (52 Zeilen, Fenster lief) nach 45 Sekunden mit einem Blinkprogramm (7 Zeilen) über, lieferte danach dreimal dieselbe Datei unverändert und wurde zurückgewiesen: <code>NICHT ABGENOMMEN — das Programm endete mit einem Fehler, FERTIG dreimal zurückgewiesen</code>.</p>
+<p>Vor jedem „getestet” steht deshalb die <strong>Prüfmatrix</strong>, und sie wird abgearbeitet:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Achse</th>
+<th style="text-align: left;">hier</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Was</strong></td>
+<td style="text-align: left;">jeder der neun festen Aufträge einzeln</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Womit</strong></td>
+<td style="text-align: left;">Coder-3B, Coder-7B, und der Lauf ohne Modell</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Wo</strong></td>
+<td style="text-align: left;">jeder Rechner, auf dem das Paket laufen soll</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Wie oft</strong></td>
+<td style="text-align: left;">mehrfach; was nur manchmal gelingt, gilt als nicht bestanden</td>
+</tr>
+</tbody>
+</table>
+<p>Neun Aufträge, drei Betriebsarten, zwei Rechner sind vierundfünfzig Felder. Geprüft war eines, und das Urteil galt für alle. Was in der Matrix leer bleibt, steht als leer im Bericht, mit Begründung — ein ungeprüftes Feld ist keine Schande, ein ungeprüftes Feld, das als geprüft gilt, ist eine Falschaussage. Siehe <code>GRUNDSAETZE.md</code>, Grundsatz 37.</p>
+<p><strong>Neuer Befund aus diesem Fall, noch nicht behoben:</strong> Das 7B-Modell fällt bei langen Gesprächen auf das Blinkbeispiel zurück. Unmittelbar vor dem Rückfall steht dreimal <code>VERLAUF innerhalb der Anweisung verdichtet</code>. Ob die Verdichtung die Ursache ist, ist zu messen, nicht zu vermuten.</p>
 <h2 id="was-offen-bleibt">Was offen bleibt</h2>
 <p>Stand 05.10.2026, nachmittags. Die Säulen sind gemessen: Modell unter Smart App Control über den signierten Server, Agent, Werkzeuge, ESP32 an COM3 mit Rücklesung am Gerät. Offen ist, was ein kleines Modell nicht verlässlich kann — und was hier bewusst nicht gebaut wurde.</p>
 <table>
@@ -3015,7 +3051,7 @@ J25 | Geräteanzeige in der Kopfzeile, Fortschrittsbalken je Aufruf | Laptop | w
 </div>
 
 <footer>
-Kurs-Agent 3.1 · 07.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.<br>
+Kurs-Agent 3.1 · 08.10.2026 · Prof. Dr.-Ing. Ralph Wystup M.Sc.<br>
 erstellt mit KI und Agent (Claude Code, Anthropic)
 </footer>
 
