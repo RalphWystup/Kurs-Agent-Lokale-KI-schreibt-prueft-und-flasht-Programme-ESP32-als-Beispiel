@@ -54,10 +54,25 @@
 </head><body>
 <div class="kopf">
   <h1>Kurs-Agent — eine lokale KI schreibt, prüft und flasht Programme (ESP32 als Beispiel)</h1>
-  <p class="meta">Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt · Fassung vom 16.10.2026 · <a href="https://github.com/RalphWystup/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel">Repositorium</a></p>
+  <p class="meta">Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt · Fassung 2.0 vom 16.10.2026 · <a href="https://github.com/RalphWystup/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel">Repositorium</a></p>
   <p>Ein Kurspaket in <b>einem Ordner</b>: Schülerinnen und Schüler programmieren einen ESP32 in MicroPython mit einem Sprachmodell als Helfer, das auf dem Kursrechner läuft — ohne Internet, ohne Konto, ohne Installation. Ein Agent in der Seite führt den Auftrag selbst durch die Kette: Sprachmodell → Interpreter → Simulator → Brett meldet sich? → Aufspielen → läuft es? Jede Fehlermeldung geht als Anhang zurück an das Modell.</p>
-  <nav><a href="#system">System</a><a href="#ablauf">Übersicht</a><a href="#installation">Installation</a><a href="#paket">Paket füllen</a><a href="#gebote">Anforderungen</a><a href="#seite">Die Seite</a></nav>
+  <nav><a href="#neu">Neu in 2.0</a><a href="#system">System</a><a href="#ablauf">Übersicht</a><a href="#installation">Installation</a><a href="#paket">Paket füllen</a><a href="#gebote">Anforderungen</a><a href="#seite">Die Seite</a></nav>
 </div>
+<section class="reiter an" id="neu">
+  <h2>Neu in Fassung 2.0 (16. Oktober 2026) — der Neuanfang</h2>
+  <div class="text">
+    <p>Fassung 3.1 vom 5. Oktober (Gesprächsoberfläche, feste Anfragen, Coder-3B, elf Werkzeuge) ist vollständig ersetzt. Was jetzt anders ist:</p>
+    <ul>
+      <li><b>Ein Ordner, ein Schalter.</b> <code>START.bat</code> richtet ein, startet Diener, Modellserver und Browser und bleibt als Fenster offen; Fenster zu = alles aus. Nichts wird installiert; Fehlendes kommt aus dem Paket, auch der USB-Treiber.</li>
+      <li><b>Fünf Fenster statt eines Gesprächs.</b> LLM-Eingabe, LLM-Ausgabe, Interpreter-Eingabe, Interpreter-Ausgabe, Direkt am ESP32. Jedes zeigt nur die rohe Ausgabe seiner Quelle — der Interpreter spricht selbst, das Brett spricht selbst.</li>
+      <li><b>Der Agent nach den Schritten des Auftraggebers.</b> Prompt → Code → Interpreter → Simulator → meldet sich das Brett (Strg+B, Strg+C, Betriebssystem)? → Freigabe <code>&gt;&gt;&gt;</code> → Aufspielen mit Prüfsumme → Traceback? Fehlermeldungen gehen als Anhang zurück ans LLM, drei Runden. Kein Maßstab mehr: gemessen wird „läuft".</li>
+      <li><b>Modell:</b> Qwen2.5-7B-Instruct statt Coder-3B; Übersetzen mit <code>py_compile</code> des Kurs-Pythons; Simulator mit nachgebautem <code>machine</code>.</li>
+      <li><b>Anwendersicher:</b> Anschluss wird beim Start erkannt; Fortschrittsbalken; Agentenschritte mit Uhrzeit; alle Knöpfe grau, solange der Agent läuft; Installationsanleitung mit Fehlerfällen auf der Seite.</li>
+      <li><b>Die zehn Anforderungen</b> (vorher „Gebote") als Reiter und als Maßstab für die Entwicklung: Tor <code>einspielen.py</code> vor dem Kursordner, <code>regelwaechter.py</code> vor jedem Schritt der KI, <code>ANFORDERUNGEN.md</code> mit jedem Satz des Auftraggebers.</li>
+      <li><b>Gemessen am 16.10.2026:</b> Einrichtung 12/12, Schalter 9/9, Diener 7/7, Simulator 10/10, sechs Agentenläufe in Runde 1 bestanden. Nicht gemessen: der leere Rechner, der Weg über das Betriebssystem, die Rückschleife am Brett.</li>
+    </ul>
+  </div>
+</section>
 <section class="reiter an" id="system">
     <h2>Das System des Kurses — Beschreibung (Stand 16.10.2026)</h2>
     <div class="text">

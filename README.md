@@ -2,7 +2,7 @@
 
 <img src="Foto_Ralph_Wystup.jpg" align="right" width="140" alt="Prof. Dr.-Ing. Ralph Wystup">
 
-**Autoren:** Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt · Fassung vom 16.10.2026
+**Autoren:** Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt · Fassung 2.0 vom 16.10.2026
 
 **Seite:** https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/ —
 System, grafische Übersicht, Installation Schritt für Schritt, die zehn Anforderungen, die Kursseite im Bild.
@@ -13,6 +13,20 @@ Ein Agent in der Seite führt den Auftrag selbst durch die Kette: Sprachmodell �
 → Aufspielen mit Prüfsumme → läuft es? Jede Fehlermeldung geht als Anhang zurück an das Modell, höchstens drei Runden.
 
 ![Übersicht: was auf dem Kursrechner läuft und was der Agent tut](bilder/uebersicht.svg)
+
+## Neu in Fassung 2.0 (16. Oktober 2026) — der Neuanfang
+
+Fassung 3.1 vom 5. Oktober (Gesprächsoberfläche, feste Anfragen, Coder-3B, elf Werkzeuge) ist vollständig ersetzt. Was jetzt anders ist:
+
+- **Ein Ordner, ein Schalter.** `START.bat` richtet ein, startet Diener, Modellserver und Browser und bleibt als Fenster offen; Fenster zu = alles aus. Nichts wird installiert; Fehlendes kommt aus dem Paket, auch der USB-Treiber.
+- **Fünf Fenster statt eines Gesprächs.** LLM-Eingabe, LLM-Ausgabe, Interpreter-Eingabe, Interpreter-Ausgabe, Direkt am ESP32. Jedes zeigt nur die rohe Ausgabe seiner Quelle — der Interpreter spricht selbst, das Brett spricht selbst.
+- **Der Agent nach den Schritten des Auftraggebers.** Prompt → Code → Interpreter → Simulator → meldet sich das Brett (Strg+B, Strg+C, Betriebssystem)? → Freigabe `>>>` → Aufspielen mit Prüfsumme → Traceback? Fehlermeldungen gehen als Anhang zurück ans LLM, drei Runden. Kein Maßstab mehr: gemessen wird „läuft".
+- **Modell:** Qwen2.5-7B-Instruct statt Coder-3B; Übersetzen mit `py_compile` des Kurs-Pythons; Simulator mit nachgebautem `machine`.
+- **Anwendersicher:** Anschluss wird beim Start erkannt; Fortschrittsbalken; Agentenschritte mit Uhrzeit; alle Knöpfe grau, solange der Agent läuft; Installationsanleitung mit Fehlerfällen auf der Seite.
+- **Die zehn Anforderungen** (vorher „Gebote") als Reiter und als Maßstab für die Entwicklung: Tor `einspielen.py` vor dem Kursordner, `regelwaechter.py` vor jedem Schritt der KI, `ANFORDERUNGEN.md` mit jedem Satz des Auftraggebers.
+- **Gemessen am 16.10.2026:** Einrichtung 12/12, Schalter 9/9, Diener 7/7, Simulator 10/10, sechs Agentenläufe in Runde 1 bestanden. Nicht gemessen: der leere Rechner, der Weg über das Betriebssystem, die Rückschleife am Brett.
+
+
 
 ## All-in-one — wer bekommt was
 

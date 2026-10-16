@@ -4,6 +4,7 @@ alt/
 Bilder/
 Arbeitsstand/
 WAECHTER_PROTOKOLL.txt
+FREIGABE.txt
 paket/*
 !paket/bretter/
 !paket/modell/

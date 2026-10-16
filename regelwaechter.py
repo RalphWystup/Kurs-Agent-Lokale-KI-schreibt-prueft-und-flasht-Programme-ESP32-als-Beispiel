@@ -73,6 +73,32 @@ def inhalte(tool: str, e: dict):
     return pfad, []
 
 
+FREIGABE = HIER / "FREIGABE.txt"
+
+
+def freigabe(cmd: str) -> str:
+    """Sein ausdrückliches Wort für einen Lösch-/Git-Schritt: eine Zeile in FREIGABE.txt
+        <ISO-Zeit> | <Wort, das im Befehl vorkommen muss> | <sein Wortlaut>
+    gilt zwei Stunden, danach nicht mehr. Jede Nutzung steht im WAECHTER_PROTOKOLL.txt.
+    (16.10.2026, 14:25: „wenn fertig, das alte Projekt auf Git und auf C: … komplett ersetzen" — und 14:50: „hochladen auf git und auf c".)"""
+    if not FREIGABE.is_file():
+        return ""
+    jetzt = _dt.datetime.now()
+    for z in FREIGABE.read_text(encoding="utf-8").splitlines():
+        teile = [t.strip() for t in z.split("|")]
+        if len(teile) < 3:
+            continue
+        try:
+            t = _dt.datetime.fromisoformat(teile[0])
+        except ValueError:
+            continue
+        if jetzt - t > _dt.timedelta(hours=2) or t > jetzt:
+            continue
+        if teile[1] and teile[1] in cmd:
+            return f"'{teile[1]}' — {teile[2][:120]} ({teile[0]})"
+    return ""
+
+
 def pruefe_schritt(tool: str, e: dict, cwd: str = "") -> list:
     """Gibt die Liste der Verstöße zurück (leer = darf laufen)."""
     v = []
@@ -83,9 +109,9 @@ def pruefe_schritt(tool: str, e: dict, cwd: str = "") -> list:
     im_kurs = "/Kurs_Agent/" in p or kurs
     if tool == "Bash":
         cmd = str(e.get("command") or "")
-        kurs_cmd = "Kurs_Agent" in cmd or kurs
+        kurs_cmd = "Kurs_Agent" in cmd      # das Paket selbst — nicht jeder Befehl aus diesem Arbeitsverzeichnis (14:55: Abruf der GitHub-Seite wurde blockiert)
         # R1 — nur das Tor schreibt nach C:\Kurs_Agent
-        if "befehl.py" in cmd and re.search(r"\bupdate\b", cmd) and re.search(r"->\s*C:\\+Kurs_Agent", cmd, re.I):
+        if "befehl.py" in cmd and re.search(r"\bupdate\b", cmd) and re.search(r"->\s*C:\\+Kurs_Agent(\\|['\"\s]|$)", cmd, re.I):   # genau der Kursordner, nicht C:\Kurs_Agent_Sicherung (14:50)
             v.append("R1: Brückenbefehl update nach C:\\Kurs_Agent direkt — nur über einspielen.py")
         # R2 — nichts in testprogramme/werkstatt schreiben
         if re.search(r"(>|>>|\bcp\b|\bmv\b|\btee\b)[^|]*testprogramme/", cmd) or re.search(r"(>|>>|\bcp\b|\bmv\b)[^|]*ablage/werkstatt/", cmd):
@@ -108,7 +134,11 @@ def pruefe_schritt(tool: str, e: dict, cwd: str = "") -> list:
         #      keine Befehle (14:27: „git add/commit/push" in einer Notiz wurde als Befehl gewertet).
         ohne_heredoc = re.sub(r"<<-?\s*'?(\w+)'?\s*\n[\s\S]*?\n\1\s*(\n|$)", "\n", cmd)
         if LOESCHEN_GIT.search(ohne_heredoc) and "pruefe" not in cmd.split()[0:1]:
-            v.append("R6: Löschen/Verschieben/git — erst ihn fragen; er führt es selbst aus (! <befehl>) oder gibt es ausdrücklich frei")
+            frei = freigabe(ohne_heredoc)
+            if frei:
+                protokoll(f"FREIGABE  R6 auf sein Wort: {frei}")
+            else:
+                v.append("R6: Löschen/Verschieben/git — erst ihn fragen; er führt es selbst aus (! <befehl>) oder gibt es ausdrücklich frei (FREIGABE.txt)")
         # R7 — MESSUNG.txt: BESTANDEN nur mit Ort
         if "MESSUNG.txt" in cmd and "BESTANDEN" in cmd:
             #  Nur der Befehlsteil, der nach MESSUNG.txt schreibt (16.10.2026, 10:20: der Waechter fand
@@ -198,12 +228,18 @@ FAELLE = [
      {"command": "cat >> X.md <<'EOF'\nNotiz\nEOF\ngit push origin main"}, True),
     ("P26", "R4 SVG-Namensraum in der Seite ist kein Netz", "Edit",
      {"file_path": "/workspace/Kurs_Agent/Frage.html", "new_string": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>'}, False),
+    ("P27", "R1 update nach C:\\Kurs_Agent_Sicherung ist nicht der Kursordner", "Bash",
+     {"command": "python3 befehl.py -p Kurs_Agent update 'x.tar.gz -> C:\\Kurs_Agent_Sicherung'"}, False),
+    ("P28", "R4 curl auf die GitHub-Seite aus dem Kursverzeichnis ist kein Kurs-Netz", "Bash",
+     {"command": "curl -s -o /dev/null https://ralphwystup.github.io/Kurs-Agent-Lokale-KI/"}, False),
     ("P23", "R7 Semikolon in der Messzeile mit Ort", "Bash",
      {"command": "cd /workspace/Kurs_Agent && printf 'Frage.html | lokal im Browser: a; b | BESTANDEN | %s\\n' \"$(date +%H:%M:%S)\" >> MESSUNG.txt && cat >> X.md <<'EOF'\nLADEN BESTANDEN im Text\nEOF"}, False),
 ]
 
 
 def pruefen() -> int:
+    global FREIGABE
+    FREIGABE = HIER / "FREIGABE_gibt_es_nicht.txt"      # der Selbsttest prüft die Regeln, nicht eine gerade gültige Freigabe
     print("REGELWÄCHTER — Selbsttest: jede Regel mit Verstoß- und Erlaubnisfall")
     gut = 0
     for nr, was, tool, e, soll in FAELLE:

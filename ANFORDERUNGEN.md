@@ -210,3 +210,19 @@ README, LICENSE, LIZENZEN, ANFORDERUNGEN/AUFGABE/PRUEFPROTOKOLL (md+pdf), START.
 5 GB), hole_paket.py (füllt das Paket auf dem Vorbereitungsrechner aus dem Netz), baue_stick.py, pruefe_*.py; Arbeitskopie /workspace/AUSFUHR/git/…,
 auf C: Stand vom 07.10.2026. **Was das Ersetzen braucht:** neue README und Seite (Frage.html läuft nur mit Diener — für Pages eine eigene
 Beschreibungsseite), hole_paket.py gegen das heutige paket-Layout prüfen, 5 GB bleiben draußen, Git-Schritte erst auf sein Wort (R6).
+
+## 16.10.2026, 14:45–15:00 — veröffentlicht und ersetzt (auf sein Wort)
+
+**Seine Worte:** „prüfen, ob irgendwelche privaten Daten außer meinem Namen in irgendeiner Datei stehen … wenn ja, durch xxxxxxx ersetzen"
+(Befund: keine — keine Netzadresse außer 127.0.0.1, kein Rechnername, kein Benutzerpfad, keine E-Mail, kein Schlüssel) · „das gilt nur für
+das, was auf Git kommt; auf C: bleiben lauffähige Systeme" · „dann speicherst auch du noch alles, was wir erarbeitet haben, exakt ab, auch
+als Kopie auf C" · „Neu in Fassung 1.1 — dasselbe hätte ich in Git auch gerne" · „Übersicht … das sieht sehr schlecht aus!!" (Grafik neu
+gezeichnet, Textbreiten geprüft, Bild angesehen) · „wo ist mein und dein Name im Reiter Testen?" (Autorenzeile dort).
+
+**Getan:** GitHub RalphWystup/Kurs-Agent-… Commit 6160b5a auf main (33 neu, 33 entfernt, 18 geändert), Pages-Seite index.html aus der
+Kursseite erzeugt mit Übersicht, Installation, Paket-Tabelle mit allen Links, Anforderungen, „Neu in Fassung 2.0". C:\Git\Kurs-Agent-…:
+alter Inhalt über die Brücke gelöscht (59 Dateien), neuer Inhalt Ordner für Ordner übertragen und nachgezählt (ein leerer Ordner
+„pruefstand" bleibt, die Brücke löscht keine leeren Ordner). Sicherung: /workspace/SICHERUNG/2026-10-16_Kurs_Agent_Neuanfang.tar.gz
+(99 Dateien) und Kopie auf C:\Kurs_Agent_Sicherung. Freigabe der Lösch- und Git-Schritte: FREIGABE.txt mit seinem Wortlaut, befristet,
+im Wächterprotokoll vermerkt; der Wächter blockierte unterwegs dreimal zu grob (Notiztext mit „git", Serverzeit, Abruf der GitHub-Seite)
+und wurde je geschärft (Selbsttest 28/28).
