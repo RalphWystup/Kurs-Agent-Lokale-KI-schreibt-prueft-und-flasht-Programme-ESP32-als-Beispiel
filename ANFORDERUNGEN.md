@@ -236,3 +236,16 @@ und gemessen: neu ausgeliefert.
 virtuellen Maschine getestet — ready for go?" **Antwort:** Auf C:\Kurs_Agent liegt der fertige Ordner (5 GB); kopieren = Auslieferung.
 Eine einzelne Datei (ZIP) gibt es noch nicht. Auf einer VM ist es nicht getestet — mein Server ist Linux, eine Windows-VM habe ich nicht.
 Gemessen ist nur sein eingerichteter Rechner. „Ready" gilt dafür; für einen fremden, leeren Rechner ist es ungemessen.
+
+## 16.10.2026, 15:05–15:15 — Test des ersten Starts: „dann machen wir den Test mit ablage\python"
+
+**Befund (gemessen auf C:):** ablage\python beiseite, START.bat — die Einrichtung baute Python (E1) und tkinter (E4) auf, aber **pip und
+die drei Pakete fehlten** (8 von 12): im Paket lag kein pip-Rad (get-pip --no-index: „keine Version"), esptool nur als .tar.gz, das die
+Einrichtung nicht als Rad erkannte. Vorher unbemerkt, weil ablage\python seit dem 04.10. fertig war — genau die Stelle, die als größte
+Unsicherheit benannt war.
+**Behoben, zweigleisig:** 1. `paket\python_vorlage` ist jetzt das vollständige Kurs-Python (4719 Dateien, 87 MB, mit pip, pyserial,
+mpremote, esptool, tkinter) — der erste Start kopiert nur noch; die nackte Vorlage liegt in paket\alt. 2. Reparaturweg: pip-Rad im
+Paket, Einrichtung nimmt esptool auch als Quellarchiv; hole_paket.py lädt künftig auch das pip-Rad.
+**Gemessen danach:** zweiter erster Start → E1 aus der Vorlage kopiert, --pruefen 12/12, Simulator-Prüfstand mit dem neuen Python 10/10.
+Sein Wort: „scheint zu gehen, oder?" — ja, gemessen. Nicht gemessen bleibt der Dozentenweg (hole_paket → nackte Vorlage → Einrichtung aus
+Rädern) auf Windows und der Treiber-Weg.

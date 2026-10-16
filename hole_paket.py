@@ -173,7 +173,7 @@ MODELLE = {   # Name -> (Adresse, ungefaehre Groesse, wofuer)
 # Diese Pakete braucht der Agent auf dem Kursrechner. Alles Weitere ergibt sich daraus.
 # Was der Agent auf dem Kursrechner braucht. esptool kommt getrennt, weil es nur als
 # Quelltext veroeffentlicht wird; setuptools und wheel sind dafuer da, es bauen zu koennen.
-BRAUCHT_RAEDER = ["mpremote", "setuptools", "wheel"]
+BRAUCHT_RAEDER = ["pip", "mpremote", "setuptools", "wheel"]   # pip selbst als Rad: get-pip.py --no-index braucht es (16.10.2026 gemessen: ohne pip-Rad 8 von 12)
 
 # Pakete, die **nur unter Windows** gebraucht werden. Sie muessen hier einzeln stehen, weil
 # pip die Bedingung 'platform_system == "Windows"' nach dem Rechner auswertet, auf dem es

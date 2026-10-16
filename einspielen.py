@@ -59,7 +59,7 @@ def quelldatei(name: str) -> pathlib.Path | None:
     #  Zuerst die Arbeitskopie, nie die Uebertragungsablage (16.10.2026: dort lag eine alte Fassung,
     #  das Tor prüfte und schickte sie — die Ablage ist nur Durchreiche).
     for p in (HIER / name, HIER / "agent" / name, HIER / "agent" / "werkzeuge" / name,
-              HIER / "testprogramme" / name):
+              HIER / "testprogramme" / name, HIER / "paket" / "pakete" / name):   # Raeder fuer paket\pakete (16.10.2026: pip-Rad fehlte)
         if p.is_file():
             return p
     return None

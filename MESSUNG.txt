@@ -48,3 +48,7 @@ Frage.html | lokal im Browser: Anschluss-Erkennung beim Start (F1 ohne Brett: Me
 START.bat | lokal: CRLF, 36 Zeilen; Rechte-Schritt fuer den Treiber (RC 3, Start-Process RunAs) — Pfad nur bei fehlendem Treiber messbar; Schalter wird auf C: erneut gemessen | BESTANDEN | 2026-10-16T12:39:41
 einrichten.py | lokal: py_compile; --treiber und Rueckgabewert 3; Messung auf C: --pruefen folgt | BESTANDEN | 2026-10-16T12:39:41
 Frage.html | lokal im Browser: Uebersichtsgrafik neu (Textbreiten geprueft, Bild angesehen), Autorenzeile im Reiter Testen, Ueberschrift Anforderungen bereinigt, Anschluss-Anzeige | BESTANDEN | 2026-10-16T12:44:33
+einrichten.py | lokal: py_compile; E3 nimmt Rad oder Quellarchiv (esptool .tar.gz) — Messung auf C: beim ersten Start folgt | BESTANDEN | 2026-10-16T13:12:47
+einrichten.py | auf C: erster Start ohne ablage\python: mit nackter Vorlage 8/12 (pip-Rad fehlte, esptool nur .tar.gz); mit vollstaendiger Vorlage E1 kopiert, --pruefen 12/12 | BESTANDEN | 2026-10-16T13:15:25
+pruefe_simulator.py | auf C: mit dem beim ersten Start neu aufgebauten Python 10/10 | BESTANDEN | 2026-10-16T13:15:25
+Frage.html | lokal: Installationstext (vollstaendige Vorlage, erster Start nachgestellt), sonst unveraendert | BESTANDEN | 2026-10-16T13:15:51

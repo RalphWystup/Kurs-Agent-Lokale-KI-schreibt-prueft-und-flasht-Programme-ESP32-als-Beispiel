@@ -45,7 +45,8 @@ Nutzer der Ordner, nicht dieser Klon.
 2. ESP32 per USB anschließen.
 3. `START.bat` doppelklicken. Das Fenster „Kurs-Agent" bleibt offen, solange gearbeitet wird; es ist der Schalter.
    Die Einrichtung (`agent\einrichten.py`) sieht zwölf Punkte nach und richtet **nur das Fehlende aus dem Paket** ein — ohne Netz:
-   das Python des Kurses aus `paket\python_vorlage`, pip aus `paket\get-pip.py`, pyserial/mpremote/esptool als Räder aus `paket\pakete`,
+   das Python des Kurses aus `paket\python_vorlage` (die mitgelieferte Vorlage ist vollständig: pip, pyserial, mpremote, esptool, tkinter —
+   gemessen am 16.10.2026: erster Start ohne `ablage\python` → 12 von 12), zur Not pip aus `paket\get-pip.py` und Pakete als Räder aus `paket\pakete`,
    tkinter aus dem Archiv, den CH340-Treiber aus `paket\treiber` (Windows-Bordmittel pnputil; verweigert Windows das mangels Rechten,
    einmal „Als Administrator ausführen"). Jeder Punkt wird davor und danach gemessen und angezeigt. Dann startet der Diener, der Diener
    startet den Modellserver und öffnet die Seite im Browser unter `http://127.0.0.1:8777`.
@@ -144,7 +145,9 @@ Einrichtung 12 von 12 · Schalter 9 von 9 (Fenster zu → Diener nach 5 s weg, M
 sechs Agentenläufe hintereinander, alle in Runde 1 bestanden (1 s an / 3 s aus, 3 s an / 1 s aus, alle 2 s, jede halbe Sekunde);
 dabei lief jedes Mal das vorige Programm noch und der Agent holte sich die Freigabe mit Strg+C. Modell: 37 Token/s lesen, 6,6 Token/s schreiben (CPU).
 
-Nicht gemessen: der **leere Rechner** (Anforderung 8, 9 — bisher nur der eingerichtete), der Weg über das **Betriebssystem** im Agenten,
+Nachgestellt: der **erste Start** ohne `ablage\python` (Einrichtung baut das Python aus der Vorlage auf, 12 von 12, Simulator 10 von 10; beim ersten
+Versuch fehlten pip-Rad und esptool-Rad — behoben). Nicht gemessen: ein **fremder, leerer Rechner** mit fehlendem Treiber (Anforderung 8, 9), der
+Dozentenweg `hole_paket.py` → Einrichtung aus Rädern auf Windows, der Weg über das **Betriebssystem** im Agenten,
 die **Rückschleife mit Anhang** am Brett (das Modell hat bisher keinen Fehler gemacht, der sie auslöste). Ohne Maßstab heißt BESTANDEN
 „läuft", nicht „richtig": ein fehlerfrei blinkendes Programm mit falschen Zeiten ginge durch. Das 7B antwortet aus seinem Trainingsstand;
 Faktenfragen ohne Netz können falsch sein. Die Richtigkeit trägt die Messung, nicht das Modell.

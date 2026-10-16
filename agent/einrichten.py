@@ -143,9 +143,11 @@ def main() -> int:
         if r.returncode == 0:
             sag("E3", f"Paket {paketname}", "VORHANDEN", r.stdout.strip()[:60])
             continue
-        raeder = sorted(PAKETE.glob(f"{paketname}*.whl")) if PAKETE.is_dir() else []
+        #  Rad (.whl) oder Quellarchiv (.tar.gz — so liefert hole_paket esptool; pip baut es offline, setuptools und
+        #  wheel liegen als Raeder bei). 16.10.2026, 15:10 gemessen: esptool lag nur als .tar.gz da -> „kein Rad".
+        raeder = sorted(p for p in PAKETE.glob(f"{paketname}*") if p.suffix in (".whl", ".gz", ".zip")) if PAKETE.is_dir() else []
         if not raeder:
-            sag("E3", f"Paket {paketname}", "FEHLT", f"kein Rad in paket\\pakete — nichts wird aus dem Netz geholt")
+            sag("E3", f"Paket {paketname}", "FEHLT", f"kein Rad und kein Quellarchiv in paket\\pakete — nichts wird aus dem Netz geholt")
             continue
         if NUR_PRUEFEN:
             sag("E3", f"Paket {paketname}", "FEHLT", f"Rad da: {raeder[-1].name} (nur geprueft)")
