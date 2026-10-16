@@ -249,3 +249,11 @@ Paket, Einrichtung nimmt esptool auch als Quellarchiv; hole_paket.py lädt künf
 **Gemessen danach:** zweiter erster Start → E1 aus der Vorlage kopiert, --pruefen 12/12, Simulator-Prüfstand mit dem neuen Python 10/10.
 Sein Wort: „scheint zu gehen, oder?" — ja, gemessen. Nicht gemessen bleibt der Dozentenweg (hole_paket → nackte Vorlage → Einrichtung aus
 Rädern) auf Windows und der Treiber-Weg.
+
+## 16.10.2026, 15:15–15:20 — Abschluss: „lief durch, ich halte an"
+
+Mit dem beim ersten Start neu aufgebauten Python: Agentenlauf „Intervall 1 zu 3" STATUS BESTANDEN in Runde 1 (Simulator Takt 4,0 s,
+Strg+C, Freigabe, Aufspielen 17,8 s, kein Traceback); danach von Hand Strg+D/Strg+C im Terminal und „Programm auf den ESP32" (17,8 s).
+Sein Wort: „funktioniert, oder?" — ja, gemessen. Stand: GitHub 99b4284, C:\Git gespiegelt, C:\Kurs_Agent fertig, Sicherung erneuert.
+Ungemessen bleibt: fremder Rechner ohne CH340-Treiber (UAC-Weg), Dozentenweg hole_paket → Räder auf Windows, Betriebssystem-Weg im Agenten,
+Rückschleife mit Anhang am Brett.

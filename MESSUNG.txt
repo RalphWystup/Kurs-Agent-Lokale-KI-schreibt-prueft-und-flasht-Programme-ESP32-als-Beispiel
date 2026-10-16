@@ -52,3 +52,4 @@ einrichten.py | lokal: py_compile; E3 nimmt Rad oder Quellarchiv (esptool .tar.g
 einrichten.py | auf C: erster Start ohne ablage\python: mit nackter Vorlage 8/12 (pip-Rad fehlte, esptool nur .tar.gz); mit vollstaendiger Vorlage E1 kopiert, --pruefen 12/12 | BESTANDEN | 2026-10-16T13:15:25
 pruefe_simulator.py | auf C: mit dem beim ersten Start neu aufgebauten Python 10/10 | BESTANDEN | 2026-10-16T13:15:25
 Frage.html | lokal: Installationstext (vollstaendige Vorlage, erster Start nachgestellt), sonst unveraendert | BESTANDEN | 2026-10-16T13:15:51
+Frage.html | auf C: siebter Agentenlauf mit neu aufgebautem Python STATUS BESTANDEN (15:17), manueller Weg Programm auf den ESP32 17,8 s, Terminal Strg+D | BESTANDEN | 2026-10-16T13:19:25
