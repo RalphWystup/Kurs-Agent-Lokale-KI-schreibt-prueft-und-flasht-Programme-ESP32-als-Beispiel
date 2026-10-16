@@ -22,14 +22,15 @@ for _p in (str(_hier), str(_hier.parent)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from _muster import werkzeug, Abbruch, lauf, PAKET, python_exe, eine
+from _muster import werkzeug, Abbruch, lauf, PAKET, python_exe, eine, Leitung
 import re
 
 FIRMWARE_URL = "https://micropython.org/resources/firmware/ESP32_GENERIC-20260824-v1.29.0.bin"
 
 
 def _esptool(port, *args, zeit=300):
-    return lauf([str(python_exe()), "-m", "esptool", "--port", port, *args], zeit)
+    with Leitung(port=port):
+        return lauf([str(python_exe()), "-m", "esptool", "--port", port, *args], zeit)
 
 
 def _was_ist_drauf(port: str) -> str:
@@ -41,10 +42,20 @@ def _was_ist_drauf(port: str) -> str:
     ueberschreibt, sollte vorher wissen, was er ueberschreibt, und im Kurs spart es Zeit,
     wenn MicroPython schon laeuft.
     """
-    r = lauf([str(python_exe()), "-m", "mpremote", "connect", port, "fs", "ls"], 40)
+    #  Gemessen 15.10.2026: Das Oeffnen der Leitung startet das Brett neu; mpremote direkt
+    #  danach fand „kein MicroPython", obwohl v1.29.0 lief. Deshalb zuerst auf das Banner
+    #  warten (Reset + bis 12 s), dann erst die Dateiliste holen.
+    banner = _meldet_sich(port, 12)
+    if not banner:
+        return ("NICHT GEMESSEN, dass MicroPython laeuft: Nach einem Neustart meldet sich innerhalb "
+                "von 12 s kein MicroPython-Banner und keine Eingabeaufforderung. Entweder ist das "
+                "Brett fabrikneu, traegt ein anderes Programm — oder es haengt; EN-Taste druecken "
+                "und erneut pruefen. esp32_firmware loescht den Speicher und schreibt MicroPython neu.")
+    with Leitung(port=port):
+        r = lauf([str(python_exe()), "-m", "mpremote", "connect", port, "fs", "ls"], 40)
     if r.returncode == 0:
         dateien = [z.strip() for z in (r.stdout or "").splitlines()[1:] if z.strip()]
-        return (f"Darauf laeuft bereits MicroPython. Dateien auf dem Geraet: "
+        return (f"Darauf laeuft MicroPython — gemessen: {banner}. Dateien auf dem Geraet: "
                 + (", ".join(d.split()[-1] for d in dateien) if dateien else "(keine)")
                 + "\nEin erneutes Flashen ist moeglich, aber nicht noetig — mit "
                   "esp32_uebertragen laesst sich sofort ein Programm aufspielen.")
@@ -103,14 +114,70 @@ def tun(e):
     # Schritt 3 — loeschen und schreiben.
     r = _esptool(port, "erase_flash", zeit=300)
     if r.returncode != 0:
-        raise Abbruch(f"Der Speicher liess sich nicht loeschen: {(r.stderr or r.stdout)[-400:]}")
+        raise Abbruch(f"Der Speicher liess sich nicht loeschen: {(r.stderr or r.stdout)[-400:]}\n"
+            f"Was jetzt hilft: Haelt ein anderes Programm den Anschluss (Thonny, "
+            f"serieller Monitor)? Dann schliessen und wiederholen. Sonst das Brett "
+            f"ab- und wieder anstecken und esp32_firmware erneut aufrufen.")
     r = _esptool(port, "--baud", "460800", "write_flash", "-z", "0x1000", str(bin_), zeit=900)
     if r.returncode != 0:
-        raise Abbruch(f"Die Firmware liess sich nicht schreiben: {(r.stderr or r.stdout)[-400:]}")
+        raise Abbruch(f"Die Firmware liess sich nicht schreiben: {(r.stderr or r.stdout)[-400:]}\n"
+            f"Was jetzt hilft: Brett ab- und wieder anstecken, dann esp32_firmware "
+            f"erneut aufrufen. Bleibt es dabei, haelt ein anderes Programm den Anschluss.")
 
-    return (f"An {port}: {chip}\n{mac}\nFirmware {woher}, der gesamte Speicher wurde geloescht "
-            f"und neu beschrieben — was vorher darauf war, ist damit weg.\n"
-            f"Der ESP32 fuehrt jetzt MicroPython aus. Mit esp32_uebertragen kommt das Programm darauf.")
+    # Schritt 4 — nachsehen, ob MicroPython sich wirklich meldet (15.10.2026: Nach dem
+    # Schreiben stand hier „Der ESP32 fuehrt jetzt MicroPython aus" — behauptet, nicht
+    # gemessen; das Laden danach fand keine REPL. Jetzt: Reset ausloesen, auf das Banner warten.)
+    meldung = _meldet_sich(port)
+    kopf = (f"An {port}: {chip}\n{mac}\nFirmware {woher}, der gesamte Speicher wurde geloescht "
+            f"und neu beschrieben — was vorher darauf war, ist damit weg.\n")
+    if meldung:
+        return kopf + (f"FIRMWARE BESTANDEN — das Brett meldet sich nach dem Neustart: {meldung}\n"
+                       f"Programme kommen mit esp32_laden darauf.")
+    return kopf + ("FIRMWARE NICHT BESTANDEN — nach dem Schreiben meldet sich innerhalb von 20 s "
+                   "keine MicroPython-Eingabeaufforderung.\n"
+                   "Was jetzt hilft: die EN-Taste (Reset) am Brett druecken oder es ab- und wieder "
+                   "anstecken; dann mit nur_pruefen: true nachsehen, ob es sich meldet.")
+
+
+def _meldet_sich(port: str, sekunden: float = 20.0) -> str:
+    """Strg+C, Strg+D, dann auf das MicroPython-Banner oder >>> warten — derselbe Weg wie
+    esp32_mitlesen (Betriebsart neustart), der am 15.10.2026 das Banner gezeigt hat, als ein
+    Reset ueber DTR/RTS es nicht zeigte (ein laufendes main.py druckt kein Banner, erst der
+    weiche Neustart). Gibt die Bannerzeile zurueck, sonst leer. Misst, behauptet nicht."""
+    import time as _t
+    try:
+        import serial
+    except ImportError:
+        return ""
+    try:
+        with Leitung(port=port):
+            v = serial.Serial(port, 115200, timeout=0.3)
+            try:
+                _t.sleep(1.5)                           # das Oeffnen startet das Brett neu
+                gesehen = b""
+                ende = _t.time() + sekunden
+                for versuch in range(3):
+                    v.write(b"\r\x03\x03")
+                    _t.sleep(0.3)
+                    v.write(b"\x04")
+                    bis = min(ende, _t.time() + sekunden / 3)
+                    while _t.time() < bis:
+                        gesehen += v.read(512)
+                        if b"MicroPython v" in gesehen or b">>>" in gesehen:
+                            break
+                    if b"MicroPython v" in gesehen or b">>>" in gesehen:
+                        break
+                text = gesehen.decode("utf-8", "replace")
+                for z in text.splitlines():
+                    if "MicroPython v" in z:
+                        return z.strip()[:120]
+                if ">>>" in text:
+                    return "Eingabeaufforderung >>> vorhanden"
+                return ""
+            finally:
+                v.close()
+    except Exception:                                   # noqa: BLE001 — kein Nachweis ist kein Nachweis
+        return ""
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Fremde Bestandteile — woher, wozu, unter welcher Lizenz
 
-Stand 05.10.2026. Das Repositorium enthält **eigenen** Quelltext (MIT) und **ein** fremdes Archiv (tkinter). Alles Übrige im
+Stand 16.10.2026. Das Repositorium enthält **eigenen** Quelltext (MIT) und **ein** fremdes Archiv (tkinter). Alles Übrige im
 Paket wird von `hole_paket.py` beim ersten Start **aus den Originalquellen geladen**, nicht hier verteilt:
 
 | Bestandteil | Quelle | Lizenz | im Repositorium? |

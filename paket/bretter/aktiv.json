@@ -1,0 +1,26 @@
+{
+  "board_id": "esp32-wroom-32-devkit-30pin",
+  "revision": "2026-10-11",
+  "bestaetigt": true,
+  "quelle": "Brett-Identität und D2=GPIO2 vom Auftraggeber am Aufdruck bestätigt (11.10.2026). Übrige D-Aliase aus zwei unabhängigen Quellen: Arduino-ESP32-Kern variants/doitESP32devkitV1 und öffentliche Pinout-Referenzen zum DOIT DevKit V1 (30 Pins).",
+  "bord_led": 2,
+  "aliases": {
+    "D2": 2, "D4": 4, "D5": 5,
+    "D12": 12, "D13": 13, "D14": 14, "D15": 15,
+    "D16": 16, "D17": 17, "D18": 18, "D19": 19,
+    "D21": 21, "D22": 22, "D23": 23,
+    "D25": 25, "D26": 26, "D27": 27,
+    "D32": 32, "D33": 33, "D34": 34, "D35": 35
+  },
+  "nur_eingang": [34, 35, 36, 39],
+  "strapping": [0, 2, 5, 12, 15],
+  "nicht_herausgefuehrt": [6, 7, 8, 9, 10, 11],
+  "hinweise": {
+    "2": "Bord-LED. Strapping-Pin: beim Start LOW oder offen, nicht auf HIGH ziehen.",
+    "5": "gibt beim Start ein PWM-Signal aus.",
+    "12": "bestimmt die Flash-Spannung, muss beim Start LOW sein.",
+    "34": "nur Eingang, kein Ausgang, kein Pull-up.",
+    "35": "nur Eingang, kein Ausgang, kein Pull-up.",
+    "6": "GPIO 6-11 sind intern am Flash und am 30-poligen Brett nicht herausgefuehrt."
+  }
+}

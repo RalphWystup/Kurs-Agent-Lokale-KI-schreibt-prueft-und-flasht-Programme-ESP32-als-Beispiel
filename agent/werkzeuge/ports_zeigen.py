@@ -50,7 +50,9 @@ def tun(e):
         if "ModuleNotFoundError" in (r.stderr or ""):
             raise Abbruch("pyserial fehlt. Erst paket_installieren mit esptool aufrufen "
                           "(pyserial kommt dabei mit).")
-        raise Abbruch(f"Die Anschluesse liessen sich nicht auflisten: {(r.stderr or '')[-300:]}")
+        raise Abbruch(f"Die Anschluesse liessen sich nicht auflisten: {(r.stderr or '')[-300:]}\n"
+                      f"Haeufigste Ursache: pyserial fehlt. Dann hilft "
+                      f'WERKZEUG: paket_installieren {{"paket": "pyserial"}}')
 
     liste = json.loads(r.stdout)
     if not liste:

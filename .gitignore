@@ -1,14 +1,16 @@
-# Arbeitsdaten des Agenten und das gefuellte Paket bleiben lokal
+# Arbeitsdaten und das gefuellte Paket (rund 5 GB) bleiben lokal — hole_paket.py fuellt es
 ablage/
 alt/
+Bilder/
+Arbeitsstand/
+WAECHTER_PROTOKOLL.txt
 paket/*
+!paket/bretter/
+!paket/modell/
+paket/modell/*
+!paket/modell/GEWAEHLT.txt
+!paket/vorlagen/
 !paket/tkinter-8.6.13-py3.12-win-amd64.zip
 !paket/tkinter-8.6.13-py3.12-win-amd64.zip.sha256
-letzter_lauf.txt
-vorletzter_lauf.txt
-fuellen_protokoll.txt
-pruefstand/ablage/
-pruefstand/paket/
-pruefstand/*.log
 __pycache__/
 *.pyc

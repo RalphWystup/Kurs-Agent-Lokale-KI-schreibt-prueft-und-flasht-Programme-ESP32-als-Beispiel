@@ -16,12 +16,13 @@ Rechner, dieses Werkzeug misst das Geraet. Stimmen beide, ist das Programm abgen
 Danach wird das Geraet neu gestartet, damit main.py wieder wie gewohnt laeuft.
 """
 import sys, pathlib
+import time as _t
 _hier = pathlib.Path(__file__).resolve().parent
 for _p in (str(_hier), str(_hier.parent)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from _muster import werkzeug, Abbruch, lauf, python_exe
+from _muster import werkzeug, Abbruch, lauf, python_exe, Leitung
 from programm_testen import _abnehmen
 import re
 
@@ -99,13 +100,17 @@ print('ENDE')
 
 
 def _mpremote(port, *args, zeit=180):
-    return lauf([str(python_exe()), "-m", "mpremote", "connect", port, *args], zeit)
+    #  Leitung anmelden, damit ein offenes Mitlese-Fenster zuruecktritt (10.10.2026).
+    with Leitung(port=port):
+        return lauf([str(python_exe()), "-m", "mpremote", "connect", port, *args], zeit)
 
 
 def tun(e):
     port = str(e["port"]).strip()
     if not re.fullmatch(r"(COM\d+|/dev/[A-Za-z0-9._/-]+)", port):
-        raise Abbruch(f"'{port}' sieht nicht wie ein Anschluss aus.")
+        raise Abbruch(f"'{port}' sieht nicht wie ein Anschluss aus. Ein Anschluss heisst "
+                      f"COM3 oder COM5. Welche es an diesem Rechner gibt, sagt "
+                      f"WERKZEUG: ports_zeigen {{}}")
     if not python_exe().exists():
         raise Abbruch("Es gibt noch kein eigenes Python. Zuerst umgebung_anlegen aufrufen.")
     datei = str(e.get("datei", "main.py")).strip() or "main.py"
@@ -126,6 +131,27 @@ def tun(e):
                 .replace("{MS}", str(int(sekunden * 1000))))
     r = _mpremote(port, "exec", programm, zeit=int(sekunden) + 90)
     text = (r.stdout or "") + (r.stderr or "")
+    #  Einmal warten und wiederholen, wenn der Anschluss noch belegt ist (10.10.2026,
+    #  Befund B2 aus seinem eigenen Lauf, 15:44:25):
+    #
+    #      esp32_laden      LADEN BESTANDEN          15:43:43
+    #      esp32_nachlesen  FEHLER: failed to        15:44:25
+    #                       access COM3 (it may be in use by another program)
+    #
+    #  Das Laden hatte die Leitung geschlossen, aber Windows gibt einen COM-Anschluss
+    #  nicht im selben Augenblick frei — der Treiber braucht einen Moment. Das Laden
+    #  gelang, die Messung am Geraet scheiterte daran, und damit der ganze Auftrag.
+    #
+    #  Wiederholt wird NUR bei genau diesem Grund und NUR einmal: Ein belegter Anschluss,
+    #  der nach zwei Sekunden noch belegt ist, hat einen anderen Grund (ein Fenster, ein
+    #  zweiter Agent), und den soll der Mensch sehen statt ihn wegzuwarten.
+    if r.returncode != 0 and ("in use by another program" in text or "Zugriff verweigert" in text
+                              or "Access is denied" in text or "PermissionError" in text):
+        _t.sleep(2.0)
+        r = _mpremote(port, "exec", programm, zeit=int(sekunden) + 90)
+        text = (r.stdout or "") + (r.stderr or "")
+        if r.returncode == 0 or "ENDE" in text:
+            text += "\n(Der Anschluss war noch belegt; nach zwei Sekunden gelang die Messung.)"
     if "ModuleNotFoundError" in text or "No module named" in text:
         raise Abbruch("mpremote fehlt. Erst paket_installieren mit mpremote aufrufen.")
     if r.returncode != 0 and "ENDE" not in text:
@@ -134,13 +160,25 @@ def tun(e):
                       f"Programm den Anschluss?")
     if "PROGRAMMFEHLER" in text:
         z = [l for l in text.splitlines() if "PROGRAMMFEHLER" in l][0]
-        raise Abbruch(f"{datei} bricht auf dem Geraet ab: {z.split('PROGRAMMFEHLER', 1)[1].strip()}")
+        raise Abbruch(f"{datei} bricht auf dem Geraet ab: {z.split('PROGRAMMFEHLER', 1)[1].strip()}\n"
+            f"Das ist ein Fehler IM PROGRAMM, nicht in der Uebertragung. Lies die "
+            f"Meldung, berichtige den Quelltext mit schreib_datei, uebertrage ihn "
+            f"erneut und miss danach wieder.")
     if "ENOENT" in text or "OSError" in text and "ENDE" not in text:
-        raise Abbruch(f"{datei} liegt nicht auf dem Geraet: {text[-300:]}")
+        raise Abbruch(f"{datei} liegt nicht auf dem Geraet: {text[-300:]}\n"
+            f"Was dort liegt, sagt WERKZEUG: geraet_zeigen; hinbringen laesst sich "
+            f"eine Datei mit esp32_uebertragen.")
 
     if pwm:
         from programm_testen import _pwm_auswerten
-        bericht, pwm_pins, pwm_an, pwm_wechsel, form = _pwm_auswerten(text)
+        #  SECHS Werte, nicht fuenf (10.10.2026, gemessen im Durchgang um 04:05:16):
+        #  Hier stand eine Zerlegung in fuenf, waehrend _pwm_auswerten in programm_testen
+        #  inzwischen zusaetzlich die Messspur zurueckgibt (fuer das Simulationsfenster).
+        #  Der Aufruf endete mit „ValueError: too many values to unpack (expected 5)", und
+        #  der Auftrag „Atmen auf das Brett laden und messen" scheiterte daran — nicht am
+        #  erzeugten Programm, sondern an diesem Werkzeug. Wer eine Funktion erweitert,
+        #  zieht JEDE Aufrufstelle mit; eine zweite Stelle faellt sonst erst im Betrieb auf.
+        bericht, pwm_pins, pwm_an, pwm_wechsel, form, _spur = _pwm_auswerten(text)
         zeilen = [f"Gemessen auf dem Geraet an {port}, {sekunden:.0f} s, Anschluesse {pins}, Programm {datei} — "
                   f"Tastgrad aus dem PWM-Kanal (alle 10 ms):"]
         zeilen.append(bericht.strip() if bericht.strip() else "  Kein PWM-Signal gemessen.")

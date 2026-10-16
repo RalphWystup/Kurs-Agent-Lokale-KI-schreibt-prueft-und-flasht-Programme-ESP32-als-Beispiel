@@ -70,7 +70,9 @@ def tun(e):
             a.extractall(PYTHON)
         if not python_exe().exists():
             raise Abbruch(f"Nach dem Entpacken fehlt {python_exe()}. "
-                          f"Ist das Archiv das eingebettete Paket fuer Windows?")
+                          f"Ist das Archiv das eingebettete Paket fuer Windows? "
+                          f"Was jetzt hilft: das Paket mit hole_paket.py neu holen — ohne "
+                          f"eigenes Python laeuft hier kein einziges Werkzeug.")
         z.append(f"entpackt nach {PYTHON}")
     else:
         z.append(f"Python liegt bereits in {PYTHON} — wird weiterverwendet.")
@@ -122,12 +124,43 @@ def tun(e):
         r = lauf([str(python_exe()), str(getpip), "--no-warn-script-location"], 900)
         if r.returncode != 0:
             raise Abbruch(f"pip liess sich nicht einrichten (Code {r.returncode}): "
-                          f"{(r.stderr or r.stdout)[-400:]}")
+                          f"{(r.stderr or r.stdout)[-400:]}\n"
+                          f"Was jetzt hilft: umgebung_anlegen noch einmal aufrufen; bleibt es "
+                          f"dabei, fehlt get-pip.py im Paket (hole_paket.py holt es nach).")
         fassung = _pip_da()
         if not fassung:
             raise Abbruch("get-pip lief durch, aber pip meldet sich trotzdem nicht. "
-                          "Haeufigste Ursache: 'import site' ist nicht freigeschaltet.")
+                          "Haeufigste Ursache: 'import site' ist nicht freigeschaltet. "
+                          "Was jetzt hilft: umgebung_anlegen noch einmal aufrufen — es "
+                          "schaltet die Zeile in python3xx._pth frei.")
         z.append(f"pip eingerichtet: {fassung}")
+
+    # --- Schritt 3b: Was jede Aufgabe braucht, wird gleich mitinstalliert ------------
+    #  Grundsatz 38 (08.10.2026): „ALLES, was benoetigt wird, muss installiert sein fuer alle
+    #  Testaufgaben." Bis zum 10.10.2026 legte dieses Werkzeug nur Python und pip an; pyserial
+    #  und mpremote musste das Modell selbst nachinstallieren, mitten im Auftrag. Gemessen am
+    #  09.10.2026: Der Auftrag „blink.py auf den ESP32 laden" scheiterte in allen drei
+    #  Durchgaengen genau daran — das Modell rief paket_installieren, bekam „installiert",
+    #  rief das naechste Werkzeug, bekam wieder „pyserial fehlt", und die Zeit lief ab.
+    #
+    #  Wer eine Umgebung anlegt, legt sie fertig an. Die Pakete liegen im Paketordner; es
+    #  wird nichts aus dem Netz geholt.
+    for paket, modul in (("pyserial", "serial"), ("mpremote", "mpremote"), ("esptool", "esptool")):
+        p_ = lauf([str(python_exe()), "-c", f"import {modul}"], 120)
+        if p_.returncode == 0:
+            z.append(f"{paket}: war schon da")
+            continue
+        vorrat = PAKET / "pakete"
+        befehl = [str(python_exe()), "-m", "pip", "install", "--no-warn-script-location", paket]
+        if vorrat.is_dir() and any(vorrat.iterdir()):
+            befehl[5:5] = ["--no-index", "--find-links", str(vorrat), "--no-build-isolation"]
+        r_ = lauf(befehl, 900)
+        g_ = lauf([str(python_exe()), "-c", f"import {modul}"], 120)
+        if g_.returncode == 0:
+            z.append(f"{paket}: eingerichtet und importierbar")
+        else:
+            #  Keine stille Niederlage: Was hier fehlt, fehlt spaeter mitten im Auftrag.
+            z.append(f"{paket}: NICHT einsatzbereit — {(r_.stderr or r_.stdout or '')[-160:]}")
 
     # --- Schritt 4: Gegenproben -----------------------------------------------------
     v = lauf([str(python_exe()), "-c", "import sys;print(sys.version)"], 120)

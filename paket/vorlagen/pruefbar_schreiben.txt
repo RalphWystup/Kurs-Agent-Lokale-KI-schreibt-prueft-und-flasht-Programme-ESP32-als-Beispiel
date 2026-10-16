@@ -1,0 +1,79 @@
+Wie ein Programm aussieht, das sich prüfen lässt
+================================================
+
+Das hier ist KEINE Lösung, sondern eine Gewohnheit: Was ein Programm tun muss, damit die
+Messung es überhaupt sehen kann. Wer das weglässt, schreibt vielleicht ein richtiges
+Programm — nur kann es niemand nachweisen.
+
+
+1. Die Lebenszeile
+------------------
+Ein Programm auf dem Brett soll sagen, dass es lebt und was es gerade tut:
+
+    print('LEBT', n, time.ticks_ms())
+
+Warum: Nach dem Neustart liest das Werkzeug die serielle Leitung mit. Kommt dort nichts an,
+weiß niemand, ob das Programm läuft, abgestürzt ist oder nie angekommen ist. Eine Zeile je
+Durchgang genügt. Die Zeit kommt aus dem Zähler des Bretts — nicht aus einer eigenen
+Mitzählung, die driftet.
+
+
+2. Keine eigene Beurteilung
+---------------------------
+Falsch:
+
+    print('Die LED blinkt korrekt mit 1 Hz')
+
+Das ist eine Behauptung des Programms über sich selbst. Sie wird nicht geglaubt und nicht
+gemessen. Richtig ist, die Rohwerte auszugeben und das Urteil außen zu überlassen:
+
+    print('P', t, dt, d)        Zeitpunkt, Abstand, Tastgrad — gerechnet wird außerhalb
+
+
+3. Bei PWM: den Wert zurücklesen
+--------------------------------
+Falsch:
+
+    pwm.duty_u16(wert)
+    print('Tastgrad', wert)     das ist der gesetzte Wert, nicht der wirksame
+
+Richtig:
+
+    pwm.duty_u16(wert)
+    print('Tastgrad', pwm.duty_u16())    zurückgelesen aus der PWM-Einheit
+
+Warum: Die PWM-Einheit übernimmt einen neuen Wert erst beim nächsten Durchlauf ihres Zählers.
+Was wirklich anliegt, weiß nur sie. Am 07.10.2026 gemessen: der zurückgelesene Wert ist genau
+der zuvor gesetzte, eine Trägerperiode später.
+
+
+4. Die Endlosschleife, aber mit Ausstieg für die Messung
+--------------------------------------------------------
+Ein Programm für das Brett läuft dauerhaft. Für die Messung ist das richtig so — das Werkzeug
+beendet es nach seiner Zeitgrenze. Was es NICHT geben darf:
+
+    while True:
+        pass                    nichts geschieht, nichts ist zu messen
+
+    time.sleep(60)              die Messung endet vorher und sieht nur Stillstand
+
+
+5. Was die Messung aus den Zahlen macht
+---------------------------------------
+    Takt       aus den Abständen zwischen zwei Einschaltvorgängen
+    Form       aus der Faltung aller Perioden übereinander (Sinus, Dreieck, Rechteck)
+    Anschlüsse aus den Pins, die wirklich geschaltet wurden
+
+Das heißt: Zwei Perioden sind das Mindeste, drei sind besser. Ein Programm, das in sechs
+Sekunden einmal blinkt, lässt sich nicht beurteilen.
+
+
+6. Die Reihenfolge, die trägt
+-----------------------------
+    schreib_datei        anlegen
+    quelltext_pruefen    was steht wirklich drin
+    programm_testen      im Nachbau messen, Fenster geht auf
+    esp32_laden          auf das Brett, mit Prüfsumme und Mitschnitt im Fenster
+
+Erst die Messung sagt, ob es stimmt. Das Bild sagt es nicht — am 08.10.2026 sahen vier
+Taschenrechner im Fenster vollständig aus, und keiner rechnete.

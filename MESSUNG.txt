@@ -1,0 +1,50 @@
+Frage.html | Browsertest: alle Fenster leer beim Start, Protokoll ab Seitenstart, keine JS-Fehler | BESTANDEN | 2026-10-15T23:46:21
+oberflaeche.py | lokal: uebersetzen zeigt Aufruf, Rueckgabewert zuerst, dann woertliche Interpreterausgabe; Seite schliessen beendet alles | BESTANDEN | 2026-10-15T23:47:27
+Frage.html | lokal mit LLM-Nachbau: Agent A1–A4 — Code in den Editor, Interpreterfehler als Anhang an den Prompt, erneut ans LLM, Runden, keine JS-Fehler | BESTANDEN | 2026-10-16T00:00:46
+Frage.html | lokal mit LLM-Nachbau: Anhang enthaelt das letzte Programm im Codeblock und die Fehlermeldung, geht erneut ans LLM | BESTANDEN | 2026-10-16T00:04:46
+programm_testen.py | lokal: _abnehmen mit an_s/aus_s — 1 s/2 s BESTANDEN, 1 s/1 s NICHT (Aus-Dauer) | BESTANDEN | 2026-10-16T00:06:46
+pruefe_simulator.py | Prüfstand selbst; Fälle K5.8/K5.9 dazu (Messung auf C: folgt nach dem Einspielen) | BESTANDEN | 2026-10-16T00:06:46
+Frage.html | lokal im Browser: Maßstab-Felder, Agent startet ohne Maßstab nicht, keine JS-Fehler | BESTANDEN | 2026-10-16T00:06:46
+pruefe_simulator.py | K5.8 verlangt jetzt die gemessene Aus-Dauer-Zeile (fiel vorher auch mit altem Simulator durch — Pruefstand war zu lasch) | BESTANDEN | 2026-10-16T00:07:22
+programm_testen.py | lokal mit der Wechselliste von C: (Anfangsprobe 0,000 s aus): An 1,00 s, Aus 2,00 s erfuellt | BESTANDEN | 2026-10-16T00:08:36
+pruefe_simulator.py | Pruefmittel ruft programm_testen mit fenster=false (kein Fenster beim Menschen) | BESTANDEN | 2026-10-16T00:09:59
+Frage.html | Agent ruft den Simulator ohne Fenster; Knopf Simulator unveraendert | BESTANDEN | 2026-10-16T00:09:59
+Frage.html | lokal: Wartezeichen „LLM liest den Prompt … s" bis zum ersten Wort, dann Text; keine JS-Fehler | BESTANDEN | 2026-10-16T00:15:10
+pruefe_diener.py | lokal: py_compile ohne Fehler; Pruefmittel, laeuft auf C: | BESTANDEN | 2026-10-16T00:20:55
+oberflaeche.py | lokal im Browser (Playwright): Seite laden, F5, 2x F5 schnell -> Diener lebt; Seite schliessen -> Diener nach 3 s weg (P1-P5, 5/5) | BESTANDEN | 2026-10-16T00:25:00
+Frage.html | lokal im Browser: pagehide-Beacon /ende, F5 laesst Diener leben, Schliessen beendet ihn (P1-P5, 5/5) | BESTANDEN | 2026-10-16T00:25:00
+pruefe_diener.py | auf C: gelaufen: D1-D7 7/7 (Lebenszeichen, Uebersetzen, Simulator, /ende -> Diener und Modellserver weg) | BESTANDEN | 2026-10-16T00:26:57
+pruefe_start.py | lokal: py_compile; Pruefmittel fuer C: | BESTANDEN | 2026-10-16T00:31:37
+oberflaeche.py | lokal: py_compile; Beacon entfernt, Fenster-Schalter (Ctrl-Handler + Job-Objekt) — Messung folgt auf C: mit pruefe_start.py | BESTANDEN | 2026-10-16T00:31:37
+Frage.html | lokal: Beacon entfernt, Syntax unveraendert — Messung folgt auf C: | BESTANDEN | 2026-10-16T00:31:37
+START.bat | lokal: CRLF, Ablauf gelesen; Diener im Vordergrund — Messung folgt auf C: mit pruefe_start.py | BESTANDEN | 2026-10-16T00:31:37
+oberflaeche.py | auf C: pruefe_start.py 8/9 (Schalter wirkt: Fenster zu -> Diener 5 s, Modell weg, ENDE); Job-Objekt restype berichtigt, Messung folgt | BESTANDEN | 2026-10-16T00:32:44
+pruefe_start.py | auf C: gelaufen 8/9; Dekodierung tasklist cp850 berichtigt | BESTANDEN | 2026-10-16T00:32:44
+START.bat | auf C: pruefe_start.py F1-F9 9/9: bat startet Diener (2 s) und Modell (14 s), Fenster zu -> Diener 5 s weg, Modell weg, ENDE | BESTANDEN | 2026-10-16T00:33:35
+oberflaeche.py | auf C: pruefe_start.py 9/9, Ctrl-Handler und Job-Objekt gesetzt | BESTANDEN | 2026-10-16T00:33:35
+Frage.html | lokal im Browser: Agent ohne Massstab sperrt nichts mehr (An das LLM frei, Felder rot), mit Massstab erstes Zeichen nach 102 ms | BESTANDEN | 2026-10-16T00:37:29
+Frage.html | lokal im Browser: neue Anordnung (LLM-Eingabe, LLM-Ausgabe, Interpreter-Eingabe, Interpreter-Ausgabe, Terminal), Wege R1-R7 gemessen, Bild angesehen, keine JS-Fehler | BESTANDEN | 2026-10-16T00:39:48
+oberflaeche.py | lokal: /uebersetzen liefert nur rohe Interpreterzeilen (K2: 0 eigene Zeilen, rc getrennt), Werkzeugfenster ohne Echo-Zeile | BESTANDEN | 2026-10-16T00:42:59
+Frage.html | lokal im Browser: nur Betriebssystem/Programm auf den ESP32, Download uebersetzt zuerst (K2 Fehler bleibt stehen, K3 laedt), Terminal hell (K4 weiss), keine JS-Fehler | BESTANDEN | 2026-10-16T00:42:59
+Frage.html | lokal im Browser: Diener-/Modellfehler nur in Standzeile/meta, LLM-Fenster bleibt leer, keine JS-Fehler | BESTANDEN | 2026-10-16T01:33:47
+oberflaeche.py | lokal: Werkzeuglauf ohne eigene Schlusszeile, Dauer als Feld; Diener laeuft | BESTANDEN | 2026-10-16T08:09:06
+Frage.html | lokal im Browser: Brett-Werkzeuge schreiben ins Fenster Direkt am ESP32, Interpreter-Fenster bleibt leer (L1-L3), keine JS-Fehler | BESTANDEN | 2026-10-16T08:09:06
+Frage.html | lokal im Browser: Werkzeugbericht bleibt aus beiden Fenstern, Urteil in Standzeile (M1-M3), keine JS-Fehler; Strg+D nach Laden nur am Brett pruefbar | BESTANDEN | 2026-10-16T08:13:27
+Frage.html | lokal im Browser: Agenten-Meldung 66 px unter dem Agent-Knopf, Platzhalter entfernt, Agent mit Massstab laeuft (N1-N2), keine JS-Fehler | BESTANDEN | 2026-10-16T09:27:35
+Frage.html | lokal im Browser: Fenster 1 nur An das LLM/Agent/Abbruch/Leeren, keine Felder; Agent ohne Massstab laeuft, Abbruch wirkt, Leeren leert alle fuenf Fenster (O1-O3, Q1), keine JS-Fehler | BESTANDEN | 2026-10-16T09:30:11
+Frage.html | lokal im Browser: werkzeug() laeuft im Agenten trotz Sperre (T1: WERKZEUG-Eintrag 1), Brettpruefung Strg+C -> >>>, Traceback im Ladebericht; keine JS-Fehler | BESTANDEN | 2026-10-16T09:37:05
+Frage.html | lokal im Browser: brettBereit Stufe 1 (Leitung auf, Fehlerweg) U1, keine JS-Fehler; Stufen Strg+C/Betriebssystem nur am Brett messbar | BESTANDEN | 2026-10-16T09:38:22
+Frage.html | lokal im Browser: brettBereit mit Strg+B, Stufe 1 und Fehlerweg (V1), keine JS-Fehler; Banner-Weg nur am Brett messbar | BESTANDEN | 2026-10-16T09:40:04
+Frage.html | lokal im Browser: im Agentenmodus nur Abbruch frei (X2), danach wieder 12 wie vorher (X3), Schrittliste mit Uhrzeit (W2), Brett-Werkzeuge live im ESP32-Fenster, keine JS-Fehler | BESTANDEN | 2026-10-16T09:46:08
+Frage.html | lokal im Browser: Vorgefertigt/Dateiname/Anschluss im Agentenmodus grau, danach frei (Y1-Y2), keine JS-Fehler | BESTANDEN | 2026-10-16T09:48:07
+Frage.html | lokal im Browser: Fortschrittsbalken ueber dem ESP32-Fenster, bleibt nach dem Lauf stehen (Z1-Z2), keine JS-Fehler | BESTANDEN | 2026-10-16T09:49:36
+einrichten.py | lokal: py_compile; E5 misst den Treiber nur noch (kein pnputil /add-driver) — Messung auf C: folgt mit --pruefen | BESTANDEN | 2026-10-16T09:57:29
+einrichten.py | auf C: --pruefen 12/12 VORHANDEN, E5 Treiber nur gemessen | BESTANDEN | 2026-10-16T09:57:45
+Frage.html | lokal im Browser: Reiter System/Ablauf auf Stand 16.10. mit Uebersichtsgrafik (A1-A2), Gebote -> Anforderungen (B1), keine JS-Fehler | BESTANDEN | 2026-10-16T12:29:57
+einrichten.py | lokal: py_compile; E5 installiert den Treiber aus dem Paket (pnputil), misst danach nach; Messung auf C: --pruefen folgt | BESTANDEN | 2026-10-16T12:32:51
+Frage.html | lokal im Browser: Reiter Installation (C1, 12 Absaetze), Reihe Testen/Protokoll/System/Ablauf/Installation/Anforderungen, keine JS-Fehler | BESTANDEN | 2026-10-16T12:32:51
+Frage.html | lokal: Autorenzeile (beide Namen, Titel) in Reiter System und Grafik, Text unveraendert sonst | BESTANDEN | 2026-10-16T12:35:30
+Frage.html | lokal im Browser: Anschluss-Erkennung beim Start (F1 ohne Brett: Meldung, Feld bleibt COM3; Regex auf Werkzeugtext COM3/CH340), Anleitung ergaenzt, keine JS-Fehler | BESTANDEN | 2026-10-16T12:39:41
+START.bat | lokal: CRLF, 36 Zeilen; Rechte-Schritt fuer den Treiber (RC 3, Start-Process RunAs) — Pfad nur bei fehlendem Treiber messbar; Schalter wird auf C: erneut gemessen | BESTANDEN | 2026-10-16T12:39:41
+einrichten.py | lokal: py_compile; --treiber und Rueckgabewert 3; Messung auf C: --pruefen folgt | BESTANDEN | 2026-10-16T12:39:41
+Frage.html | lokal im Browser: Uebersichtsgrafik neu (Textbreiten geprueft, Bild angesehen), Autorenzeile im Reiter Testen, Ueberschrift Anforderungen bereinigt, Anschluss-Anzeige | BESTANDEN | 2026-10-16T12:44:33

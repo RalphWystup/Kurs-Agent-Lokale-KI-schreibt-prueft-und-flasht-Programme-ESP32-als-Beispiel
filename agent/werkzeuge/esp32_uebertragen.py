@@ -5,9 +5,15 @@
 MicroPython fuehrt nach dem Einschalten ``main.py`` aus. Deshalb wird die Datei unter
 diesem Namen abgelegt — dann blinkt die LED, sobald Strom anliegt, auch ohne Rechner.
 
-Nach dem Kopieren wird das Verzeichnis des Geraets gelesen. Erst wenn die Datei dort mit
-der richtigen Groesse steht, gilt die Uebertragung als gelungen; ein stiller Fehlschlag
-soll nicht als Erfolg gemeldet werden.
+Nach dem Kopieren wird die **Pruefsumme auf dem Geraet** gebildet (esp32_pruefsumme) und
+gegen die Datei in der Werkstatt gehalten. Erst wenn SHA-256 und Bytezahl uebereinstimmen,
+gilt die Uebertragung als gelungen.
+
+Berichtigung vom 09.10.2026: Bis dahin stand an dieser Stelle, die Datei muesse „mit der
+richtigen Groesse" im Verzeichnis stehen. Gelesen wurde aber nur der **Name** — die Groesse
+nirgends. Eine halb geschriebene Datei heisst genauso wie eine ganze. Der Auftraggeber fragte
+nach („wird die uebertragung auch geprueft?"), und die Antwort war: nein, nicht wirklich. Eine
+Behauptung im Kopftext ist schlimmer als gar keine, weil niemand mehr nachsieht.
 """
 import sys, pathlib
 # Der eigene Ordner und der des Agenten muessen in den Suchpfad, bevor etwas daraus geholt
@@ -20,18 +26,21 @@ for _p in (str(_hier), str(_hier.parent)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from _muster import werkzeug, Abbruch, lauf, WERKSTATT, python_exe
+from _muster import werkzeug, Abbruch, lauf, WERKSTATT, python_exe, Leitung
 import re
 
 
 def _mpremote(port, *args, zeit=180):
-    return lauf([str(python_exe()), "-m", "mpremote", "connect", port, *args], zeit)
+    with Leitung(port=port):
+        return lauf([str(python_exe()), "-m", "mpremote", "connect", port, *args], zeit)
 
 
 def tun(e):
     port = str(e["port"]).strip()
     if not re.fullmatch(r"(COM\d+|/dev/[A-Za-z0-9._/-]+)", port):
-        raise Abbruch(f"'{port}' sieht nicht wie ein Anschluss aus.")
+        raise Abbruch(f"'{port}' sieht nicht wie ein Anschluss aus. Ein Anschluss heisst "
+                      f"COM3 oder COM5. Welche es an diesem Rechner gibt, sagt "
+                      f"WERKZEUG: ports_zeigen {{}}")
     name = str(e["datei"]).strip()
     quelle = WERKSTATT / name
     if not quelle.is_file():
@@ -73,12 +82,27 @@ def tun(e):
     gefunden = ziel in (v.stdout or "")
     if not gefunden:
         raise Abbruch(f"Nach dem Kopieren steht {ziel} nicht im Verzeichnis des Geraets. "
-                      f"Verzeichnis: {(v.stdout or v.stderr)[-300:]}")
+                      f"Verzeichnis: {(v.stdout or v.stderr)[-300:]}\n"
+                      f"Was jetzt hilft: Ist auf dem Brett ueberhaupt Platz? Das sagt "
+                      f"WERKZEUG: geraet_zeigen. Danach noch einmal uebertragen.")
+
+    #  Die eigentliche Gegenprobe: die Pruefsumme wird AUF DEM BRETT gebildet, bevor neu
+    #  gestartet wird. Danach laeuft main.py und haelt die serielle Leitung besetzt.
+    try:
+        from esp32_pruefsumme import tun as pruefsumme
+        summe = pruefsumme({"port": port, "ziel": ziel, "datei": name})
+    except Abbruch as a:
+        summe = f"FEHLER bei der Pruefsumme: {a}"
+    bestanden = "UEBERTRAGUNG BESTANDEN" in summe
 
     _mpremote(port, "reset", zeit=60)
     text = (f"{quelle.name} ({quelle.stat().st_size} Byte) nach {port}:{ziel} kopiert.\n"
-            f"Gegenprobe — Verzeichnis des Geraets:\n{v.stdout.strip()}\n"
+            f"Verzeichnis des Geraets:\n{v.stdout.strip()}\n\n"
+            f"{summe}\n\n"
             f"Geraet neu gestartet. MicroPython fuehrt main.py selbsttaetig aus.")
+    if not bestanden:
+        text += ("\nACHTUNG: Die Pruefsumme stimmt nicht. Was auf dem Geraet laeuft, ist nicht "
+                 "das, was in der Werkstatt steht. Noch einmal uebertragen.")
     #  „Das muss man doch durch Ruecklesen rausfinden" (04.10.2026): Ist eine Erwartung bekannt, wird
     #  nach dem Neustart am Geraet gemessen — die Uebertragung endet mit einer Messung, nicht mit
     #  einem Satz. Das Messprogramm fuehrt die Datei auf dem Geraet aus und startet danach neu.
@@ -99,6 +123,7 @@ if __name__ == "__main__":
         "esp32_uebertragen",
         "Kopiert eine Datei aus der Werkstatt auf den ESP32 und startet ihn neu. Standardziel "
         "ist main.py, denn MicroPython fuehrt diese Datei nach dem Einschalten selbsttaetig aus. "
+        "Prueft danach die SHA-256-Pruefsumme AUF DEM GERAET gegen die Werkstattdatei. "
         "Setzt voraus, dass esp32_firmware bereits gelaufen ist.",
         {"port":  {"type": "string", "description": "der Anschluss, zum Beispiel COM5"},
          "datei": {"type": "string", "description": "Dateiname in der Werkstatt, zum Beispiel blink.py"},

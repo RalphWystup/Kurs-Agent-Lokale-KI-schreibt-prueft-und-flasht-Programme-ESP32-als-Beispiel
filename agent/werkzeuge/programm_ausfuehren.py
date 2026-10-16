@@ -89,6 +89,7 @@ def tun(e):
         t0 = time.time()
         try:
             r = subprocess.run(befehl, cwd=str(WERKSTATT), env=u, capture_output=True, text=True,
+                               creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
                                encoding="utf-8", errors="replace", timeout=sekunden,
                                input=(str(eingabe) if eingabe is not None else None))
             dauer = time.time() - t0
@@ -119,6 +120,7 @@ def tun(e):
     if os.name == "nt":
         kennung["creationflags"] = 0x00000008 | 0x00000200       # DETACHED_PROCESS | NEW_PROCESS_GROUP
     p = subprocess.Popen(befehl, cwd=str(WERKSTATT), env=u, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
                          text=True, encoding="utf-8", errors="replace", **kennung)
     t0 = time.time(); titel = []
     while time.time() - t0 < sekunden:
@@ -156,8 +158,16 @@ def tun(e):
     zeilen.append("LAUF BESTANDEN" if bestanden else "LAUF NICHT BESTANDEN")
     if not bestanden:
         zeilen.append("  Ein Fensterprogramm muss laufen und ein Fenster zeigen. Lies die Fehlerausgabe, "
-                      "berichtige mit schreib_datei und fuehre es erneut aus. Fehlt tkinter, sagt die "
-                      "Fehlerausgabe 'No module named _tkinter' — dann liegt es nicht im Paket.")
+                      "berichtige mit schreib_datei und fuehre es erneut aus.")
+        #  Am 08.10.2026 stand hier „dann liegt es nicht im Paket" — und das war falsch: tkinter lag
+        #  als Archiv im Paket, nur war es nicht ins eigene Python ausgepackt. Das Modell schloss
+        #  daraus, es muesse tkinter beschaffen, griff viermal zu paket_installieren und lief in eine
+        #  Schleife. Eine falsche Ursache ist schlimmer als keine.
+        if "No module named" in "\n".join(zeilen) and "tkinter" in "\n".join(zeilen):
+            zeilen.append("  Die Fehlerausgabe nennt ein fehlendes Modul. Bei '_tkinter' oder 'tkinter' ist "
+                          "NICHT das Programm schuld: tkinter liegt als Archiv im Paket und muss ins eigene "
+                          "Python ausgepackt werden. Rufe WERKZEUG: umgebung_anlegen {} auf und fuehre das "
+                          "Programm danach erneut aus. Ueber pip kommt tkinter nicht.")
     return "\n".join(zeilen)
 
 

@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurs-Agent</title>
+<style>
+  :root{--bg:#f4f3ef;--fg:#1d1d1b;--rand:#c9c6bd;--kasten:#fff;--grau:#6b6962;--rot:#b3261e;--gruen:#2e7d32;--blau:#1f4e9e;--aktiv:#fff}
+  @media (prefers-color-scheme: dark){:root{--bg:#1b1b19;--fg:#e8e6df;--rand:#44423c;--kasten:#24241f;--grau:#a19e94;--rot:#ff8a80;--gruen:#81c784;--blau:#8ab4f8;--aktiv:#24241f}}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+  header{display:flex;align-items:baseline;gap:14px;padding:10px 20px 0;border-bottom:1px solid var(--rand)}
+  header h1{font-size:1.05rem;margin:0 0 8px}
+  header small{color:var(--grau)}
+  nav{display:flex;gap:4px;margin-left:auto}
+  nav button{font:inherit;padding:6px 16px;border:1px solid var(--rand);border-bottom:none;border-radius:8px 8px 0 0;background:transparent;color:var(--grau);cursor:pointer}
+  nav button.an{background:var(--aktiv);color:var(--fg);font-weight:600}
+  main{flex:1;overflow:auto;padding:16px 20px}
+  .reiter{display:none;max-width:1100px}
+  .reiter.an{display:block}
+  h2{font-size:.95rem;margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--rand);color:var(--grau);text-transform:uppercase;letter-spacing:.04em}
+  h2:first-child{border-top:none;padding-top:0;margin-top:0}
+  label{display:block;font-size:12px;color:var(--grau);margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}
+  textarea{width:100%;box-sizing:border-box;resize:vertical;font:inherit;padding:10px 12px;border:1.5px solid var(--rand);border-radius:8px;background:var(--kasten);color:var(--fg)}
+  #eingabe{min-height:90px}
+  #editor{min-height:240px;font-family:ui-monospace,Consolas,monospace;font-size:14px;tab-size:4}
+  textarea:focus,select:focus,input:focus{outline:2px solid var(--blau);outline-offset:1px}
+  .knoepfe{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 14px}
+  button.k{font:inherit;padding:9px 18px;border:1px solid var(--rand);border-radius:8px;background:var(--kasten);color:var(--fg);cursor:pointer}
+  button.k:disabled{opacity:.5;cursor:default}
+  button.k.g{border-color:var(--blau)}
+  select,input[type=text]{font:inherit;padding:8px 10px;border:1.5px solid var(--rand);border-radius:8px;background:var(--kasten);color:var(--fg)}
+  #terminal{min-height:160px;height:200px;font-family:ui-monospace,Consolas,monospace;font-size:14px;line-height:1.4}
+  #ausgabe,#ausgabe_llm{min-height:160px;height:220px;font-family:ui-monospace,Consolas,monospace;font-size:14px;line-height:1.4}
+  #ausgabe.fehler{color:var(--rot)}#ausgabe.gut{color:var(--gruen)}
+  .meta{font-size:12px;color:var(--grau);margin-top:6px}
+  #balken{margin:6px 0 10px;max-width:700px}#balken .spur{height:12px;border:1px solid var(--rand);border-radius:6px;background:var(--kasten);overflow:hidden}
+  #balken .fuell{height:100%;width:0;background:var(--blau);transition:width .4s}
+  #balken .fuell.unbestimmt{width:30%;animation:lauf 1.2s linear infinite}
+  @keyframes lauf{0%{margin-left:-30%}100%{margin-left:100%}}
+  #balken small{display:block;color:var(--grau);font-size:12px;margin-top:4px}
+  .struktur,.ablauf{max-width:980px}.struktur .k,.ablauf .k{border:1.5px solid var(--rand);border-radius:8px;padding:8px 12px;margin:0 0 6px;background:var(--kasten)}
+  .struktur .k b,.ablauf .k b{display:block}.struktur .k small,.ablauf .k small{color:var(--grau);line-height:1.4}
+  .reihe{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:0 0 6px}
+  .pf{text-align:center;color:var(--grau);margin:2px 0 8px;font-size:13px}
+  .s-seite{border-color:#1f4e9e!important}.s-diener{border-color:#6b6962!important}.s-llm{border-color:#b26a00!important}.s-py{border-color:#2e7d32!important}.s-wz{border-color:#2e7d32!important}.s-brett{border-color:#6a1b9a!important}.s-agent{border-style:dashed!important;opacity:.8}
+  #proto{min-height:300px;max-height:75vh;overflow:auto;padding:12px 14px;border:1.5px solid var(--rand);border-radius:8px;background:var(--kasten);white-space:pre-wrap;word-wrap:break-word;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+  .text{max-width:860px;line-height:1.55}.text ul{padding-left:22px}.text li{margin:0 0 6px}.text code{font-size:13px}
+  ol.gebote{padding-left:28px;max-width:900px}ol.gebote li{margin:0 0 16px;line-height:1.5}ol.gebote li b{font-weight:600}ol.gebote small{color:var(--grau);font-size:13px}
+  .fehler{color:var(--rot)}
+  .gut{color:var(--gruen)}
+  .cursor::after{content:"▍";animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+#agent_stand{white-space:pre-wrap;margin:6px 0 0;max-height:220px;overflow:auto;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.4;color:var(--fg)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kurs-Agent</h1>
+  <small id="modell">Modell: wird gesucht …</small>
+  <nav><button class="an" data-reiter="testen">Testen</button><button data-reiter="protokoll">Protokoll</button><button data-reiter="system">System</button><button data-reiter="ablauf">Ablauf</button><button data-reiter="installation">Installation</button><button data-reiter="gebote">Anforderungen</button></nav>
+</header>
+
+<main>
+  <section class="reiter an" id="testen">
+    <p class="meta" style="margin:0 0 6px">Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt</p>
+
+    <h2>1 · LLM-Eingabe</h2>
+    <textarea id="eingabe" placeholder="Text, der unverändert an das LLM geht … (Strg+Enter sendet)"></textarea>
+    <div class="knoepfe">
+      <button class="k g" id="senden">An das LLM</button>
+      <button class="k g" id="agent">Agent</button>
+      <button class="k" id="agent_stopp" data-frei="1" disabled>Abbruch</button>
+      <button class="k" id="leeren">Leeren</button>
+    </div>
+    <pre class="meta" id="agent_stand" hidden></pre>
+    <small class="meta">Agent (sein Wort, 16.10.2026): Prompt ans LLM → reinen Python-Code in die Interpreter-Eingabe → Interpreter → Simulator (läuft ohne Fehler?) → antwortet der ESP32 (Strg+C/D, Banner, &gt;&gt;&gt;)? → Download → meldet das Brett einen Traceback? Jede Fehlermeldung kommt als Anhang an den Prompt und geht erneut ans LLM, höchstens drei Runden. Gemessen wird nur „läuft", nicht „richtig" — es gibt keinen Maßstab (sein Wort, 11:30: „alles weg").</small>
+
+    <h2>2 · LLM-Ausgabe</h2>
+    <textarea id="ausgabe_llm" spellcheck="false" placeholder="Hier erscheint die Antwort des LLM, Wort für Wort — frei zum Markieren, Ausschneiden, Ändern."></textarea>
+    <div class="meta" id="meta"></div>
+    <div class="knoepfe">
+      <button class="k" id="aus_editor" data-frei="1">LLM-Ausgabe → Interpreter-Eingabe (Codeblock)</button>
+      <button class="k" id="llm_eingabe" data-frei="1">LLM-Ausgabe → LLM-Eingabe</button>
+    </div>
+
+    <h2>3 · Interpreter-Eingabe (Python für den ESP32)</h2>
+    <div class="knoepfe">
+      <label for="datei" style="margin:0">Vorgefertigt</label>
+      <select id="datei"></select>
+      <button class="k" id="laden_datei">In die Eingabe</button>
+      <label for="name" style="margin:0 0 0 14px">Dateiname</label>
+      <input type="text" id="name" value="programm.py" size="22" spellcheck="false">
+      <small class="meta">Zum Ändern freigegeben — damit niemand einen fertigen Text durchwinkt.</small>
+    </div>
+    <textarea id="editor" spellcheck="false"></textarea>
+
+    <h2>4 · Interpreter-Ausgabe</h2>
+    <textarea id="ausgabe" spellcheck="false" placeholder="Hier erscheint, was Interpreter, Simulator und Werkzeuge sagen — wörtlich, sonst nichts."></textarea>
+    <div class="knoepfe">
+      <label for="port" style="margin:0">Anschluss</label>
+      <input type="text" id="port" value="COM3" size="6">
+      <button class="k g" id="firmware">Betriebssystem auf den ESP32</button>
+      <button class="k g" id="esp">Programm auf den ESP32</button>
+    </div>
+    <small class="meta" id="stand"></small>
+    <div class="knoepfe">
+      <button class="k" id="aus_eingabe" data-frei="1">Interpreter-Ausgabe → LLM-Eingabe</button>
+      <button class="k" id="editor_eingabe" data-frei="1">Interpreter-Eingabe → LLM-Eingabe</button>
+      <button class="k" id="kopieren" data-frei="1">Interpreter-Ausgabe kopieren</button>
+      <small class="meta">Alles von Hand, wie es der Agent tut: Text hin- und herreichen.</small>
+    </div>
+
+    <h2>5 · Direkt am ESP32 (Eingabeaufforderung des Bretts)</h2>
+    <div id="balken" hidden><div class="spur"><div class="fuell" id="fuell"></div></div><small id="balken_text"></small></div>
+    <textarea id="terminal" spellcheck="false" readonly></textarea>
+    <div class="knoepfe">
+      <input type="text" id="repl" placeholder="Befehl an das Brett, z. B. print(1+1) — Enter sendet" style="flex:1;min-width:280px" disabled>
+      <button class="k" id="repl_senden" data-frei="1" disabled>Senden</button>
+      <button class="k" id="strg_c" data-frei="1" disabled title="Strg+C: laufendes Programm unterbrechen">Strg+C</button>
+      <button class="k" id="strg_d" data-frei="1" disabled title="Strg+D: weicher Neustart">Strg+D</button>
+      <button class="k" id="verbinden" data-frei="1">Verbinden</button>
+      <button class="k" id="trennen" data-frei="1" disabled>Trennen</button>
+      <small class="meta" id="repl_stand">Nicht verbunden. Nach „Betriebssystem" und „Laden" verbindet die Seite von selbst.</small>
+    </div>
+  </section>
+
+  <section class="reiter" id="protokoll">
+    <h2>Protokoll — live, was der Diener tut (von Ihnen oder von der Entwicklungs-KI über die Brücke)</h2>
+    <div id="proto"></div>
+    <p class="meta">Datei <code>ablage\protokoll_testen.txt</code>; jede Zeile ein Schritt mit Uhrzeit. Aktualisiert jede Sekunde, zeigt die letzten 120 Zeilen.</p>
+  </section>
+
+  <section class="reiter" id="system">
+    <h2>Das System des Kurses — Beschreibung (Stand 16.10.2026)</h2>
+    <div class="text">
+      <p class="meta">Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt</p>
+      <p><b>Zweck.</b> Ein Kurspaket, mit dem Schülerinnen und Schüler einen ESP32 in MicroPython programmieren — mit einem Sprachmodell als Helfer, das auf dem Kursrechner läuft. Kein Internet, kein Konto, nichts installiert: alles liegt in einem Ordner und läuft mit dem Python, das der Ordner mitbringt.</p>
+      <p><b>Was dazugehört.</b></p>
+      <ul>
+        <li><b>Diese Seite</b> (<code>Frage.html</code>) — fünf Fenster: LLM-Eingabe, LLM-Ausgabe, Interpreter-Eingabe, Interpreter-Ausgabe, Direkt am ESP32. Jedes Fenster zeigt nur die rohe Ausgabe seiner Quelle. Der Agent läuft in dieser Seite.</li>
+        <li><b>Der Diener</b> (<code>agent\oberflaeche.py</code>) — ein kleines Programm auf 127.0.0.1:8777: liefert die Seite, startet auf Knopfdruck je ein Werkzeug, hält die Leitung zum Brett, startet und beendet den Modellserver und schreibt jeden Schritt in <code>ablage\protokoll_testen.txt</code>.</li>
+        <li><b>Das Sprachmodell</b> — Qwen2.5-7B-Instruct (4,7 GB) im <code>llama-server</code> (llama.cpp) auf 127.0.0.1:8099. Es schreibt Text; es führt nichts aus und ruft nichts auf.</li>
+        <li><b>Der Python-Interpreter des Kurses</b> (<code>ablage\python</code>) — übersetzt die Programme (<code>py_compile</code>) und führt Simulator und Werkzeuge aus.</li>
+        <li><b>Die Werkzeuge</b> (<code>agent\werkzeuge</code>) — je eines ein Programm: Simulator (<code>machine</code> nachgebaut, misst Pins, Takt, Tastgrad), Anschlüsse zeigen, MicroPython aufspielen (Banner gemessen), Programm aufspielen (Prüfsumme vom Brett, Neustart), Nachlesen am Brett.</li>
+        <li><b>Das Brett</b> — ESP32-WROOM-32 DevKit am USB (CH340, COM3), Bord-LED D2 = GPIO 2, MicroPython v1.29.0.</li>
+        <li><b>Drei Testprogramme</b> (<code>testprogramme\</code>) — vom Auftraggeber, zum Ändern freigegeben.</li>
+      </ul>
+      <p><b>Wie es gestartet und beendet wird.</b> Doppelklick auf <code>START.bat</code>: Das Fenster „Kurs-Agent" bleibt offen, solange gearbeitet wird; der Diener läuft darin, startet den Modellserver und öffnet diese Seite. Fenster schließen = Kurs aus: Leitung zu, Modellserver beendet, Diener beendet. Vor dem Start sieht <code>agent\einrichten.py</code> nach, was da ist; es wird nichts installiert.</p>
+      <p><b>Der Agent — seine Schritte, wörtlich vom Auftraggeber.</b> Prompt ans LLM → reinen Python-Code in die Interpreter-Eingabe → der Interpreter zeigt sein Ergebnis → Simulator: läuft es ohne Fehler? → ist der ESP32 angeschlossen und meldet er sich (Strg+B; sonst läuft das alte Programm noch: Strg+C; sonst Betriebssystem aufspielen)? → Freigabe ist <code>&gt;&gt;&gt;</code> → das übersetzte Programm aufspielen und starten → meldet das Brett einen Traceback? Jede Fehlermeldung geht als Anhang zum alten Prompt zurück ans LLM, höchstens drei Runden. Gemessen wird „läuft", nicht „richtig": es gibt keinen Maßstab. Alles, was der Agent tut, steht mit Uhrzeit unter den Knöpfen und im Protokoll.</p>
+      <p><b>Was heute gemessen ist (16.10.2026, am Brett an COM3).</b> Sechs Agentenläufe hintereinander, alle in Runde 1 bestanden: Blinken 1 s an / 3 s aus, 3 s an / 1 s aus, alle 2 s, jede halbe Sekunde. Dabei lief jedes Mal das vorige Programm noch; der Agent stoppte es mit Strg+C und bekam die Freigabe. Die Rückschleife mit Anhang ist am Brett noch nie nötig gewesen; der Weg über das Betriebssystem und der leere Rechner (Anforderung 8, 9) sind ungemessen.</p>
+      <p><b>Wie gearbeitet wird.</b> Nach den Anforderungen (eigener Reiter): nie vermuten, immer messen; der manuelle Test zu 100 %; autark; kein Fake; Fehler ohne Ausnahme benennen; alles gegen die Anforderungen prüfen; erst Literatur und Git, dann eigene Ansätze; alles in einem Ordner; nichts installieren; geht nicht gibt es nicht. In der Entwicklung — nicht im Kurs — prüft ein Tor (<code>einspielen.py</code>) jede Lieferung und ein Regelwächter (<code>regelwaechter.py</code>) jeden Schritt der KI gegen diese Anforderungen.</p>
+      <p><b>Ordner.</b> <code>agent\</code> Diener, Einrichtung, Werkzeuge · <code>ablage\</code> Python des Kurses, Werkstatt, Protokoll · <code>paket\</code> Modell, llama-server, Python-Vorlage, Pakete, Treiber, Firmware, Vorlagen, Brett-Tafel · <code>testprogramme\</code> · <code>Frage.html</code>, <code>START.bat</code>.</p>
+    </div>
+  </section>
+
+  <section class="reiter" id="ablauf">
+    <h2>Übersicht — was auf diesem Rechner läuft und was der Agent tut (Stand 16.10.2026)</h2>
+    <div class="text" style="max-width:1000px">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" font-family="system-ui,Segoe UI,sans-serif" font-size="12" style="max-width:100%;height:auto;background:#f4f3ef;border-radius:10px">
+<defs><marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b6962"/></marker></defs>
+<text x="20" y="32" font-size="17" font-weight="700">Kurs-Agent — was auf dem Kursrechner läuft: ein Ordner, kein Internet, nichts installiert</text>
+<rect x="20" y="60" width="240" height="70" rx="8" fill="#fff3c4" stroke="#c9a227" stroke-width="1.5"/>
+<text x="32" y="83" font-weight="700" font-size="13.5">START.bat — der Schalter</text>
+<text x="32" y="104" font-size="12" fill="#3b3a36">Fenster offen = Kurs läuft</text>
+<text x="32" y="121" font-size="12" fill="#3b3a36">Fenster zu = alles aus</text>
+<rect x="330" y="60" width="350" height="80" rx="8" fill="#efe6f7" stroke="#6a3d9a" stroke-width="1.5"/>
+<text x="342" y="83" font-weight="700" font-size="13.5">Modellserver · llama-server · :8099</text>
+<text x="342" y="104" font-size="12" fill="#3b3a36">Qwen2.5-7B-Instruct Q4_K_M (4,7 GB)</text>
+<text x="342" y="121" font-size="12" fill="#3b3a36">schreibt nur Text, führt nichts aus</text>
+<rect x="740" y="60" width="340" height="230" rx="8" fill="#f4f3ef" stroke="#a19e94" stroke-width="1.5"/>
+<text x="752" y="83" font-weight="700" font-size="13.5">Entwicklung — nicht Teil des Systems</text>
+<text x="752" y="104" font-size="12" fill="#3b3a36">Brücke: beobachtet, misst, spielt ein</text>
+<text x="752" y="121" font-size="12" fill="#3b3a36">Tor einspielen.py: nichts nach C: ohne</text>
+<text x="752" y="138" font-size="12" fill="#3b3a36">   Messung, Quelle und Freigabe</text>
+<text x="752" y="155" font-size="12" fill="#3b3a36">Regelwächter: prüft jeden Schritt</text>
+<text x="752" y="172" font-size="12" fill="#3b3a36">   der KI gegen die Anforderungen</text>
+<text x="752" y="189" font-size="12" fill="#3b3a36">Im Kurs läuft davon nichts.</text>
+<rect x="20" y="190" width="290" height="190" rx="8" fill="#e8f0fb" stroke="#1f4e9e" stroke-width="1.5"/>
+<text x="32" y="213" font-weight="700" font-size="13.5">Frage.html im Browser</text>
+<text x="32" y="234" font-size="12" fill="#3b3a36">1 LLM-Eingabe (An das LLM, Agent)</text>
+<text x="32" y="251" font-size="12" fill="#3b3a36">2 LLM-Ausgabe, Wort für Wort</text>
+<text x="32" y="268" font-size="12" fill="#3b3a36">3 Interpreter-Eingabe (Python)</text>
+<text x="32" y="285" font-size="12" fill="#3b3a36">4 Interpreter-Ausgabe, Befehle</text>
+<text x="32" y="302" font-size="12" fill="#3b3a36">5 Direkt am ESP32 (Terminal)</text>
+<text x="32" y="319" font-size="12" fill="#3b3a36">Der Agent läuft in dieser Seite</text>
+<text x="32" y="336" font-size="12" fill="#3b3a36">Abbruch · Leeren · Fortschritt</text>
+<rect x="330" y="200" width="350" height="120" rx="8" fill="#e6f4ea" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="342" y="223" font-weight="700" font-size="13.5">Diener · agent\oberflaeche.py · :8777</text>
+<text x="342" y="244" font-size="12" fill="#3b3a36">liefert die Seite, startet je ein Werkzeug</text>
+<text x="342" y="261" font-size="12" fill="#3b3a36">hält die Leitung zum Brett (Terminal)</text>
+<text x="342" y="278" font-size="12" fill="#3b3a36">schreibt ablage\protokoll_testen.txt</text>
+<text x="342" y="295" font-size="12" fill="#3b3a36">startet und beendet den Modellserver</text>
+<rect x="330" y="400" width="350" height="130" rx="8" fill="#ffffff" stroke="#6b6962" stroke-width="1.5"/>
+<text x="342" y="423" font-weight="700" font-size="13.5">Python des Kurses · ablage\python</text>
+<text x="342" y="444" font-size="12" fill="#3b3a36">Interpreter: python.exe -m py_compile</text>
+<text x="342" y="461" font-size="12" fill="#3b3a36">Simulator: programm_testen</text>
+<text x="342" y="478" font-size="12" fill="#3b3a36">Werkzeuge: esp32_laden (Prüfsumme),</text>
+<text x="342" y="495" font-size="12" fill="#3b3a36">esp32_firmware, esp32_nachlesen,</text>
+<text x="342" y="512" font-size="12" fill="#3b3a36">ports_zeigen</text>
+<rect x="740" y="400" width="340" height="130" rx="8" fill="#fde8e6" stroke="#b3261e" stroke-width="1.5"/>
+<text x="752" y="423" font-weight="700" font-size="13.5">ESP32-WROOM-32 · COM3 (CH340)</text>
+<text x="752" y="444" font-size="12" fill="#3b3a36">MicroPython v1.29 · main.py</text>
+<text x="752" y="461" font-size="12" fill="#3b3a36">LED an GPIO 2</text>
+<text x="752" y="478" font-size="12" fill="#3b3a36">meldet Banner und &gt;&gt;&gt;</text>
+<text x="752" y="495" font-size="12" fill="#3b3a36">Strg+B · Strg+C · Betriebssystem</text>
+<line x1="140" y1="130" x2="140" y2="190" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<text x="150" y="165" font-size="11" fill="#6b6962" text-anchor="start">öffnet die Seite</text>
+<line x1="260" y1="110" x2="330" y2="222" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<text x="268" y="150" font-size="11" fill="#6b6962" text-anchor="end">startet</text>
+<line x1="310" y1="268" x2="330" y2="268" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)" marker-start="url(#p)"/>
+<text x="320" y="257" font-size="10" fill="#6b6962" text-anchor="middle">HTTP</text>
+<line x1="310" y1="212" x2="400" y2="140" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)" marker-start="url(#p)"/>
+<text x="372" y="178" font-size="11" fill="#6b6962" text-anchor="start">Streaming</text>
+<line x1="505" y1="200" x2="505" y2="140" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<text x="515" y="175" font-size="11" fill="#6b6962" text-anchor="start">startet · beendet</text>
+<line x1="505" y1="320" x2="505" y2="400" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<text x="515" y="365" font-size="11" fill="#6b6962" text-anchor="start">startet je Werkzeug als Prozess</text>
+<line x1="680" y1="465" x2="740" y2="465" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)" marker-start="url(#p)"/>
+<text x="710" y="455" font-size="11" fill="#6b6962" text-anchor="middle">COM3</text>
+<line x1="680" y1="300" x2="900" y2="400" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)" marker-start="url(#p)"/>
+<text x="800" y="338" font-size="11" fill="#6b6962" text-anchor="middle">Terminal (seriell)</text>
+<rect x="20" y="560" width="1060" height="215" rx="8" fill="#fff" stroke="#1f4e9e" stroke-width="1.5"/>
+<text x="32" y="585" font-weight="700" font-size="14">Der Agent — in der Seite, nach seinen Schritten, höchstens drei Runden</text>
+<rect x="32" y="600" width="109" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="86.5" y="625" font-size="11.5" text-anchor="middle">1 Prompt → LLM</text>
+<line x1="141" y1="620" x2="157" y2="620" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="157" y="600" width="194" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="254.0" y="625" font-size="11.5" text-anchor="middle">2 Code → Interpreter-Eingabe</text>
+<line x1="351" y1="620" x2="367" y2="620" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="367" y="600" width="182" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="458.0" y="625" font-size="11.5" text-anchor="middle">3 Interpreter (py_compile)</text>
+<line x1="549" y1="620" x2="565" y2="620" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="565" y="600" width="213" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="671.5" y="625" font-size="11.5" text-anchor="middle">4 Simulator: läuft ohne Fehler?</text>
+<rect x="32" y="662" width="347" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="205.5" y="687" font-size="11.5" text-anchor="middle">5 Brett meldet sich? Strg+B · Strg+C · Betriebssystem</text>
+<line x1="379" y1="682" x2="395" y2="682" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="395" y="662" width="274" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="532.0" y="687" font-size="11.5" text-anchor="middle">6 Freigabe &gt;&gt;&gt; → Aufspielen mit Prüfsumme</text>
+<line x1="669" y1="682" x2="685" y2="682" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="685" y="662" width="158" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="764.0" y="687" font-size="11.5" text-anchor="middle">7 Traceback vom Brett?</text>
+<line x1="843" y1="682" x2="859" y2="682" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<rect x="859" y="662" width="133" height="40" rx="6" fill="#e8f0fb" stroke="#1f4e9e"/>
+<text x="925.5" y="687" font-size="11.5" text-anchor="middle">8 STATUS BESTANDEN</text>
+<path d="M 778 620 L 808 620 L 808 650 L 20 650 L 20 682 L 32 682" fill="none" stroke="#6b6962" stroke-width="1.6" marker-end="url(#p)"/>
+<path d="M 932 702 L 932 722 L 100 722 L 100 648" fill="none" stroke="#b3261e" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#p)"/>
+<text x="120" y="739" font-size="11.5" fill="#b3261e">Jede Fehlermeldung (Interpreter, Simulator, Traceback) geht als Anhang zum alten Prompt zurück ans LLM — nächste Runde.</text>
+<text x="120" y="757" font-size="11.5" fill="#b3261e">Schweigt das Brett auch mit neuem Betriebssystem, endet der Lauf mit Befund: Hardware, kein Fall für das LLM.</text>
+<text x="1080" y="793" font-size="11" fill="#6b6962" text-anchor="end">Prof. Dr.-Ing. Ralph Wystup M.Sc. und Claude (Anthropic, Claude Code) — gemeinsam erstellt · 16.10.2026</text>
+</svg>
+      <p class="meta">Wer was tut: die Seite zeigt, der Agent entscheidet nach seinen Schritten, der Diener startet, das Werkzeug misst, das Brett antwortet, das Modell schreibt Text. Jedes Fenster zeigt nur die rohe Ausgabe seiner Quelle.</p>
+    </div>
+  </section>
+
+  <section class="reiter" id="installation">
+    <h2>Installation — Schritt für Schritt (Stand 16.10.2026)</h2>
+    <div class="text">
+      <p><b>Grundsatz.</b> Ein einziger Ordner <code>Kurs_Agent</code> mit allen Dateien; <code>START.bat</code> löst alles aus. Der Ordner bringt alles mit: ein eigenes Python, den Modellserver, das Sprachmodell, die MicroPython-Firmware, den USB-Treiber, die Werkzeuge und diese Seite. Beim Start sieht die Einrichtung nach, was auf dem Rechner schon da ist, und richtet nur das Fehlende ein — <i>aus dem Paket, ohne Internet</i>. Kein Konto, kein Herunterladen, nichts aus dem Netz.</p>
+      <p><b>Was der Rechner braucht.</b></p>
+      <ul>
+        <li>Windows 10 oder 11, 64 Bit.</li>
+        <li>Etwa 6 GB freier Platz auf dem Laufwerk (der Ordner ist rund 5 GB groß, das Modell allein 4,7 GB).</li>
+        <li>Arbeitsspeicher: der Modellserver belegt im Betrieb rund 4,5 GB; gemessen auf einem Rechner mit 16 GB. Mit 8 GB wird es eng, darunter passt das 7B-Modell nicht.</li>
+        <li>Einen freien USB-Anschluss und ein USB-Datenkabel (kein reines Ladekabel).</li>
+        <li>Das Brett: ESP32-WROOM-32 DevKit (30 Pins) mit USB-Wandler CH340. Die Bord-LED liegt an GPIO 2.</li>
+      </ul>
+      <p><b>Schritt 1 — Ordner kopieren.</b> Den ganzen Ordner <code>Kurs_Agent</code> vom Stick auf das Laufwerk kopieren, zum Beispiel nach <code>C:\Kurs_Agent</code>. Der Ort ist frei wählbar; alles leitet sich vom Ort der <code>START.bat</code> ab. Geprüft ist bisher nur <code>C:\Kurs_Agent</code>.</p>
+      <p><b>Schritt 2 — Brett anschließen.</b> Den ESP32 per USB verbinden. Im Geräte-Manager (Windows-Taste, „Geräte-Manager" eintippen) unter „Anschlüsse (COM &amp; LPT)" erscheint „USB-SERIAL CH340 (COMx)"; die Nummer x merken (die Seite erkennt den Anschluss beim Start selbst und trägt ihn ein; nur zur Kontrolle). Fehlt der Treiber, erscheint ein unbekanntes Gerät — das ist kein Hindernis: <code>START.bat</code> stellt das in Schritt 3 fest und installiert den Treiber aus dem Paket (<code>paket\treiber</code>, Windows-Bordmittel pnputil, kein Netz). Verlangt Windows dafür Administratorrechte, holt <code>START.bat</code> sie für diesen einen Schritt selbst: Es erscheint die Windows-Abfrage „Möchten Sie zulassen, dass …" — mit <b>Ja</b> beantworten. Mehr ist nicht zu tun.</p>
+      <p><b>Schritt 3 — START.bat doppelklicken.</b> Zeigt Windows beim ersten Start vom Stick einen blauen Hinweis „Der Computer wurde durch Windows geschützt" (SmartScreen): auf „Weitere Informationen" und dann „Trotzdem ausführen" klicken — das kommt nur einmal. Ein schwarzes Fenster „Kurs-Agent" geht auf. Es ist der Schalter: Es bleibt offen, solange gearbeitet wird. Darin läuft zuerst die Einrichtung (<code>agent\einrichten.py</code>), die zwölf Punkte nachsieht — Python des Kurses, pip, pyserial, mpremote, esptool, tkinter, CH340-Treiber, Sprachmodell, Modellserver, Firmware, Werkzeuge, Seite — und jedes fehlende Stück aus dem Paket einrichtet: das Python wird aus <code>paket\python_vorlage</code> kopiert, die Pakete kommen als Räder aus <code>paket\pakete</code>, tkinter aus dem Archiv, der Treiber aus <code>paket\treiber</code>. Jeder Punkt wird davor und danach gemessen und mit Ergebnis angezeigt; geholt wird nichts aus dem Netz. Was das Paket nicht hat, wird gesagt. Danach startet der Diener, der Diener startet den Modellserver (er lädt das Modell in den Arbeitsspeicher, je nach Rechner 15 bis 60 Sekunden) und öffnet diese Seite im Browser unter <code>http://127.0.0.1:8777</code>. Der erste Start auf einem Rechner dauert 1 bis 3 Minuten (Python kopieren, Pakete einrichten, Modell laden); danach etwa eine halbe Minute.</p>
+      <p><b>Schritt 4 — bereit?</b> Oben rechts auf der Seite muss „Modell: Qwen2.5-7B-Instruct…" stehen. Solange dort „wird gesucht" steht, lädt der Modellserver noch. Das Feld „Anschluss" in Fenster 4 ist beim Start selbst gefüllt worden („Anschluss erkannt: COMx" in der Zeile darunter); nur wenn dort „Kein USB-Anschluss erkannt" steht, das Brett prüfen und die COM-Nummer aus Schritt 2 eintragen.</p>
+      <p><b>Schritt 5 — erster Test von Hand.</b> In Fenster 3 unter „Vorgefertigt" <code>test1_blink_1hz.py</code> wählen, „In die Eingabe" drücken, dann in Fenster 4 „Programm auf den ESP32". Der Interpreter übersetzt zuerst (bei Erfolg bleibt sein Fenster leer, der Rückgabewert steht in der Zeile darunter), dann läuft der Fortschrittsbalken über dem ESP32-Fenster, und das Brett meldet <code>MPY: soft reboot</code>. Die Bord-LED blinkt einmal je Sekunde. Meldet das Brett nichts: „Betriebssystem auf den ESP32" drücken (spielt MicroPython auf, etwa 60 Sekunden), dann Schritt 5 wiederholen.</p>
+      <p><b>Schritt 6 — der Agent.</b> In Fenster 1 den Auftrag eintippen, zum Beispiel „Schreibe ein MicroPython-Programm, das die LED am ESP32 eine Sekunde an und drei Sekunden aus blinken lässt", dann „Agent" drücken. Während er läuft, sind alle anderen Knöpfe grau; unter den Knöpfen steht jeder Schritt mit Uhrzeit. „Abbruch" hält ihn an. Am Ende steht STATUS BESTANDEN oder GESCHEITERT mit Befund.</p>
+      <p><b>Schritt 7 — beenden.</b> Das Fenster „Kurs-Agent" schließen. Damit werden Leitung, Modellserver und Diener beendet; danach läuft nichts mehr vom Kurs. Den Browser-Reiter schließen.</p>
+      <p><b>Wenn es klemmt.</b></p>
+      <ul>
+        <li><i>„Modell: wird gesucht" bleibt stehen.</i> Der Modellserver ist nicht hochgekommen. Fenster „Kurs-Agent" ansehen: Dort steht, was er gemeldet hat. Häufigste Ursache: zu wenig freier Arbeitsspeicher — andere Programme schließen, Fenster schließen, <code>START.bat</code> neu starten. Blockiert ein Virenschutz oder Smart App Control den Server, versucht der Diener zuerst die signierte Fassung unter <code>paket\llama_signiert</code>.</li>
+        <li><i>„Diener antwortet nicht" auf der Seite.</i> Das Fenster „Kurs-Agent" ist zu oder abgestürzt. <code>START.bat</code> neu starten; die Seite verbindet sich von selbst wieder.</li>
+        <li><i>COM-Anschluss belegt.</i> Ein anderes Programm hält die Leitung (Thonny, Arduino-IDE, ein Terminal). Dort schließen, dann erneut.</li>
+        <li><i>Falscher Anschluss.</i> Die COM-Nummer im Geräte-Manager nachsehen und im Feld „Anschluss" eintragen.</li>
+        <li><i>Das Brett meldet sich nicht.</i> Erst Verbinden und Strg+C im Terminal (das alte Programm läuft noch), sonst „Betriebssystem auf den ESP32". Hilft auch das nicht: Kabel (Datenkabel?), anderer USB-Anschluss, Brett ab- und anstecken.</li>
+        <li><i>Der Kurs läuft schon.</i> Sagt <code>START.bat</code>, wenn es bereits ein Fenster „Kurs-Agent" gibt; dann öffnet es nur den Browser.</li>
+      </ul>
+      <p><b>Entfernen.</b> Den Ordner löschen. Mehr ist nicht auf dem Rechner — außer dem CH340-Treiber im Treiberspeicher von Windows, falls er in Schritt 3 eingerichtet wurde.</p>
+      <p><b>Ehrlich gesagt.</b> Geprüft ist das alles auf einem eingerichteten Windows-11-Rechner mit 16 GB (16.10.2026, Brett an COM3): Einrichtung 12 von 12, Schalter 9 von 9, sechs Agentenläufe. Auf einem leeren Rechner, auf dem der Ordner zum ersten Mal landet, ist es noch nicht gemessen worden.</p>
+    </div>
+  </section>
+
+  <section class="reiter" id="gebote">
+    <h2>Die Anforderungen — sein Wort, 15.10.2026</h2>
+    <ol class="gebote">
+      <li><b>Wir vermuten nie etwas! Wir rechnen und prüfen immer — ein für alle Mal. Und das wird bis ins kleinste Detail befolgt.</b><br><small>Keine Aussage über einen Zustand ohne Messung daneben. Ein Werkzeug, das etwas nicht gemessen hat, sagt NICHT GEMESSEN — nie „läuft jetzt".</small></li>
+      <li><b>Der manuelle Test muss zu 100 % funktionieren!</b><br><small>Jeder Knopf im Reiter Testen tut jedes Mal, was er sagt — mit dem Brett, nicht nur am Rechner. Was nicht 100 % geht, wird nicht angeboten.</small></li>
+      <li><b>Das System muss autark funktionieren, also ohne Internet. In der Entwicklung beobachtet, analysiert und verbessert die KI das System — aber sie ist nie Teil des Systems.</b><br><small>Alles läuft auf diesem Rechner (127.0.0.1): Seite, Diener, Werkzeuge, 7B. Kein Netz, kein Konto, keine Brücke im Betrieb.</small></li>
+      <li><b>Wir bescheißen nicht! Kein Fake, keine fertigen Programme aus der Hinterhand, um dem User zu gefallen.</b><br><small>Keine Lösung in Vorlagen, Vorspann, Prüfern oder Werkzeugen. Jeder Lauf belegt, woher sein Code kam — Rohantwort, Prüfsumme bis aufs Brett.</small></li>
+      <li><b>Es wird grundehrlich geprüft, ob es Fehler gibt; sie werden ohne Ausnahme benannt und behoben.</b><br><small>Auch die eigenen Fehler und die der Werkzeuge — mit Messung, Ursache und Abhilfe. Nichts wird weggelassen, weil es unbequem ist.</small></li>
+      <li><b>Alles wird gegen diese Anforderungen immer bis ins Detail geprüft!</b><br><small>Vor jeder Abgabe, jedem Einspielen, jeder Aussage: Anforderungen Punkt für Punkt gegen das Ergebnis halten — mit Messung, nicht mit Durchsicht.</small></li>
+      <li><b>Wir überlassen nichts dem Zufall. Zuerst wird in der Literatur und im Git nachgesehen; erst nach ausführlicher Information — dann und nur dann — entstehen eigene Ansätze auf dieser Grundlage und dem allgemeinen Wissen.</b><br><small>Vor jedem Bauschritt Stand der Technik lesen und die Quellen nennen; ein eigener Ansatz benennt, worauf er fußt. Kein Eigenbau aus dem Stegreif.</small></li>
+      <li><b>Alles muss über eine Datei auf einen jungfräulichen Rechner übergeben werden können.</b><br><small>Ein Archiv mit allem — Seite, Diener, Werkzeuge, Python, llama-server, 7B, Treiber, Firmware. Entpacken, START.bat, fertig; geprüft auf einem Rechner ohne Python und ohne Netz.</small></li>
+      <li><b>Bevor etwas auf diesem Rechner installiert wird, wie Treiber, ist nachzusehen, ob es das schon gibt. Ansonsten ist alles mitzuführen — wir haben kein Internet.</b><br><small>Jeder Einrichtungsschritt prüft erst, was da ist (Treiber, Python, Pakete, Firmware), und tut nur, was fehlt. Alles, was fehlen kann, liegt im Paket; nichts kommt aus dem Netz — was nicht da ist, wird gesagt.</small></li>
+      <li><b>Wir suchen immer eine Lösung — geht nicht gibt es nicht!</b><br><small>Ein Hindernis wird benannt, dann wird gesucht: Literatur, Git, ein anderer Weg, eine Messung mehr. Die Suche selbst gehört in den Bericht.</small></li>
+    </ol>
+    <p class="meta">Wortlaut und Umsetzung je Anforderung auch in <code>ANFORDERUNGEN.md</code> im Paketordner. Neue Anforderungen kommen hier dazu.</p>
+  </section>
+</main>
+
+<script>
+const LLM = "http://127.0.0.1:8099";          // der Modellserver
+const DIENER = "";                             // dieselbe Adresse wie die Seite (127.0.0.1:8777)
+const $ = id => document.getElementById(id);
+const eingabe = $("eingabe"), ausgabe = $("ausgabe"), ausgabeLLM = $("ausgabe_llm"), meta = $("meta"), editor = $("editor");
+let laeuft = false, uebersetzt = "";           // Name der zuletzt erfolgreich uebersetzten Datei
+
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("an", x === b));
+  document.querySelectorAll(".reiter").forEach(r => r.classList.toggle("an", r.id === b.dataset.reiter));
+}));
+
+function zeigen(text, klasse) { ausgabe.className = klasse || ""; ausgabe.value = text; ausgabe.scrollTop = ausgabe.scrollHeight; }
+function zeigenLLM(text, klasse) { ausgabeLLM.className = klasse || ""; ausgabeLLM.value = text; ausgabeLLM.scrollTop = ausgabeLLM.scrollHeight; }
+function sperren(ja) {                                           // im Agentenmodus alles grau ausser Abbruch (sein Wort 11:45)
+  laeuft = ja || laeuftAgent;
+  document.querySelectorAll("button.k").forEach(b => { if (laeuftAgent) b.disabled = (b.id !== "agent_stopp"); else if (!b.dataset.frei) b.disabled = ja; else b.disabled = (b.id === "agent_stopp"); });
+  document.querySelectorAll("#testen select, #testen input[type=text]").forEach(e => { if (e.id !== "repl") e.disabled = laeuftAgent; });   // Vorgefertigt, Dateiname, Anschluss (sein Wort 11:50)
+  if (!laeuftAgent && !ja && typeof replKnoepfe === "function") replKnoepfe();
+}
+
+// ---------------------------------------------------------------- 1 · das Sprachmodell
+async function modellname() {
+  try {
+    const d = await (await fetch(LLM + "/v1/models")).json();
+    const n = (d.data && d.data[0] && d.data[0].id) || "?";
+    $("modell").textContent = "Modell: " + n.split(/[\\/]/).pop();
+  } catch (e) {
+    $("modell").innerHTML = '<span class="fehler">Modellserver auf 127.0.0.1:8099 (noch) nicht erreichbar</span>';
+    setTimeout(modellname, 5000);
+  }
+}
+
+async function anDasLLM() {
+  const text = eingabe.value;
+  if (!text.trim() || laeuft) return;
+  sperren(true); zeigenLLM("", "cursor"); meta.textContent = "";
+  fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art: "LLM_FRAGE", text }) }).catch(() => {});
+  const t0 = performance.now(); let antwort = "", stuecke = 0;
+  wartenAnzeigen(true);
+  try {
+    const r = await fetch(LLM + "/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: text }], max_tokens: 1200, temperature: 0.2, stream: true }) });
+    if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 200));
+    const leser = r.body.getReader(), dec = new TextDecoder(); let rest = "";
+    while (true) {
+      const { value, done } = await leser.read(); if (done) break;
+      rest += dec.decode(value, { stream: true });
+      const zeilen = rest.split("\n"); rest = zeilen.pop();
+      for (const z of zeilen) {
+        if (!z.startsWith("data:")) continue;
+        const daten = z.slice(5).trim(); if (daten === "[DONE]") continue;
+        try { const j = JSON.parse(daten); const teil = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+              if (teil) { if (!antwort) wartenAnzeigen(false); antwort += teil; stuecke++; ausgabeLLM.value = antwort; ausgabeLLM.scrollTop = ausgabeLLM.scrollHeight; } } catch (e) {}
+      }
+    }
+    meta.textContent = `${((performance.now() - t0) / 1000).toFixed(1)} s · ${stuecke} Stücke · ${antwort.length} Zeichen · unverändert vom Modell`;
+    fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art: "LLM_ANTWORT", text: antwort }) }).catch(() => {});
+  } catch (e) {
+    meta.textContent = "Keine Antwort vom Modellserver (127.0.0.1:8099): " + e.message;
+  } finally { wartenAnzeigen(false); ausgabeLLM.classList.remove("cursor"); sperren(false); }
+}
+
+// ---------------------------------------------------------------- 2 · das Programm
+async function dateienLaden() {
+  try {
+    const d = await (await fetch(DIENER + "/dateien")).json();
+    const s = $("datei"); s.innerHTML = "";
+    for (const n of d.dateien) { const o = document.createElement("option"); o.value = n; o.textContent = n; s.appendChild(o); }
+    // sein Wort (16.10.2026): „alle Fenster am Anfang leeren" — nichts wird von selbst geladen
+  } catch (e) { zeigen("Der Diener (127.0.0.1:8777) antwortet nicht — die Seite muss über START.bat geöffnet sein, nicht als Datei.", "fehler"); }
+}
+async function inDenEditor() {
+  const name = $("datei").value; if (!name) return;
+  const d = await (await fetch(DIENER + "/datei?name=" + encodeURIComponent(name))).json();
+  editor.value = d.inhalt || ""; $("name").value = name; uebersetzt = ""; sperren(false);
+  $("stand").textContent = name + " geladen — ändern erlaubt; danach übersetzen.";
+}
+async function uebersetzen() {
+  if (laeuft) return;
+  let name = ($("name").value || "programm.py").trim().replace(/[^A-Za-z0-9_.-]/g, "_");
+  if (!name.endsWith(".py")) name += ".py";
+  $("name").value = name;
+  sperren(true); zeigen("", "cursor"); meta.textContent = "";
+  try {
+    const d = await (await fetch(DIENER + "/uebersetzen", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, inhalt: editor.value }) })).json();
+    zeigen(d.zeilen.join("\n"), d.ok ? "gut" : "fehler");   // nur, was der Interpreter selbst sagt (sein Wort 16.10.2026, 02:50)
+    if (d.inhalt) editor.value = d.inhalt;          // gemeinsame Einrueckung entfernt — die Eingabe zeigt, was uebersetzt wurde
+    uebersetzt = d.ok ? d.name : "";
+    $("stand").textContent = `Interpreter (py_compile ${d.name}): Rückgabewert ${d.rc}` + (d.hinweis ? " — " + d.hinweis : "");
+    return d.ok;
+  } catch (e) { $("stand").textContent = "Diener antwortet nicht: " + e.message; return false; }
+  finally { ausgabe.classList.remove("cursor"); sperren(false); }
+}
+async function werkzeug(name, eingabeDaten) {
+  if (laeuft && !laeuftAgent) return;   // 11:34 gemessen: der Agent sperrt die Knoepfe selbst — vorher kehrte werkzeug() hier um, Simulator und Download liefen nie
+  // Wohin die Ausgabe gehoert (sein Wort 16.10.2026, 10:05: „das ist doch keine Interpreterausgabe!"):
+  // Brett-Werkzeuge (laden, Betriebssystem, nachlesen) sprechen mit dem Brett -> Fenster „Direkt am ESP32";
+  // Simulator/Interpreter-Werkzeuge -> Interpreter-Ausgabe. Immer nur, was das Werkzeug selbst ausgibt.
+  // Sein Wort (10:15, Thonny als Massstab): im ESP32-Fenster steht nur, was das Brett selbst sagt — „MPY: soft reboot",
+  // Ausgabe oder Traceback des Programms, Banner, >>>. Der Bericht des Werkzeugs bleibt draussen (Balken + Standzeile);
+  // nach dem Laden verbindet die Seite das Terminal und loest Strg+D aus, dann schreibt das Brett.
+  const amBrett = /^esp32_/.test(name);                           // Brett-Werkzeuge: live ins ESP32-Fenster (11:45: „ich habe keinen Download gesehen")
+  const basis = amBrett ? (replText ? replText.replace(/\n*$/, "\n\n") : "") : "";
+  const zeigeWz = (text, klasse) => { if (amBrett) { replText = basis + text; term.value = replText; term.scrollTop = term.scrollHeight; } else zeigen(text, klasse); };
+  sperren(true); zeigeWz("", "cursor"); meta.textContent = "";
+  const t0 = performance.now();
+  try {
+    const a = await (await fetch(DIENER + "/werkzeug", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, eingabe: eingabeDaten }) })).json();
+    if (a.fehler) throw new Error(a.fehler);
+    while (true) {
+      await new Promise(r => setTimeout(r, 500));
+      const d = await (await fetch(DIENER + "/ausgabe?id=" + a.id)).json();
+      const text = d.zeilen.join("\n");
+      const klasse = /NICHT BESTANDEN|^FEHLER|\nFEHLER/.test(text) ? "fehler" : /BESTANDEN/.test(text) ? "gut" : "";
+      zeigeWz(text, klasse);
+      balken(name, text, (performance.now() - t0) / 1000, d.fertig);
+      if (d.fertig) { const urteil = (text.split("\n").find(z => /BESTANDEN|^FEHLER|^Traceback/.test(z)) || "").slice(0, 160);
+                      $("stand").textContent = `${name}: ${d.dauer_s} s` + (d.rc === 0 ? "" : ` (Rückgabe ${d.rc})`) + (urteil ? " — " + urteil : "");
+                      if (!laeuftAgent && /FIRMWARE BESTANDEN|LADEN BESTANDEN/.test(text)) { await warte(800); await verbinden(); await warte(400); await replSenden("strg_d"); }
+                      return text; }
+    }
+  } catch (e) { $("stand").textContent = "Werkzeug nicht gestartet: " + e.message; return "FEHLER: " + e.message; }
+  finally { ausgabe.classList.remove("cursor"); sperren(false); }   // Balken bleibt mit „fertig nach … s" stehen (sein Wort 11:50: „warum sehe ich den Fortschrittsbalken nicht mehr?")
+}
+
+// Fortschrittsbalken: beim Laden nach Schritten (1..7 aus der Ausgabe), beim Betriebssystem nach
+// Zeit (Loeschen und Schreiben dauern zusammen etwa 60 s), sonst laufendes Band.
+const SCHRITTE_LADEN = ["Treiber und Anschluss", "Leitung oeffnen", "MicroPython antwortet", "Platz auf dem Brett", "Datei schreiben", "Pruefsumme vom Brett", "Neustart"];
+function balken(name, text, sek, fertig) {
+  const b = $("balken"), f = $("fuell"), t = $("balken_text");
+  b.hidden = false; f.classList.remove("unbestimmt");
+  if (fertig) { f.style.width = "100%"; t.textContent = name + " — fertig nach " + sek.toFixed(1) + " s"; return; }
+  if (name === "esp32_laden") {
+    const n = (text.match(/^\s*\d\. /gm) || []).length;
+    f.style.width = Math.round(100 * n / 7) + "%";
+    t.textContent = "Auf den ESP32 laden: Schritt " + Math.min(n + 1, 7) + " von 7 — " + (SCHRITTE_LADEN[Math.min(n, 6)]) + " · " + sek.toFixed(0) + " s";
+  } else if (name === "esp32_firmware") {
+    f.style.width = Math.min(95, Math.round(100 * sek / 60)) + "%";
+    t.textContent = "Betriebssystem auf den ESP32: Speicher löschen und 1,8 MB schreiben · " + sek.toFixed(0) + " s (etwa 60 s)";
+  } else {
+    f.style.width = ""; f.classList.add("unbestimmt");
+    t.textContent = name + " läuft · " + sek.toFixed(0) + " s";
+  }
+}
+
+// ---------------------------------------------------------------- Der Agent — genau nach seiner Anweisung (16.10.2026, 01:50–01:55):
+//  A1 „Der Agent extrahiert den reinen Python-Code und kopiert ihn in das Eingabefenster des Interpreters."
+//  A2 „Danach zeigt der Interpreter das Ergebnis an."
+//  A3 „Danach prüft der Agent zuerst, ob der ESP32 antwortet: MPY: soft reboot / MicroPython v… / >>>"
+//  A4 „Danach löst der Agent den Download aus. Alle eventuellen Fehlermeldungen gibt der Agent oben als
+//      Anhang zum alten Prompt wieder mit in die LLM und wartet auf das neue Ergebnis."
+//  Kein Vorspann, keine Vorlage, kein eigener Code. Was das LLM nicht schreibt, schreibt niemand.
+let agentStopp = false, laeuftAgent = false;
+let wartezeiger = null;
+function wartenAnzeigen(an) {           // sichtbar machen, dass das LLM den Prompt liest (kein Wort kommt, bis es fertig gelesen hat)
+  clearInterval(wartezeiger); wartezeiger = null;
+  if (!an) return;
+  const t0 = performance.now(), wz = Math.round((eingabe.value.length) / 5);
+  const tick = () => { meta.textContent = `LLM liest den Prompt (~${wz} Wörter) … ${((performance.now() - t0) / 1000).toFixed(0)} s — das erste Wort kommt, wenn es fertig gelesen hat`; };
+  tick(); wartezeiger = setInterval(tick, 500);
+}
+async function llmFrage(messages, zeigeLive) {
+  wartenAnzeigen(true);
+  const r = await fetch(LLM + "/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, max_tokens: 1200, temperature: 0.2, stream: true }) });
+  if (!r.ok) { wartenAnzeigen(false); throw new Error("HTTP " + r.status); }
+  const leser = r.body.getReader(), dec = new TextDecoder(); let rest = "", antwort = "";
+  while (true) {
+    const { value, done } = await leser.read(); if (done) break;
+    rest += dec.decode(value, { stream: true });
+    const zeilen = rest.split("\n"); rest = zeilen.pop();
+    for (const z of zeilen) {
+      if (!z.startsWith("data:")) continue; const daten = z.slice(5).trim(); if (daten === "[DONE]") continue;
+      try { const j = JSON.parse(daten); const teil = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+            if (teil) { if (!antwort) { wartenAnzeigen(false); meta.textContent = "LLM schreibt …"; } antwort += teil; if (zeigeLive) zeigeLive(antwort); } } catch (e) {}
+    }
+  }
+  wartenAnzeigen(false); meta.textContent = antwort ? "LLM fertig." : "LLM: keine Antwort.";
+  return antwort;
+}
+function notiz(art, text) { fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art, text }) }).catch(() => {}); }
+const warte = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function brettBereit(port, stand) {
+  // A3 (sein Wort 16.10.2026, 11:40): „der Agent soll zuvor testen, ob der ESP32 angeschlossen ist und sich
+  // meldet über seriell — das ist auch online auszugeben. Wenn keine Meldung kommt, läuft das aktuelle
+  // Programm noch: dann stoppen, oder eben die Firmware neu aufspielen. Das kompilierte Programm erst
+  // aufspielen, wenn die Freigabe-Meldung kommt, und dann starten."  Freigabe = die Eingabeaufforderung >>>.
+  // Alles laeuft ueber die offene Leitung, das ESP32-Fenster zeigt es live.
+  const auf = async () => { const o = await (await fetch(DIENER + "/seriell/oeffnen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ port }) })).json();
+                            if (o.fehler) return "Leitung " + port + ": " + o.fehler; replVerbunden = true; replKnoepfe(); return ""; };
+  const gelesen = async () => { await replLesen(); const d = await (await fetch(DIENER + "/seriell/lesen?ab=1")).json(); return d.text || ""; };
+  // Strg+B: verlaesst den raw REPL (11:34 im Protokoll: Brett stand im raw REPL, Prompt „>" statt „>>>"); im normalen REPL
+  // druckt Strg+B das Banner und >>> — das ist die Meldung des Bretts.
+  const strgB = () => fetch(DIENER + "/seriell/senden", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "\u0002", art: "" }) });
+  // 1. angeschlossen und meldet sich?
+  let f = await auf(); if (f) return { ok: false, text: f };
+  await strgB(); await warte(1500);
+  if (/>>>/.test(await gelesen())) { await trennen(); return { ok: true, text: "meldet sich mit Banner und >>>" }; }
+  // 2. keine Meldung: laeuft das aktuelle Programm noch? stoppen
+  stand("ESP32 meldet sich nicht — läuft das Programm noch? Strg+C");
+  await replSenden("strg_c"); await warte(300); await replSenden("strg_c"); await warte(800); await strgB(); await warte(1500);
+  if (/>>>/.test(await gelesen())) { await trennen(); return { ok: true, text: "Programm gestoppt (Strg+C), Banner und >>> da" }; }
+  await trennen();
+  // 3. immer noch nichts: Betriebssystem aufspielen, dann erneut nachsehen
+  stand("ESP32 meldet sich auch nach Strg+C nicht — Betriebssystem wird aufgespielt (etwa 60 s)");
+  const fw = await werkzeug("esp32_firmware", { port });
+  if (!/FIRMWARE BESTANDEN/.test(fw)) return { ok: false, text: "Betriebssystem nicht aufgespielt: " + ((fw.split("\n").find(z => /FEHLER|NICHT BESTANDEN/.test(z)) || fw.split("\n").pop() || "").slice(0, 200)) };
+  f = await auf(); if (f) return { ok: false, text: f };
+  await warte(1500); await replSenden("strg_c"); await warte(800); await strgB(); await warte(1500);
+  const t = await gelesen(); await trennen();
+  if (/>>>/.test(t)) return { ok: true, text: "Betriebssystem aufgespielt, >>> da" };
+  return { ok: false, text: "ESP32 an " + port + " meldet sich auch mit neuem Betriebssystem nicht mit >>>. Empfangen:\n" + (t.trim() || "(nichts)") };
+}
+
+async function agentLauf() {
+  const prompt = eingabe.value.trim();
+  if (!prompt || laeuft) return;
+  const maxRunden = 3;                                           // fest (sein Wort 11:30: Runden-Feld weg)
+  const port = $("port").value.trim();
+  let name = ($("name").value || "programm.py").trim().replace(/[^A-Za-z0-9_.-]/g, "_"); if (!name.endsWith(".py")) name += ".py"; $("name").value = name;
+  const stand = (z) => {                                           // Liste der Schritte mit Uhrzeit (sein Wort 11:45: „das will ich alles sehen!")
+    const el = $("agent_stand"); el.hidden = false;
+    el.textContent = (el.textContent ? el.textContent + "\n" : "") + new Date().toTimeString().slice(0, 8) + "  " + z;
+    el.scrollTop = el.scrollHeight; notiz("AGENT", z); };
+  $("agent_stand").textContent = "";
+  const amBrett = (t) => { replText = (replText ? replText.replace(/\n*$/, "\n") : "") + t; term.value = replText; term.scrollTop = term.scrollHeight; };
+  let anhang = "", letzterCode = "", status = "GESCHEITERT", befund = "";
+  agentStopp = false; laeuftAgent = true; sperren(true); $("agent_stopp").disabled = false;
+  try {
+    for (let runde = 1; runde <= maxRunden; runde++) {
+      if (agentStopp) { befund = "vom Menschen gestoppt"; break; }
+      // Prompt oben: der alte Prompt, bei Wiederholung mit Anhang
+      // A4, ergaenzt (sein Wort 16.10.2026, 02:06): das fehlerhafte Programm kommt mit in den Anhang —
+      // „wie ein Lehrer, der das Heft zurueckgibt, nicht nur ‚Aufgabe 3 ist falsch'".
+      const text = anhang ? prompt + "\n\nAnhang — dein Programm aus dem letzten Versuch:\n```python\n" + letzterCode + "```\n\nFehlermeldung dazu:\n" + anhang + "\n\nBerichtige dieses Programm und antworte nur mit dem vollständigen Programm in einem Codeblock." : prompt;
+      eingabe.value = text;
+      stand(`Runde ${runde} von ${maxRunden}: Prompt ans LLM`);
+      notiz("LLM_FRAGE", text);
+      zeigenLLM("", "cursor");
+      const antwort = await llmFrage([{ role: "user", content: text }], (a) => zeigenLLM(a, ""));
+      ausgabeLLM.classList.remove("cursor");
+      notiz("LLM_ANTWORT", antwort);
+      // A1: reiner Python-Code in den Editor
+      const code = codeAus(antwort).trim() + "\n";
+      letzterCode = code;
+      editor.value = code;
+      stand(`Runde ${runde}: Code in den Editor (${code.split("\n").length} Zeilen)`);
+      await warte(600);
+      // A2: der Interpreter zeigt sein Ergebnis
+      const d = await (await fetch(DIENER + "/uebersetzen", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, inhalt: code }) })).json();
+      if (d.inhalt) editor.value = d.inhalt;
+      const interp = d.zeilen.join("\n");
+      zeigen(interp, d.ok ? "gut" : "fehler");
+      if (!d.ok) { anhang = d.zeilen.join("\n"); stand(`Runde ${runde}: Interpreter Rückgabewert ${d.rc} — Anhang an den Prompt`); await warte(1500); continue; }
+      uebersetzt = d.name;
+      // Simulator: laeuft das Programm ohne Fehler? (kein Massstab — sein Wort 11:30)
+      stand(`Runde ${runde}: Interpreter Rückgabewert 0 — Simulator`);
+      const sim = await werkzeug("programm_testen", { datei: name, sekunden: 6, oeffnen: false, fenster: false });
+      if (/Traceback|Error|^FEHLER|\nFEHLER/.test(sim)) {
+        anhang = "Der Simulator meldet beim Lauf:\n" + sim.split("\n").filter(z => /Traceback|Error|FEHLER|File |line /.test(z)).join("\n");
+        stand(`Runde ${runde}: Simulator meldet einen Fehler — Anhang an den Prompt`); await warte(1500); continue;
+      }
+      stand(`Runde ${runde}: Simulator läuft ohne Fehler — prüfe, ob der ESP32 antwortet`);
+      await warte(800);
+      // A3: ist der ESP32 angeschlossen und meldet er sich? (live im ESP32-Fenster)
+      stand(`Runde ${runde}: ist der ESP32 an ${port} angeschlossen und meldet er sich?`);
+      const b = await brettBereit(port, stand);
+      if (!b.ok) { befund = "ESP32: " + b.text.split("\n")[0]; stand(`${befund} — kein Fall für das LLM, Lauf beendet`); break; }   // Hardware, nicht das Programm
+      stand(`Runde ${runde}: ESP32 ${b.text} — Freigabe, das übersetzte Programm wird aufgespielt und gestartet`);
+      await warte(800);
+      // A4: Download
+      const lad = await werkzeug("esp32_laden", { datei: name, port, fenster: false, sekunden: 6 });
+      const tbLad = lad.match(/Traceback[\s\S]{0,600}/);
+      if (tbLad) { anhang = "Nach dem Download meldet der ESP32:\n" + tbLad[0]; stand(`Runde ${runde}: das Programm stürzt auf dem Brett ab — Anhang an den Prompt`); await warte(1500); continue; }
+      if (!/LADEN BESTANDEN/.test(lad)) { anhang = lad.split("\n").filter(z => !z.startsWith(">")).join("\n"); stand(`Runde ${runde}: Download nicht bestanden — Anhang an den Prompt`); await warte(1500); continue; }
+      // Meldungen des Bretts nach dem Neustart (ein Traceback ist eine Fehlermeldung)
+      await warte(800);
+      await verbinden(); await warte(3000); await replLesen();
+      const g = await (await fetch(DIENER + "/seriell/lesen?ab=0")).json();
+      const tb = (g.text || "").match(/Traceback[\s\S]{0,600}/);
+      if (tb) { await trennen(); anhang = "Nach dem Download meldet der ESP32:\n" + tb[0]; stand(`Runde ${runde}: das Programm stürzt auf dem Brett ab — Anhang an den Prompt`); await warte(1500); continue; }
+      await trennen();
+      status = "BESTANDEN"; befund = `Runde ${runde}: übersetzt, Simulator läuft ohne Fehler, ESP32 antwortet, Download mit Prüfsumme vom Brett, kein Traceback — nicht gegen einen Maßstab gemessen (es gibt keinen)`;
+      await verbinden();
+      break;
+    }
+    if (status !== "BESTANDEN" && !befund) befund = `${maxRunden} Runden verbraucht; letzter Anhang: ` + anhang.split("\n")[0];
+  } catch (e) { befund = "Fehler: " + e.message; }
+  stand(`STATUS ${status} — ${befund}`);
+  laeuftAgent = false; $("agent_stopp").disabled = true; sperren(false);
+}
+$("agent").addEventListener("click", agentLauf);
+$("leeren").addEventListener("click", () => { alleFensterLeeren(); $("agent_stand").textContent = ""; $("agent_stand").hidden = true; });   // sein Wort 11:35: „und Leeren wäre auch noch gut"
+$("agent_stopp").addEventListener("click", () => { agentStopp = true; });
+
+$("senden").addEventListener("click", anDasLLM);
+eingabe.addEventListener("keydown", e => { if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); anDasLLM(); } });
+$("laden_datei").addEventListener("click", inDenEditor);
+$("datei").addEventListener("change", inDenEditor);
+$("firmware").addEventListener("click", () => werkzeug("esp32_firmware", { port: $("port").value.trim() }));
+$("esp").addEventListener("click", async () => {                 // sein Wort 16.10.2026, 02:50: nur „Download Betriebssystem" und „Download Programm"
+  if (laeuft) return;                                            // der Download uebersetzt zuerst; sagt der Interpreter etwas, bleibt es stehen und nichts wird geladen
+  const ok = await uebersetzen();
+  if (!ok) return;
+  await werkzeug("esp32_laden", { datei: uebersetzt, port: $("port").value.trim(), fenster: false, sekunden: 6 });
+});
+editor.addEventListener("input", () => { uebersetzt = ""; });
+// ---------------------------------------------------------------- Text hin- und herreichen, von Hand
+function codeAus(text) {               // Codeblock aus einer Modellantwort, sonst der ganze Text
+  const m = text.match(/```(?:python|py)?\s*\n([\s\S]*?)```/);
+  return m ? m[1] : text;
+}
+$("aus_editor").addEventListener("click", () => { fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art: "AUS_EDITOR", text: "" }) }).catch(() => {}); editor.value = codeAus(ausgabeLLM.value).trim() + "\n"; uebersetzt = ""; sperren(false); $("stand").textContent = "Aus der LLM-Ausgabe übernommen."; });
+$("llm_eingabe").addEventListener("click", () => { notiz("LLM_EINGABE", ""); eingabe.value = (eingabe.value ? eingabe.value + "\n\n" : "") + ausgabeLLM.value; eingabe.focus(); });
+$("aus_eingabe").addEventListener("click", () => { fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art: "AUS_EINGABE", text: "" }) }).catch(() => {}); eingabe.value = (eingabe.value ? eingabe.value + "\n\n" : "") + ausgabe.value; eingabe.focus(); });
+$("editor_eingabe").addEventListener("click", () => { fetch(DIENER + "/notiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ art: "EDIT_EINGABE", text: "" }) }).catch(() => {}); eingabe.value = (eingabe.value ? eingabe.value + "\n\n" : "") + "```python\n" + editor.value.trim() + "\n```"; eingabe.focus(); });
+$("kopieren").addEventListener("click", async () => { try { await navigator.clipboard.writeText(ausgabe.value); meta.textContent = "kopiert"; } catch (e) { meta.textContent = "Kopieren: Text markieren und Strg+C"; } });
+// ---------------------------------------------------------------- 3 · direkt am Brett
+const term = $("terminal"), repl = $("repl");
+let replAb = 0, replVerbunden = false, replText = "";
+function replKnoepfe() {
+  for (const id of ["repl", "repl_senden", "strg_c", "strg_d", "trennen"]) $(id).disabled = !replVerbunden;
+  $("verbinden").disabled = replVerbunden;
+}
+async function replLesen() {
+  try {
+    const d = await (await fetch(DIENER + "/seriell/lesen?ab=" + replAb)).json();
+    if (d.text) { replText += d.text; if (replText.length > 60000) replText = replText.slice(-50000); term.value = replText; term.scrollTop = term.scrollHeight; }
+    replAb = d.ab;
+    if (replVerbunden !== d.verbunden) { replVerbunden = d.verbunden; replKnoepfe(); $("repl_stand").textContent = d.verbunden ? "Verbunden mit " + d.port + " — Befehle gehen direkt an das Brett." : "Nicht verbunden."; }
+    if (dienerWeg) { dienerWeg = false; $("stand").textContent = "Diener antwortet wieder."; }
+  } catch (e) { if (!dienerWeg) { dienerWeg = true; $("stand").textContent = "Diener antwortet nicht (127.0.0.1:8777) — START.bat erneut ausführen; diese Seite verbindet sich dann wieder."; } }
+}
+let dienerWeg = false;
+async function verbinden() {
+  const port = $("port").value.trim();
+  const d = await (await fetch(DIENER + "/seriell/oeffnen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ port }) })).json();
+  if (d.fehler) { $("repl_stand").textContent = "Verbinden: " + d.fehler; return; }
+  replVerbunden = true; replKnoepfe(); $("repl_stand").textContent = "Verbunden mit " + d.port + " — Befehle gehen direkt an das Brett."; repl.focus();
+}
+async function trennen() { await fetch(DIENER + "/seriell/schliessen", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); replVerbunden = false; replKnoepfe(); }
+async function replSenden(art) {
+  const text = art ? "" : repl.value;
+  if (!art && !text) return;
+  await fetch(DIENER + "/seriell/senden", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, art: art || "" }) });
+  if (!art) repl.value = "";
+}
+$("verbinden").addEventListener("click", verbinden);
+$("trennen").addEventListener("click", trennen);
+$("repl_senden").addEventListener("click", () => replSenden(""));
+$("strg_c").addEventListener("click", () => replSenden("strg_c"));
+$("strg_d").addEventListener("click", () => replSenden("strg_d"));
+repl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); replSenden(""); } });
+setInterval(replLesen, 300);
+// Der Schalter ist das Fenster von START.bat (sein Wort 16.10.2026) — die Seite meldet nichts beim Schliessen.
+async function protoLesen() {
+  if (!document.getElementById("protokoll").classList.contains("an")) return;
+  try { const d = await (await fetch(DIENER + "/protokoll?n=400")).json(); const el = $("proto");
+        const unten = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+        const ab = SEITENSTART.toISOString().slice(0, 10) + " " + SEITENSTART.toTimeString().slice(0, 8);
+        let zeigeAb = false; const neu = [];
+        for (const z of d.zeilen) { const m = z.match(/^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/); if (m && m[1] >= ab) zeigeAb = true; if (zeigeAb) neu.push(z); }
+        el.textContent = neu.length ? neu.join("\n") : "(noch nichts seit dem Öffnen der Seite)"; if (unten) el.scrollTop = el.scrollHeight; } catch (e) {}
+}
+setInterval(protoLesen, 1000);
+const SEITENSTART = new Date();
+function alleFensterLeeren() {
+  eingabe.value = ""; editor.value = ""; zeigen(""); zeigenLLM(""); meta.textContent = ""; term.value = ""; replText = ""; replAb = 0;
+  $("stand").textContent = ""; uebersetzt = ""; sperren(false);
+}
+alleFensterLeeren();
+// Anschluss beim Start selbst erkennen (sein Wort 16.10.2026, 14:40: „anwendersicher") — ports_zeigen nennt COMx und den Wandler
+(async () => {
+  try {
+    const d = await (await fetch(DIENER + "/ports")).json();
+    const m = (d.text || "").match(/(COM\d+)[^\n]*?(CH34\d|CP210\d?|USB-SERIAL|USB)/i);
+    if (m) { $("port").value = m[1]; $("stand").textContent = "Anschluss erkannt: " + m[1] + " (" + m[2] + ")"; }
+    else $("stand").textContent = "Kein USB-Anschluss erkannt — ist das Brett angeschlossen? Vorgabe COM3 bleibt.";
+  } catch (e) {}
+})();
+modellname(); dateienLaden();
+</script>
+</body>
+</html>

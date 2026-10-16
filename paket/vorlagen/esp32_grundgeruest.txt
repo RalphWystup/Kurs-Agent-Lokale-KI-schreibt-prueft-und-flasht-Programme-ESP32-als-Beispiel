@@ -1,0 +1,73 @@
+# Grundgeruest eines MicroPython-Programms fuer den ESP32
+# ======================================================
+#
+# Das hier ist KEINE Loesung, sondern das Handwerkszeug: was es gibt, wie es heisst,
+# und in welcher Reihenfolge es steht. Was das Programm TUN soll, steht im Auftrag —
+# das gehoert an die Stellen, die mit <<< ... >>> gekennzeichnet sind.
+#
+# Dieses Geruest laeuft absichtlich NICHT. Wer es unveraendert abschickt, bekommt
+# einen Syntaxfehler, und das ist so gewollt.
+
+
+# --- 1. Was es auf dem Brett gibt ---------------------------------------------------
+#
+#   import machine     Pins, PWM, Timer, ADC — alles, was Hardware anspricht
+#   import time        time.sleep(sekunden), time.sleep_ms(millisekunden), time.ticks_ms()
+#   import math        sin, cos, pi — fuer weiche Verlaeufe
+#
+# Was es NICHT gibt: tkinter, numpy, requests, os.system. MicroPython ist klein.
+# Und: time ist ein EIGENES Modul, nicht Teil von machine.
+
+import machine
+import time
+
+
+# --- 2. Einen Anschluss als Ausgang anlegen -----------------------------------------
+#
+#   led = machine.Pin(<nummer>, machine.Pin.OUT)
+#
+# Die Nummer steht im Auftrag. Geraten wird sie nie.
+# Schalten:   led.value(1)  ein      led.value(0)  aus
+#             led.on()               led.off()
+
+led = machine.Pin(<<< welcher Anschluss? steht im Auftrag >>>, machine.Pin.OUT)
+
+
+# --- 3. Wenn die Helligkeit sich aendern soll: PWM ----------------------------------
+#
+#   pwm = machine.PWM(machine.Pin(<nummer>))
+#   pwm.freq(1000)              Traegerfrequenz, 1000 Hz ist fuer eine LED richtig
+#   pwm.duty_u16(<0 bis 65535>) Helligkeit: 0 = aus, 65535 = voll
+#
+# ACHTUNG, haeufigster Fehler: duty_u16 geht bis 65535, nicht bis 1023.
+# Wer duty_u16(1023 * x) schreibt, bleibt bei 1,6 Prozent Helligkeit stehen.
+#
+# Die TRAEGERFREQUENZ (1000 Hz) ist nicht der Takt, den der Auftrag meint.
+# Der Auftrag meint, wie oft je Sekunde die LED sichtbar heller und dunkler wird.
+
+
+# --- 4. Das Programm laeuft, solange Strom anliegt ----------------------------------
+#
+# Ein Programm fuer das Brett endet nicht. Es braucht eine Endlosschleife:
+#
+#   while True:
+#       ...
+#
+# Darin stehen die Schritte und die Wartezeiten. Die Wartezeit bestimmt den Takt:
+# Zwei Wartezeiten von je 0,5 s ergeben eine Periode von 1 s, also 1 Hz.
+# Wer 2 Hz will, rechnet: 1 / 2 = 0,5 s je Periode, also zweimal 0,25 s.
+
+while True:
+    <<< was soll hier geschehen? Das steht im Auftrag. >>>
+    time.sleep(<<< wie lange? aus dem verlangten Takt gerechnet >>>)
+
+
+# --- 5. Was danach kommt -------------------------------------------------------------
+#
+# Geschrieben wird mit     schreib_datei
+# Angesehen mit            quelltext_pruefen   (was steht wirklich drin)
+# Gemessen ohne Brett mit  programm_testen     (Anschluesse, Takt, Form)
+# Auf das Brett mit        esp32_uebertragen
+# Dort nachgemessen mit    esp32_nachlesen
+#
+# Erst die Messung sagt, ob es stimmt. Der Augenschein sagt es nicht.

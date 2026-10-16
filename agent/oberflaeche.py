@@ -1,347 +1,452 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Die Bedienoberflaeche im Browser — damit niemand eine Kommandozeile braucht.
+"""Der Diener hinter Frage.html — startet auf Knopfdruck die Werkzeuge, sonst nichts.
 
-Ein kleiner Webserver auf ``127.0.0.1``, der eine Seite ausliefert und den Agenten in
-einem Nebenlauf startet. Die Seite fragt alle halbe Sekunde nach neuen Ereignissen und
-zeigt sie an: welcher Schritt laeuft, welches Werkzeug gerufen wurde, was es geantwortet
-hat, ob die Abnahme bestanden ist.
+Neuanfang 15.10.2026. Sein Wort: „Im Reiter Testen geschieht zuerst alles per Hand": zwei
+vorgefertigte Python-Dateien, waehlbar und aenderbar, durch den Interpreter uebersetzen, dann
+Simulator oder Laden auf den ESP32, davor das Betriebssystem (MicroPython) aufspielen.
 
-Warum ein Webserver und kein Fenster: das eingebettete Python bringt **kein tkinter** mit.
-Ein Fenster haette also eine Installation verlangt — genau das, was dieses Paket nicht tut.
-Der Browser ist auf jedem Windows-Rechner da.
+Kein Agent, kein Modellaufruf hier (die Seite spricht mit dem 7B selbst). Jeder Knopf ruft genau
+ein Werkzeug als eigenen Prozess, und die Ausgabe laeuft Zeile fuer Zeile in die Seite.
 
-Warum Nachfragen und keine dauerhafte Verbindung: beides geht, aber Nachfragen geht immer.
-Ein halbsekuendliches GET ueberlebt Virenscanner, Zwischenspeicher und einen Browser, der
-die Verbindung schliesst, weil der Reiter in den Hintergrund rutscht.
+Wege (nur 127.0.0.1:8777):
+    GET  /                      die Seite (Frage.html, bei jedem Aufruf gelesen)
+    GET  /zustand               {"laeuft": ...}  — damit die Bruecke start/status kann
+    GET  /dateien               die vorgefertigten Programme in testprogramme\\
+    GET  /datei?name=x.py       Inhalt einer davon
+    POST /uebersetzen           {name, inhalt}: in die Werkstatt schreiben, mit dem Interpreter
+                                des Kurses uebersetzen (py_compile) — Fehler im Wortlaut
+    POST /werkzeug              {name, eingabe}: Werkzeug starten, gibt {"id": n}
+    GET  /ausgabe?id=n          {"zeilen": [...], "fertig": bool}
+    GET  /ports                 Ausgabe von ports_zeigen
 
-``127.0.0.1`` ist ausdruecklich gemeint: der Server ist von aussen nicht erreichbar, auch
-nicht aus dem Hoersaal-WLAN. Wer die Seite sehen will, sitzt an diesem Rechner.
+Die Bruecke startet diese Datei mit „kursagent start" (Python des Kurses, abgeloest).
 """
 from __future__ import annotations
-import http.server, json, socketserver, threading, time, webbrowser, subprocess, sys, pathlib, os
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from pfade import ABLAGE, WURZEL, eine                      # noqa: E402
-import agent as agentmodul                                   # noqa: E402
+import http.server
+import json
+import os
+import signal
+import pathlib
+import subprocess
+import sys
+import threading
+import time
+import webbrowser
 
-ADRESSE, PORT = "127.0.0.1", 8777
-PORTE = range(8777, 8787)      # zehn Versuche, falls einer schon belegt ist
+HIER = pathlib.Path(__file__).resolve().parent
+WURZEL = HIER.parent
+for _p in (str(HIER), str(WURZEL)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+from pfade import ABLAGE, WERKSTATT, python_exe, umgebung   # noqa: E402
 
-# Fertige Auftraege. Ein Anfaenger soll klicken koennen, nicht formulieren muessen — und
-# wer formulieren will, hat daneben das freie Feld.
-AUFTRAEGE = [
-    ("LED blinken lassen, nur geprüft",
-     "Schreibe ein MicroPython-Programm blink.py, das die LED an GPIO 2 einmal je Sekunde "
-     "blinken laesst. Pruefe es danach mit programm_testen gegen die Erwartung pins [2] und "
-     "takt_hz 1.0. Es ist keine Hardware angeschlossen.",
-     "ohne Hardware — das Programm entsteht, läuft und wird abgenommen"),
-    ("LED blinken lassen und auf den ESP32",
-     "Richte die Umgebung ein und installiere esptool und mpremote. Schreibe dann ein "
-     "MicroPython-Programm blink.py, das die LED an GPIO 2 einmal je Sekunde blinken laesst, "
-     "und pruefe es mit programm_testen gegen pins [2] und takt_hz 1.0. Sieh danach nach, "
-     "welche seriellen Anschluesse es gibt, und melde mir, welchen ich bestaetigen soll.",
-     "mit Hardware — bis zum Anschluss, das Flashen bestätigen Sie"),
-    ("Zweimal blinken, verschiedene Takte",
-     "Schreibe ein MicroPython-Programm zwei.py, in dem die LED an GPIO 2 zweimal je Sekunde "
-     "und die LED an GPIO 4 einmal je Sekunde blinkt. Pruefe es mit programm_testen gegen "
-     "pins [2, 4]. Es ist keine Hardware angeschlossen.",
-     "zeigt, dass jeder Anschluss einzeln aufgezeichnet wird"),
-    ("Was ist an diesem Rechner angeschlossen?",
-     "Richte die Umgebung ein, installiere esptool und sieh dann nach, welche seriellen "
-     "Anschluesse es an diesem Rechner gibt.",
-     "kurzer Lauf — gut als erster Versuch"),
-]
+WERKZEUGE = HIER / "werkzeuge"
+PROGRAMME = WURZEL / "testprogramme"
+SEITE = WURZEL / "Frage.html"
+OHNE_FENSTER = {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
+LESEN = {"encoding": "utf-8", "errors": "replace"}
 
-def auftraege_lesen() -> list:
-    """Die festen Anfragen (Knoepfe ueber dem Eingabefeld) aus agent/auftraege.json — je Aufruf
-    gelesen, damit der Dozent sie aendern kann, ohne den Agenten neu zu starten (05.10.2026:
-    „feste Anfragen ueber Buttons hinterlegen, aber auch freie Eingabe ermoeglichen")."""
-    d = pathlib.Path(__file__).with_name("auftraege.json")
-    try:
-        liste = json.loads(d.read_text(encoding="utf-8"))
-        return [{"titel": a["titel"], "text": a["text"], "hinweis": a.get("hinweis", "")} for a in liste]
-    except Exception:
-        return [{"titel": a, "text": b, "hinweis": c} for a, b, c in AUFTRAEGE]
-
-
-_ereignisse: list = []
+_jobs: dict = {}
 _sperre = threading.Lock()
-_laeuft = False
+_naechste = [0]
 
-_geraete = {"zeit": 0.0, "liste": None}
-def geraete() -> list | None:
-    """Welche seriellen Anschluesse gerade da sind — fuer die Kopfzeile („sehe nie, ob der ESP32 ueberhaupt
-    verbunden ist", 05.10.2026). Hoechstens alle 5 s, und nie waehrend ein Werkzeug laeuft: Ein Flashen oder
-    Uebertragen darf keine zweite Abfrage am selben Anschluss bekommen. None heisst: nicht feststellbar
-    (noch kein eigenes Python oder kein pyserial)."""
-    if _laeuft or time.time() - _geraete["zeit"] < 5:
-        return _geraete["liste"]
-    _geraete["zeit"] = time.time()
+
+def fenster_ist_der_schalter():
+    """Sein Wort (16.10.2026, 02:35): „ich will doch eine start bat zum starten! das muss alles
+    ausloesen und wenn ich diese schliesse — sie bleibt offen solange ich arbeite — wird wieder
+    alles abgestellt."  Zwei Sicherungen nach Windows-Dokumentation (kein Raten):
+      1. SetConsoleCtrlHandler: beim Schliessen des Fensters (CTRL_CLOSE_EVENT, auch Abmelden/
+         Herunterfahren) laeuft aufraeumen() — Python selbst faengt nur Strg+C/Strg+Untbr ab.
+      2. Job-Objekt mit KILL_ON_JOB_CLOSE: stirbt dieser Prozess, wie auch immer, beendet Windows
+         alle Kindprozesse (Modellserver, Werkzeuge) mit — nichts bleibt stehen."""
+    if os.name != "nt":
+        return "kein Windows"
+    import ctypes
+    from ctypes import wintypes
+    k = ctypes.windll.kernel32
+    befund = []
     try:
-        from pfade import python_exe
-        w = str(pathlib.Path(__file__).resolve().parent / "werkzeuge")
-        if w not in sys.path:
-            sys.path.insert(0, w)
-        from ports_zeigen import ABFRAGE, WANDLER
-        if not python_exe().exists():
-            return None
-        from pfade import umgebung
-        r = subprocess.run([str(python_exe()), "-c", ABFRAGE], capture_output=True, text=True, timeout=10,
-                           env=umgebung(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        if r.returncode != 0:
-            return None
-        liste = []
-        for p in json.loads(r.stdout):
-            kennung = f"{p['vid']:04X}:{p['pid']:04X}" if p.get("vid") else ""
-            liste.append({"port": p["port"], "name": p.get("name", ""), "wandler": WANDLER.get(kennung)})
-        _geraete["liste"] = liste
-    except Exception:
-        return _geraete["liste"]
-    return _geraete["liste"]
-_sitzung = None          # das Gespraech: bleibt ueber Anweisungen hinweg offen (04.10.2026)
+        HANDLER = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
 
-
-def _melden(e: dict):
-    with _sperre:
-        e["zeit"] = time.strftime("%H:%M:%S")
-        _ereignisse.append(e)
-
-
-def _starten(auftrag: str):
-    """Eine Anweisung in der offenen Sitzung — die erste eroeffnet sie.
-
-    Bis zum 04.10.2026 war jeder Auftrag ein eigener Lauf mit leerem Gedaechtnis und neu
-    geladenem Modell. Jetzt bleibt beides stehen: „anderer Pin", „andere Frequenz", „erst
-    pruefen, dann laden" beziehen sich auf das, was vorher war."""
-    global _laeuft, _sitzung
-    _laeuft = True
+        def _handler(art):
+            if art in (2, 5, 6):                       # CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
+                aufraeumen("Fenster geschlossen")
+                return True
+            return False
+        global _ctrl_handler
+        _ctrl_handler = HANDLER(_handler)                # Referenz halten, sonst raeumt Python sie weg
+        befund.append("Ctrl-Handler " + ("gesetzt" if k.SetConsoleCtrlHandler(_ctrl_handler, True) else "NICHT gesetzt"))
+    except Exception as e:                                        # noqa: BLE001
+        befund.append(f"Ctrl-Handler Fehler: {e}")
     try:
-        if _sitzung is None:
-            _sitzung = agentmodul.Sitzung(agentmodul.sammlung(), laut=False, melden=_melden)
-        _sitzung.anweisung(auftrag)
-    except Exception as e:
-        _melden({"art": "fehler", "text": f"{type(e).__name__}: {e}"})
-        _sitzung = None                      # die Sitzung hat sich im Fehlerfall selbst geschlossen
-    finally:
-        _laeuft = False
-        _melden({"art": "ende"})
+        class IO_COUNTERS(ctypes.Structure):
+            _fields_ = [(n, ctypes.c_ulonglong) for n in ("r", "w", "o", "rb", "wb", "ob")]
+
+        class BASIC(ctypes.Structure):
+            _fields_ = [("PerProcessUserTimeLimit", ctypes.c_longlong), ("PerJobUserTimeLimit", ctypes.c_longlong),
+                        ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                        ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                        ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD), ("SchedulingClass", wintypes.DWORD)]
+
+        class EXTENDED(ctypes.Structure):
+            _fields_ = [("BasicLimitInformation", BASIC), ("IoInfo", IO_COUNTERS), ("ProcessMemoryLimit", ctypes.c_size_t),
+                        ("JobMemoryLimit", ctypes.c_size_t), ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                        ("PeakJobMemoryUsed", ctypes.c_size_t)]
+        k.CreateJobObjectW.restype = wintypes.HANDLE                # 64-Bit-Handles: ohne restype kuerzt ctypes auf 32 Bit (Fehler 6, gemessen 02:32)
+        k.GetCurrentProcess.restype = wintypes.HANDLE
+        k.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+        k.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        job = k.CreateJobObjectW(None, None)
+        info = EXTENDED()
+        info.BasicLimitInformation.LimitFlags = 0x2000          # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        ok1 = k.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))   # JobObjectExtendedLimitInformation
+        ok2 = k.AssignProcessToJobObject(job, k.GetCurrentProcess())
+        global _job
+        _job = job                                              # Handle halten: sein Schliessen = alles beenden
+        befund.append("Job-Objekt " + ("gesetzt" if ok1 and ok2 else f"NICHT gesetzt (Fehler {k.GetLastError()})"))
+    except Exception as e:                                        # noqa: BLE001
+        befund.append(f"Job-Objekt Fehler: {e}")
+    return ", ".join(befund)
 
 
-def _sitzung_schliessen(grund: str):
-    global _sitzung
-    if _sitzung is not None:
-        try:
-            _sitzung.schliessen()
-        except Exception:
-            pass
-        _sitzung = None
-        _melden({"art": "neu", "text": grund})
-
-
-def _werkzeug(name: str, eingabe: dict):
-    """Ein einzelnes Werkzeug ohne Modell — fuer die Knoepfe 'Prüfen' und 'Aufräumen'."""
-    w = agentmodul.sammlung()
-    _melden({"art": "ruft", "werkzeug": name, "eingabe": eingabe, "schritt": 0})
-    #  Auch Einzelaufrufe stehen im Protokoll — bis zum 04.10.2026 taten sie das nicht, und
-    #  ein Aufraeumen aus dem Browser, das das laufende Python halb loeschte, war darin
-    #  unsichtbar. Was ein Knopf tut, muss hinterher nachlesbar sein.
-    agentmodul.notieren(f"KNOPF {name} {json.dumps(eingabe, ensure_ascii=False)[:160]}")
-    t = agentmodul.ausfuehren(name, eingabe, w)
-    #  Die ersten drei Zeilen, nicht nur die erste: Bei esp32_firmware steht in Zeile 1 nur
-    #  "ESP32 erkannt", ob geflasht wurde erst in Zeile 3 (04.10.2026, 1:22 Uhr).
-    agentmodul.notieren("ERGIBT " + " | ".join(z.strip() for z in (t or "").splitlines()[:3])[:300])
-    _melden({"art": "ergibt", "werkzeug": name, "text": t, "schritt": 0,
-             **agentmodul.beurteilen(t)})
-    _melden({"art": "ende"})
-
-
-class Griff(http.server.BaseHTTPRequestHandler):
-    def log_message(self, *a):
-        pass                                  # kein Gekritzel in der Konsole
-
-    def _senden(self, art, inhalt: bytes, code=200):
-        self.send_response(code)
-        self.send_header("Content-Type", art)
-        self.send_header("Content-Length", str(len(inhalt)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(inhalt)
-
-    def do_GET(self):
-        if self.path == "/" or self.path.startswith("/?"):
-            return self._senden("text/html; charset=utf-8", seite().encode("utf-8"))
-        if self.path.startswith("/ereignisse"):
-            ab = 0
-            if "ab=" in self.path:
-                try:
-                    ab = int(self.path.split("ab=")[1].split("&")[0])
-                except ValueError:
-                    ab = 0
-            with _sperre:
-                neu = _ereignisse[ab:]
-                stand = len(_ereignisse)
-            return self._senden("application/json",
-                                json.dumps({"ab": stand, "neu": neu, "laeuft": _laeuft}).encode())
-        if self.path.startswith("/zustand"):
-            with _sperre:
-                stand = len(_ereignisse)
-            s = _sitzung
-            return self._senden("application/json", json.dumps({
-                "laeuft": _laeuft, "stand": stand, "wurzel": str(WURZEL),
-                "modell": (eine("modell/*.gguf") or pathlib.Path("—")).name,
-                "sitzung": None if s is None else {
-                    "anweisungen": s.anweisungen,
-                    "modell_geladen": bool(s.server is not None and s.server.poll() is None),
-                    "ohne_modell": s.ohne_modell,
-                    "erwartung": s.feste_erwartung, "ports": sorted(s.genannte_ports),
-                    "abgenommen": sorted(s.abgenommen), "ungeprueft": sorted(s.ungeprueft)},
-                "auftraege": auftraege_lesen(),
-                "geraete": geraete(),
-            }).encode())
-        if self.path.startswith("/led"):
-            # startswith, nicht ==: die Seite haengt ein ?t=<Zeit> an, um den
-            # Zwischenspeicher des Browsers zu umgehen. Mit == trifft die Route nie.
-            d = ABLAGE / "virtuelle_led.html"
-            if d.is_file():
-                return self._senden("text/html; charset=utf-8", d.read_bytes())
-            return self._senden("text/plain; charset=utf-8",
-                                "Noch keine Aufzeichnung.".encode(), 404)
-        self._senden("text/plain", b"nicht gefunden", 404)
-
-    def do_POST(self):
-        laenge = int(self.headers.get("Content-Length") or 0)
-        daten = json.loads(self.rfile.read(laenge) or b"{}")
-        if self.path == "/start":
-            auftrag = (daten.get("auftrag") or "").strip()
-            if not auftrag:
-                return self._senden("application/json", b'{"fehler": "kein Auftrag"}', 400)
-            if _laeuft:
-                #  Quereingabe (04.10.2026): waehrend der Agent arbeitet, wird die Eingabe als
-                #  Zwischenruf eingereiht und beim naechsten Schritt aufgenommen — statt 409.
-                if _sitzung is not None:
-                    _sitzung.zwischenruf(auftrag)
-                    return self._senden("application/json", b'{"zwischenruf": true}')
-                return self._senden("application/json", b'{"fehler": "laeuft schon"}', 409)
-            threading.Thread(target=_starten, args=(auftrag,), daemon=True).start()
-            return self._senden("application/json", b'{"gestartet": true}')
-        if self.path == "/neu":
-            #  Neues Gespraech: Sitzung schliessen (Modellserver beenden, Sperre loesen); die
-            #  Werkstatt bleibt, damit nichts verloren geht. Nur im Stillstand.
-            if _laeuft:
-                return self._senden("application/json", b'{"fehler": "laeuft schon"}', 409)
-            _sitzung_schliessen("Neues Gespraech begonnen.")
-            return self._senden("application/json", b'{"neu": true}')
-        if self.path == "/neuladen":
-            #  Agent und Modellanbindung neu einlesen, ohne das Fenster zu schliessen. Fuer den
-            #  Dozenten, der Korrekturen ueber die Bruecke einspielt (04.10.2026: drei Neustarts
-            #  an einem Nachmittag). Nur im Stillstand; Werkzeuge sind ohnehin Unterprozesse.
-            if _laeuft:
-                return self._senden("application/json", b'{"fehler": "laeuft schon"}', 409)
-            import importlib
-            _sitzung_schliessen("Agent neu geladen — das Gespraech beginnt von vorn.")
-            neu = []
-            for modulname in ("modell", "waechter", "sauber", "pfade"):
-                if modulname in sys.modules:
-                    importlib.reload(sys.modules[modulname]); neu.append(modulname)
-            importlib.reload(agentmodul); neu.append("agent")
-            stand = {n: time.strftime("%H:%M:%S", time.localtime(pathlib.Path(sys.modules[n].__file__).stat().st_mtime))
-                     for n in neu if n in sys.modules}
-            agentmodul.notieren("NEU GELADEN " + ", ".join(f"{k} ({v})" for k, v in stand.items()))
-            return self._senden("application/json", json.dumps({"neu_geladen": stand}).encode())
-        if self.path == "/werkzeug":
-            if _laeuft:
-                return self._senden("application/json", b'{"fehler": "laeuft schon"}', 409)
-            name = daten.get("name", "")
-            threading.Thread(target=_werkzeug,
-                             args=(name, daten.get("eingabe") or {}), daemon=True).start()
-            return self._senden("application/json", b'{"gestartet": true}')
-        self._senden("text/plain", b"nicht gefunden", 404)
-
-
-class Server(socketserver.ThreadingTCPServer):
-    # Absichtlich NICHT allow_reuse_address: ein belegter Port gehoert jemand anderem.
-    # Wir weichen aus, statt uns dazwischenzudraengen (siehe _freier_port).
-    allow_reuse_address = False
-    daemon_threads = True
-
-
-def seite() -> str:
-    """Die Seite wird bei jedem Aufruf gelesen: eine Aenderung an oberflaeche.html braucht so
-    keinen Neustart — der Dozent spielt sie ein und laedt den Browser neu."""
-    d = pathlib.Path(__file__).with_name("oberflaeche.html")
-    return d.read_text(encoding="utf-8") if d.is_file() else "<h1>oberflaeche.html fehlt</h1>"
-
-
-def _freier_port():
-    """Nimmt den ersten freien Port — statt den belegten einem anderen Programm wegzunehmen.
-
-    Auf dem Kursrechner kann 8777 schon jemandem gehoeren. Mit allow_reuse_address wuerde
-    der Start hier zwar gelingen, aber die Anfragen landeten dann teils beim anderen
-    Programm. Lieber ausweichen: wir sind Gast auf diesem Rechner.
-    """
-    import socket
-    for p in PORTE:
-        with socket.socket() as s:
-            try:
-                s.bind((ADRESSE, p))
-                return p
-            except OSError:
-                continue
-    raise SystemExit(f"Die Ports {PORTE.start} bis {PORTE.stop-1} sind alle belegt. "
-                     f"Schliesse ein Programm, das einen davon benutzt.")
-
-
-def _sperre_aufraeumen():
-    """Eine Sperrdatei ohne lebenden Prozess wird beim Start entfernt.
-
-    Wird das Agentenfenster hart geschlossen (Kreuz statt Strg+C), bleibt ablage\\laeuft.pid
-    liegen, und die naechste Anweisung endet mit „Belegt: In diesem Ordner laeuft bereits ein
-    Agent" (Pruefstand 04.10.2026, 12:52, nach einem abgeschossenen Server). Lebt der Prozess
-    nicht mehr, ist die Sperre gegenstandslos; lebt er, bleibt sie — und wird gemeldet."""
-    d = agentmodul.ABLAGE / "laeuft.pid"
-    if not d.is_file():
-        return
-    alt = d.read_text(encoding="utf-8", errors="replace").strip()
-    if alt.isdigit() and agentmodul._lebt(alt) and alt != str(os.getpid()):
-        print(f"  Achtung: ablage\\laeuft.pid nennt Prozess {alt}, und der laeuft noch — ein zweiter Agent? "
-              f"Erst den beenden, sonst meldet jede Anweisung 'Belegt'.")
-        return
+def aufraeumen(grund: str):
+    """Ausgangszustand (sein Wort 16.10.2026: „Wenn die HTML oder die bat geschlossen wird, muss
+    alles wieder auf den Ausgangszustand gesetzt werden — nichts ausser der Bruecke darf mehr
+    laufen"): Leitung zu, Modellserver aus, Diener aus."""
     try:
-        d.unlink()
-        print("  Alte Sperrdatei ohne lebenden Prozess entfernt (ablage\\laeuft.pid).")
+        protokoll("ENDE", grund + " — Leitung geschlossen, Modellserver beendet, Diener beendet")
+    except Exception:                                             # noqa: BLE001
+        pass
+    try:
+        SERIELL.schliessen()
+    except Exception:                                             # noqa: BLE001
+        pass
+    try:
+        subprocess.run(["taskkill", "/IM", "llama-server.exe", "/F"], capture_output=True, timeout=20,
+                       **OHNE_FENSTER)
+    except Exception:                                             # noqa: BLE001
+        pass
+    os._exit(0)
+
+
+PROTOKOLL = ABLAGE / "protokoll_testen.txt"
+
+
+def protokoll(art: str, text: str):
+    """Jeder Schritt des Menschen im Testmodus, mit Uhrzeit — daraus wird spaeter der Agent
+    abgeleitet (sein Wort 15.10.2026: „du analysierst mein Verhalten, indem du mir zusiehst")."""
+    try:
+        ABLAGE.mkdir(parents=True, exist_ok=True)
+        with open(PROTOKOLL, "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {art:<12} {text}\n")
     except OSError:
         pass
 
 
-def main():
-    _sperre_aufraeumen()
-    port = _freier_port()
-    if port != PORT:
-        print(f"  Port {PORT} ist belegt — die Oberflaeche laeuft auf {port}.")
-    with Server((ADRESSE, port), Griff) as s:
-        adresse = f"http://{ADRESSE}:{port}/"
-        print(f"  Die Oberflaeche laeuft: {adresse}")
-        print(f"  Dieses Fenster offen lassen. Beenden mit Strg+C.")
-        # Den Browser in einem eigenen Nebenlauf starten und jeden Fehler schlucken:
-        # webbrowser.open ruft ein fremdes Programm auf, und dessen Scheitern darf den
-        # Server nicht mitreissen. Auf einem Rechner ohne eingetragenen Standardbrowser
-        # endete das sonst mit einer Ausnahme, und die Oberflaeche war weg, bevor sie
-        # jemand sehen konnte.
-        def _browser():
+class Seriell:
+    """Die direkte Leitung zum Brett (REPL): offen halten, mitlesen, Befehle senden.
+    Sein Wort (15.10.2026): „Normalerweise meldet der ESP32 sich nach dem Aufspielen des
+    Betriebssystems zurueck und ermoeglicht eine direkte Eingabe von Befehlen — das moechte
+    ich hier auch drin haben." Vor jedem Werkzeug wird die Leitung freigegeben."""
+
+    def __init__(self):
+        self.v = None
+        self.port = ""
+        self.puffer: list = []
+        self.sperre = threading.Lock()
+
+    def oeffnen(self, port: str) -> str:
+        import serial
+        self.schliessen()
+        self.v = serial.Serial(port, 115200, timeout=0.2)
+        self.port = port
+        with self.sperre:
+            self.puffer = [f"[verbunden mit {port}, 115200 Baud — Strg+C unterbricht, Strg+D startet neu]"]
+        threading.Thread(target=self._lesen, daemon=True).start()
+        try:                       # ein Zeilenumbruch holt die Eingabeaufforderung hervor
+            self.v.write(b"\r\n")
+        except Exception:          # noqa: BLE001
+            pass
+        return port
+
+    def _lesen(self):
+        v = self.v
+        rest = b""
+        while v is not None and v is self.v:
             try:
-                webbrowser.open(adresse)
-            except Exception as e:
-                print(f"  (Der Browser liess sich nicht oeffnen: {type(e).__name__}. "
-                      f"Adresse von Hand aufrufen: {adresse})")
-        threading.Thread(target=_browser, daemon=True).start()
+                b = v.read(256)
+            except Exception as ex:                                # noqa: BLE001
+                with self.sperre:
+                    self.puffer.append(f"[Leitung weg: {ex}]")
+                self.v = None
+                return
+            if not b:
+                continue
+            rest += b
+            text = rest.decode("utf-8", "replace")
+            rest = b""
+            with self.sperre:
+                self.puffer.append(text)
+                if len(self.puffer) > 4000:
+                    del self.puffer[:1000]
+
+    def senden(self, text: str, roh: bytes = b""):
+        if self.v is None:
+            raise RuntimeError("keine Verbindung")
+        self.v.write(roh if roh else (text.encode("utf-8") + b"\r\n"))
+
+    def lesen(self, ab: int):
+        with self.sperre:
+            return "".join(self.puffer[ab:]), len(self.puffer)
+
+    def schliessen(self):
+        v, self.v = self.v, None
+        if v is not None:
+            try:
+                v.close()
+            except Exception:      # noqa: BLE001
+                pass
+            with self.sperre:
+                self.puffer.append(f"[getrennt von {self.port}]")
+            time.sleep(0.3)
+
+
+SERIELL = Seriell()
+
+
+def _py() -> str:
+    p = pathlib.Path(python_exe())
+    return str(p) if p.is_file() else sys.executable
+
+
+def job_starten(befehl: list, titel: str) -> int:
+    """Ein Programm abgeloest starten; seine Zeilen landen in _jobs[id]."""
+    with _sperre:
+        _naechste[0] += 1
+        nr = _naechste[0]
+        _jobs[nr] = {"zeilen": [], "fertig": False, "rc": None, "start": time.time()}
+
+    def laufen():
         try:
-            s.serve_forever()
-        except KeyboardInterrupt:
-            print("\n  Beendet.")
-        finally:
-            _sitzung_schliessen("Oberflaeche beendet.")      # Modellserver nicht verwaist lassen
+            p = subprocess.Popen(befehl, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 text=True, bufsize=1, env=umgebung(), cwd=str(WURZEL),
+                                 **OHNE_FENSTER, **LESEN)
+            for zeile in p.stdout:
+                with _sperre:
+                    _jobs[nr]["zeilen"].append(zeile.rstrip("\n"))
+            p.wait()
+            rc = p.returncode
+        except Exception as ex:                                   # noqa: BLE001
+            with _sperre:
+                _jobs[nr]["zeilen"].append(f"FEHLER: {type(ex).__name__}: {ex}")
+            rc = -1
+        with _sperre:
+            d = _jobs[nr]
+            d["rc"] = rc
+            d["dauer_s"] = round(time.time() - d["start"], 1)   # fuer die Standzeile — keine eigene Zeile im Fenster (sein Wort 16.10.2026)
+            d["fertig"] = True
+            protokoll("ERGEBNIS", titel.split(" ")[0] + f" rc={rc} {d['dauer_s']} s | "
+                      + " | ".join(z for z in d["zeilen"] if z.strip())[:600])
+    threading.Thread(target=laufen, daemon=True).start()
+    protokoll("WERKZEUG", titel[:400])
+    return nr
+
+
+def werkzeug_befehl(name: str, eingabe: dict) -> list:
+    datei = WERKZEUGE / f"{name}.py"
+    if not datei.is_file():
+        raise FileNotFoundError(f"Werkzeug {name} fehlt")
+    return [_py(), str(datei), json.dumps(eingabe, ensure_ascii=False)]
+
+
+class H(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *_):
+        pass
+
+    def _senden(self, typ: str, daten: bytes, code: int = 200):
+        self.send_response(code)
+        self.send_header("Content-Type", typ)
+        self.send_header("Content-Length", str(len(daten)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(daten)
+
+    def _json(self, d, code: int = 200):
+        self._senden("application/json; charset=utf-8", json.dumps(d, ensure_ascii=False).encode("utf-8"), code)
+
+    def do_GET(self):
+        pfad, _, abfrage = self.path.partition("?")
+        felder = dict(x.split("=", 1) for x in abfrage.split("&") if "=" in x)
+        if pfad == "/":
+            if SEITE.is_file():
+                return self._senden("text/html; charset=utf-8", SEITE.read_bytes())
+            return self._senden("text/plain; charset=utf-8", b"Frage.html fehlt", 404)
+        if pfad == "/zustand":
+            with _sperre:
+                laeuft = any(not j["fertig"] for j in _jobs.values())
+            return self._json({"laeuft": laeuft, "wurzel": str(WURZEL), "werkstatt": str(WERKSTATT)})
+        if pfad == "/dateien":
+            PROGRAMME.mkdir(exist_ok=True)
+            return self._json({"dateien": sorted(p.name for p in PROGRAMME.glob("*.py"))})
+        if pfad == "/datei":
+            name = pathlib.Path(felder.get("name", "")).name
+            protokoll("WAHL", name)
+            p = PROGRAMME / name
+            if not name or not p.is_file():
+                return self._json({"fehler": f"{name} gibt es nicht"}, 404)
+            return self._json({"name": name, "inhalt": p.read_text(encoding="utf-8", errors="replace")})
+        if pfad == "/ausgabe":
+            try:
+                nr = int(felder.get("id", "0"))
+            except ValueError:
+                nr = 0
+            with _sperre:
+                j = _jobs.get(nr)
+                if not j:
+                    return self._json({"fehler": "unbekannter Lauf"}, 404)
+                return self._json({"zeilen": list(j["zeilen"]), "fertig": j["fertig"], "rc": j["rc"], "dauer_s": j.get("dauer_s")})
+        if pfad == "/seriell/lesen":
+            try:
+                ab = int(felder.get("ab", "0"))
+            except ValueError:
+                ab = 0
+            text, stand = SERIELL.lesen(ab)
+            return self._json({"text": text, "ab": stand, "verbunden": SERIELL.v is not None, "port": SERIELL.port})
+        if pfad == "/protokoll":
+            try:
+                n = int(felder.get("n", "120"))
+            except ValueError:
+                n = 120
+            try:
+                zeilen = PROTOKOLL.read_text(encoding="utf-8", errors="replace").splitlines()[-n:]
+            except OSError:
+                zeilen = []
+            return self._json({"zeilen": zeilen})
+        if pfad == "/ports":
+            r = subprocess.run(werkzeug_befehl("ports_zeigen", {}), capture_output=True, text=True,
+                               timeout=60, env=umgebung(), **OHNE_FENSTER, **LESEN)
+            return self._json({"text": (r.stdout or r.stderr or "").strip()})
+        return self._senden("text/plain", b"nicht gefunden", 404)
+
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        try:
+            daten = json.loads(self.rfile.read(n) or b"{}")
+        except ValueError:
+            return self._json({"fehler": "kein JSON"}, 400)
+        if self.path == "/uebersetzen":
+            name = pathlib.Path(str(daten.get("name") or "programm.py")).name
+            if not name.endswith(".py"):
+                name += ".py"
+            inhalt = str(daten.get("inhalt") or "")
+            #  Beim Kopieren aus einer Antwort kommt oft eine gemeinsame Einrueckung mit (16.10.2026,
+            #  in seinem Test: jede Zeile zwei Leerzeichen -> IndentationError in Zeile 1). Eine
+            #  Einrueckung, die ALLE nicht-leeren Zeilen gemeinsam haben, traegt keine Bedeutung und
+            #  wird entfernt — und gesagt. Der Interpreter urteilt danach wie immer selbst.
+            import textwrap
+            bereinigt = textwrap.dedent(inhalt.replace("\r\n", "\n"))
+            hinweis = ""
+            if bereinigt != inhalt.replace("\r\n", "\n"):
+                erste = next((z for z in inhalt.replace("\r\n", "\n").splitlines() if z.strip()), "")
+                n = len(erste) - len(erste.lstrip())
+                hinweis = (f"alle Zeilen hatten {n} Zeichen Einrueckung am Anfang (beim Kopieren "
+                           f"mitgekommen) — entfernt; die Eingabe zeigt jetzt den bereinigten Text")
+                inhalt = bereinigt
+            protokoll("EDITOR", name + "\n" + inhalt)
+            # 1. in die Werkstatt — unveraendert, wie er in der Eingabe steht.
+            WERKSTATT.mkdir(parents=True, exist_ok=True)
+            ziel = WERKSTATT / name
+            ziel.write_text(inhalt, encoding="utf-8")
+            # 2. uebersetzen mit dem Interpreter des Kurses. Sein Wort (16.10.2026, 02:50): „der
+            #    Interpreter-Ausgang gibt nur die Meldung vom Interpreter aus, so wie er es macht, und
+            #    nicht wie du es willst!" — zeilen = wortgetreu stdout+stderr des Interpreters, sonst
+            #    nichts; py_compile schreibt bei Erfolg nichts, dann ist zeilen leer. Rueckgabewert und
+            #    Hinweis gehen getrennt mit (fuer die Standzeile, nicht fuer das Fenster).
+            r2 = subprocess.run([_py(), "-m", "py_compile", str(ziel)], capture_output=True,
+                                text=True, timeout=60, env=umgebung(), **OHNE_FENSTER, **LESEN)
+            roh = ((r2.stdout or "") + (r2.stderr or "")).rstrip()
+            zeilen = roh.splitlines()
+            protokoll("UEBERSETZT" if r2.returncode == 0 else "NICHT_UEBERS",
+                      f"{name} | Rueckgabewert {r2.returncode} | " + (" | ".join(zeilen)[:600] or "(keine Ausgabe)"))
+            return self._json({"zeilen": zeilen, "ok": r2.returncode == 0, "rc": r2.returncode, "name": name,
+                               "hinweis": hinweis, "inhalt": inhalt if hinweis else None})
+        if self.path == "/notiz":
+            protokoll(str(daten.get("art") or "NOTIZ")[:12], str(daten.get("text") or "")[:4000])
+            return self._json({"ok": True})
+        if self.path == "/seriell/oeffnen":
+            with _sperre:
+                laeuft = any(not j["fertig"] for j in _jobs.values())
+            if laeuft:
+                return self._json({"fehler": "Ein Werkzeug benutzt die Leitung gerade."}, 409)
+            try:
+                port = SERIELL.oeffnen(str(daten.get("port") or "COM3").strip())
+                protokoll("SERIELL", "verbunden " + port)
+                return self._json({"ok": True, "port": port})
+            except Exception as ex:                                 # noqa: BLE001
+                return self._json({"fehler": f"{type(ex).__name__}: {ex}"}, 500)
+        if self.path == "/seriell/senden":
+            try:
+                art = str(daten.get("art") or "")
+                roh = {"strg_c": b"\x03", "strg_d": b"\x04"}.get(art, b"")
+                text = str(daten.get("text") or "")
+                SERIELL.senden(text, roh)
+                protokoll("REPL", art or text)
+                return self._json({"ok": True})
+            except Exception as ex:                                 # noqa: BLE001
+                return self._json({"fehler": f"{type(ex).__name__}: {ex}"}, 500)
+        if self.path == "/seriell/schliessen":
+            SERIELL.schliessen()
+            protokoll("SERIELL", "getrennt")
+            return self._json({"ok": True})
+        if self.path == "/werkzeug":
+            name = str(daten.get("name") or "")
+            eingabe = daten.get("eingabe") or {}
+            if name not in ("programm_testen", "esp32_firmware", "esp32_laden", "esp32_nachlesen",
+                            "ports_zeigen", "geraet_zeigen", "quelltext_pruefen"):
+                return self._json({"fehler": f"{name} ist hier nicht vorgesehen"}, 400)
+            if SERIELL.v is not None:
+                SERIELL.schliessen()           # die Leitung gehoert jetzt dem Werkzeug
+                protokoll("SERIELL", "getrennt, weil " + name + " die Leitung braucht")
+            try:
+                nr = job_starten(werkzeug_befehl(name, eingabe),
+                                 f"{name} {json.dumps(eingabe, ensure_ascii=False)}")
+            except FileNotFoundError as ex:
+                return self._json({"fehler": str(ex)}, 404)
+            return self._json({"id": nr})
+        return self._json({"fehler": "nicht gefunden"}, 404)
+
+
+def modell_sicherstellen():
+    """Alles in einem (sein Wort 15.10.2026): laeuft kein Modellserver, wird das 7B gestartet."""
+    try:
+        import modell as _m
+        if not _m.laeuft_schon(2.0):
+            print("Modellserver wird gestartet …", flush=True)
+            _m.starten(laut=False)
+            print("Modellserver laeuft:", _m.geladenes() or "127.0.0.1:8099", flush=True)
+    except Exception as ex:                                       # noqa: BLE001
+        print(f"Modellserver nicht gestartet: {type(ex).__name__}: {ex}", flush=True)
+
+
+def main() -> int:
+    PROGRAMME.mkdir(exist_ok=True)
+    WERKSTATT.mkdir(parents=True, exist_ok=True)
+    threading.Thread(target=modell_sicherstellen, daemon=True).start()
+    protokoll("START", "Diener gestartet; Schalter: " + fenster_ist_der_schalter())
+    for sig in ("SIGBREAK", "SIGINT", "SIGTERM"):       # Strg+Untbr, Strg+C, kursagent stop
+        if hasattr(signal, sig):
+            signal.signal(getattr(signal, sig), lambda *_: aufraeumen("Fenster geschlossen"))
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 8777), H)
+    print("Seite: http://127.0.0.1:8777", flush=True)
+    import os
+    if os.environ.get("KURS_BROWSER") == "1":      # START.bat setzt das; ueber die Bruecke kein neues Fenster
+        threading.Thread(target=lambda: (time.sleep(0.8), webbrowser.open("http://127.0.0.1:8777")),
+                         daemon=True).start()
+    srv.serve_forever()
+    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
