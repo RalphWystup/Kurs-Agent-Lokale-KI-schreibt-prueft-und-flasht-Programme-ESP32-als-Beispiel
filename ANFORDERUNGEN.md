@@ -226,3 +226,13 @@ alter Inhalt über die Brücke gelöscht (59 Dateien), neuer Inhalt Ordner für 
 (99 Dateien) und Kopie auf C:\Kurs_Agent_Sicherung. Freigabe der Lösch- und Git-Schritte: FREIGABE.txt mit seinem Wortlaut, befristet,
 im Wächterprotokoll vermerkt; der Wächter blockierte unterwegs dreimal zu grob (Notiztext mit „git", Serverzeit, Abruf der GitHub-Seite)
 und wurde je geschärft (Selbsttest 28/28).
+
+## 16.10.2026, 15:00 — Startseite und seine letzte Frage
+
+**Sein Wort:** „Fünfzehn Arbeiten … die Zahl der Arbeiten aktualisieren" → Kurs-Agent Fassung 2.0 in die Startseite ralphwystup.github.io
+eingetragen (fehlte im Generator), jetzt sechzehn Arbeiten, Sitemap neu; auf GitHub (99bf179) und C:\Git gespiegelt. Beide Seiten abgerufen
+und gemessen: neu ausgeliefert.
+**Seine Frage:** „ist bei mir auf C: der Agent so, dass ich eine einzige fertige Datei zum Kopieren habe, und hast du das bei dir auf einer
+virtuellen Maschine getestet — ready for go?" **Antwort:** Auf C:\Kurs_Agent liegt der fertige Ordner (5 GB); kopieren = Auslieferung.
+Eine einzelne Datei (ZIP) gibt es noch nicht. Auf einer VM ist es nicht getestet — mein Server ist Linux, eine Windows-VM habe ich nicht.
+Gemessen ist nur sein eingerichteter Rechner. „Ready" gilt dafür; für einen fremden, leeren Rechner ist es ungemessen.
