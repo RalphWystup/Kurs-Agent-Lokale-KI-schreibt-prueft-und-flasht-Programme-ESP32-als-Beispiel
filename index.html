@@ -1,5 +1,28 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="de"><head><meta charset="utf-8">
+<!-- kopfangaben:anfang -->
+<meta name="description" content="Ein Kurspaket in einem Ordner: Schülerinnen und Schüler programmieren einen ESP32 in MicroPython mit einem Sprachmodell, das auf dem Kursrechner läuft — ohne Internet, ohne Installation. Ein Agent in der Seite führt den Auftrag durch Interpreter, Simulator und Brett; jede Fehlermeldung geht zurück ans Modell. Fassung 2.0 vom 16.10.2026, mit Installationsanleitung und den zehn Anforderungen.">
+<meta name="author" content="Prof. Dr.-Ing. Ralph Wystup M.Sc.">
+<meta name="keywords" content="KI-Agent, lokales Sprachmodell, llama.cpp, Qwen, MicroPython, ESP32, Unterricht, Offline, Python">
+<link rel="canonical" href="https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="Ralph Wystup — Elektrotechnik">
+<meta property="og:title" content="Kurs-Agent: eine lokale KI schreibt, prüft und flasht Programme — ESP32 als Beispiel">
+<meta property="og:description" content="Ein Kurspaket in einem Ordner: Schülerinnen und Schüler programmieren einen ESP32 in MicroPython mit einem Sprachmodell, das auf dem Kursrechner läuft — ohne Internet, ohne Installation. Ein Agent in der Seite führt den Auftrag durch Interpreter, Simulator und Brett; jede Fehlermeldung geht zurück ans Modell. Fassung 2.0 vom 16.10.2026, mit Installationsanleitung und den zehn Anforderungen.">
+<meta property="og:url" content="https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/">
+<meta property="og:image" content="https://ralphwystup.github.io/Foto_Ralph_Wystup.jpg">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle","headline":"Kurs-Agent: eine lokale KI schreibt, prüft und flasht Programme — ESP32 als Beispiel",
+ "description":"Ein Kurspaket in einem Ordner: Schülerinnen und Schüler programmieren einen ESP32 in MicroPython mit einem Sprachmodell, das auf dem Kursrechner läuft — ohne Internet, ohne Installation. Ein Agent in der Seite führt den Auftrag durch Interpreter, Simulator und Brett; jede Fehlermeldung geht zurück ans Modell. Fassung 2.0 vom 16.10.2026, mit Installationsanleitung und den zehn Anforderungen.","url":"https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/","inLanguage":"de",
+ "license":"https://opensource.org/licenses/MIT",
+ "author":{"@type":"Person","name":"Prof. Dr.-Ing. Ralph Wystup M.Sc.","url":"https://ralphwystup.github.io/"},
+ "publisher":{"@type":"Person","name":"Prof. Dr.-Ing. Ralph Wystup M.Sc."},
+ "isPartOf":{"@type":"Collection","name":"Lehr- und Laborarbeiten zur Elektrotechnik","url":"https://ralphwystup.github.io/"},
+ "keywords":"KI-Agent, lokales Sprachmodell, llama.cpp, Qwen, MicroPython, ESP32, Unterricht, Offline, Python"}
+</script>
+<!-- kopfangaben:ende --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kurs-Agent — eine lokale KI schreibt, prüft und flasht Programme (ESP32)</title>
 <style>
   :root{--bg:#f4f3ef;--fg:#1d1d1b;--rand:#c9c6bd;--kasten:#fff;--grau:#6b6962;--rot:#b3261e;--gruen:#2e7d32;--blau:#1f4e9e;--aktiv:#fff}
