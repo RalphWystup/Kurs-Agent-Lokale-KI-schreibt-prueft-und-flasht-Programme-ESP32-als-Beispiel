@@ -257,3 +257,51 @@ Strg+C, Freigabe, Aufspielen 17,8 s, kein Traceback); danach von Hand Strg+D/Str
 Sein Wort: „funktioniert, oder?" — ja, gemessen. Stand: GitHub 99b4284, C:\Git gespiegelt, C:\Kurs_Agent fertig, Sicherung erneuert.
 Ungemessen bleibt: fremder Rechner ohne CH340-Treiber (UAC-Weg), Dozentenweg hole_paket → Räder auf Windows, Betriebssystem-Weg im Agenten,
 Rückschleife mit Anhang am Brett.
+
+## 11.11.2026, 08:30–10:00 — „Ich brauche so eine alles-gut-Startdatei“
+
+**Sein Wort:** „wenn ich den studenten den link zum : https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/
+gebe was müssen die dann runterladen damit sie starten können, also damit alles automatisch installiert wird was fehelt. Ich bracuche so eine
+alles gut start datei“ — „denke daran die leute haben wirklich frische rechner. bereite alles vor, lege es so dass ich es aus Frankfurt ereichen
+kann damit die studenten es später prüfen können“ — „rechner bleibt an, brücke läuft weiter“.
+
+**Befund:** Das Repositorium allein reicht nicht. Es enthält nur Quelltexte (3,9 MB); `hole_paket.py` setzt ein Python **mit pip** voraus
+(die Räder kommen über `pip download`), und das hat ein frischer Rechner nicht; das Modell (4,7 GB) passt nicht in Git. Bisher gab es nur
+den Stick-Weg (Gebot 8: ein Archiv). Jetzt gibt es dazu den Netz-Weg für den Rechner mit Internet; der Kurs selbst bleibt ohne Netz (Gebot 3).
+
+**Umsetzung (Gebot 8, 9, 10):** `ALLES_GUT_START_1.0.bat` ist die eine Datei. Sie holt mit Windows-Bordmitteln (curl, tar, robocopy) das
+Kurspaket als ZIP von GitHub und das eingebettete Python 3.12 und übergibt an das neue `alles_gut.py`, das mit diesem Python `import site`
+freischaltet, pip aus `get-pip.py` einrichtet, den Arbeitsspeicher misst (ab 12 GB nutzbar das 7B, sonst das 3B; Eintrag in `GEWAEHLT.txt`), das
+vorhandene `hole_paket.py` aufruft (kein zweiter Lader), das Kurs-Python vervollständigt (setuptools, wheel, esptool aus dem Quellarchiv
+als Rad vorgebaut, pyserial, mpremote, esptool), die Treiber-Archive entpackt (E5 braucht die .inf) und den Bestand prüft
+(Pflicht gegen Hinweis: fehlender Treiber hält den Start nicht auf, Windows 10/11 bringen den CH340 meist mit); danach `START.bat`.
+Nichts wird installiert, alles liegt in `C:\Kurs_Agent`; Abbruch und Neustart sind unschädlich; Mitschrift `alles_gut_protokoll.txt`.
+Beide Dateien sind Werkzeuge der Vorbereitung wie `hole_paket.py` und rufen ins Netz — der Regelwächter (R4) meldet das zu Recht; die
+Ausnahme ist sein Wort von heute. Abgelegt: Arbeitskopie `/workspace/AUSFUHR/git/…` (von Frankfurt aus erreichbar), Spiegel
+`C:\Kurs_Agent\alles_gut\` und Probeordner `C:\Kurs_Agent_Probe`, Sicherung in `/workspace/SICHERUNG`. Auf GitHub erst nach seinem Wort
+(Grundsatz 24). Messungen: MESSUNG.txt.
+
+**Gemessen, Weg 1 (Linux, Server, echte Downloads, 08:52):** `alles_gut.py` mit `hole_paket.py --modell 7b --llama vulkan` von null: Python-ZIP
+11,1 MB, get-pip 2,4 MB, 23 Räder 10,2 MB, Firmware 1,8 MB, llama.cpp b12283 vulkan 38 MB, CH341SER/CH343SER, Modell 4683 MB — zusammen
+4,84 GB in 124 Dateien, Rückgabe 0 des Laders; CP210x beim ersten Anlauf 403 (Silicon Labs), beim zweiten Lauf geholt. Fehler gefunden
+und behoben: die .inf-Prüfung war schreibweisenabhängig (WCH liefert `CH341SER.INF`), auf Linux 0 Treffer → Bestand FEHLT → die bat hätte
+START.bat nicht aufgerufen; jetzt schreibweisenunabhängig und Treiber nur Hinweis. Zweiter Lauf: alles da, Rückgabe 0.
+
+**Gemessen, Weg 2 (Windows 11 auf seinem Rechner, Probeordner `C:\Kurs_Agent_Probe`, über die Brücke, 09:52–10:03):** die bat mit
+`--ohne-start` (kein Browser, kein Diener — die Brücke bliebe sonst blockiert) und dem Kurspaket aus der Arbeitskopie (die Fassung auf
+GitHub hat `alles_gut.py` noch nicht): Schritt 1 entpackt und verschoben, Schritt 2 Python-ZIP aus dem Netz und mit tar entpackt, Schritt 3
+`alles_gut.py`: `._pth` freigeschaltet, pip 26.3, Arbeitsspeicher **13,8 GB** (16 GB eingebaut; die Grenze 14 GB hätte das 3B gewählt →
+Grenze auf 12 GB gesetzt), `hole_paket --modell 3b` aus dem Vorrat `C:\Kurs_Agent\paket` in 1 Minute, Bestand alle DA, Rückgabe 0.
+Danach `agent\einrichten.py` im Probeordner: **11 von 12 — esptool FEHLT**: „Cannot import build backend 'setuptools.build_meta'“, obwohl
+`setuptools-84.0.0` als Rad daneben lag. Ursache: pip baut das Quellarchiv in einer abgeschirmten Umgebung über PYTHONPATH, und ein Python
+mit `._pth` ignoriert PYTHONPATH. Das ist der am 16.10. als ungemessen benannte Dozentenweg (Räder → Einrichtung) — er ging nie, es fiel
+nicht auf, weil die Vorlage seit dem 16.10. esptool schon enthält. Behoben in `alles_gut.py` (Schritt 6): setuptools und wheel in das
+Kurs-Python, esptool ohne Abschirmung zum Rad gebaut (`esptool-5.4.0-py3-none-any.whl` nach `paket\pakete`), pyserial, mpremote, esptool
+eingerichtet; `einrichten.py` unverändert. Dazwischen ein Fehler von mir (pip-Option an falscher Stelle, Lauf 3), berichtigt. Lauf 4:
+Bestand 17 Punkte alle DA, Rückgabe 0; `einrichten.py` **12 von 12** (E3 esptool EINGERICHTET aus dem Rad). Wiederholte Läufe holen nichts
+noch einmal (3 s).
+
+**Nicht gemessen:** ein wirklich leerer Windows-Rechner in einem Zug von der heruntergeladenen Startdatei bis zum laufenden Kurs (auf
+seinem Rechner lag der Vorrat, und `START.bat` wurde nicht aus der bat heraus gestartet — Schritt 1 davon, die Einrichtung, aber schon);
+der 4,7-GB-Download über eine langsame Leitung; SmartScreen bei der heruntergeladenen bat; der Treiber-Weg mit Administratorrechten;
+die Startdatei aus dem veröffentlichten Repositorium (erst nach dem Hochladen möglich). Das ist der Auftrag an die ersten Studierenden.

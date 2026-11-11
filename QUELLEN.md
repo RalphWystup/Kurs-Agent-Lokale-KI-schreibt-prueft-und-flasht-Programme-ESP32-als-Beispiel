@@ -5,6 +5,8 @@
 | `Frage.html` | Seite: OpenAI-kompatible Schnittstelle des llama-server (`/v1/chat/completions`, Server-Sent Events), Dokumentation llama.cpp; Textfeld/Fetch nach MDN; eigener Ansatz nach Lesen von LLM-Self-Repair-Arbeiten (arXiv 2604.10508, 2606.17514, ICLR 2024 Self-Debug) für die Agent-Knöpfe |
 | `agent/oberflaeche.py` | Python `http.server`, `subprocess`, pyserial (Raw-REPL-Steuerzeichen Strg+A/B/C/D nach MicroPython-Doku) |
 | `agent/einrichten.py` | Python Embeddable Package + `get-pip.py` (python.org), `pip install --no-index --find-links`, `pnputil /enum-drivers` (Microsoft) |
+| `ALLES_GUT_START_1.0.bat` | Windows-Batch; Bordmittel `curl.exe` und `tar.exe` (bsdtar, in Windows 10 ab 1803 enthalten, Microsoft-Doku), `robocopy /E /MOVE` (Rückgabe < 8 = gut); GitHub-Archivadresse `archive/refs/heads/main.zip`; Python Embeddable Package (python.org). Werkzeug der Vorbereitung wie `hole_paket.py`: ruft ins Netz, gehört nicht zum Kursbetrieb |
+| `alles_gut.py` | Python Embeddable Package: `python3xx._pth` mit `import site` (python.org, „Using Python on Windows“), `get-pip.py` (pypa); `GlobalMemoryStatusEx` (Microsoft) für den Arbeitsspeicher; ruft das vorhandene `hole_paket.py` auf (kein zweiter Lader); `pnputil /add-driver` braucht eine entpackte .inf (einrichten.py E5) |
 | `START.bat` | Windows-Batch; `netstat -ano`, `findstr` (Microsoft) |
 | `einspielen.py` | Baugate-Prinzip wie bei der Analoganzeige (eigenes Projekt, 16.09.2026); Gebote 1–10 vom 15./16.10.2026 |
 | `agent/werkzeuge/esp32_firmware.py` | esptool (`erase_flash`, `write_flash`), MicroPython-Banner nach weichem Neustart (Strg+C/Strg+D, MicroPython-Doku REPL) |

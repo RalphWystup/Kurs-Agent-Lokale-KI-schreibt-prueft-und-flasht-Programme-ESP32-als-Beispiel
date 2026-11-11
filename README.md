@@ -34,10 +34,38 @@ Fassung 3.1 vom 5. Oktober (Gesprächsoberfläche, feste Anfragen, Coder-3B, elf
 |:--|:--|:--|
 | **Der Nutzer im Kurs** | den gefüllten Ordner `Kurs_Agent` (rund 5 GB) auf einem Stick oder als Kopie — alles drin: Python, Modellserver, Sprachmodell, Firmware, USB-Treiber, Werkzeuge, Seite | **nein**, nie |
 | **Dieses Repositorium** | die Quelltexte, die Anleitung, das Prüfmaterial und `hole_paket.py` | — |
+| **Der Studierende am eigenen Rechner** | nur `ALLES_GUT_START_1.0.bat` (eine Datei, 5 KB): holt Kurspaket, Python, pip, Räder, llama.cpp, Firmware, Treiber und Modell nach `C:\Kurs_Agent` und startet — siehe unten | ja, einmal, für diesen Lauf |
 | **Der Dozent, einmal** | füllt den Ordner mit `hole_paket.py --modell 7b` aus den Originalquellen (Python, Räder, llama.cpp, MicroPython, Treiber, Modell) und kopiert ihn auf den Stick | ja, einmal, auf dem Vorbereitungsrechner |
 
 Die 5 GB passen nicht in ein Git-Repositorium (Grenze 100 MB je Datei, das Modell hat 4,7 GB). Darum ist die Auslieferung an den
 Nutzer der Ordner, nicht dieser Klon.
+
+## Für Studierende mit Internet: eine Datei (seit 11.11.2026)
+
+Wer keinen Stick bekommt, braucht von dieser Seite genau **eine Datei**: [`ALLES_GUT_START_1.0.bat`](ALLES_GUT_START_1.0.bat)
+(Rechtsklick, „Link speichern unter“, oder von der [Kursseite](https://ralphwystup.github.io/Kurs-Agent-Lokale-KI-schreibt-prueft-und-flasht-Programme-ESP32-als-Beispiel/) unter „Installation“).
+Doppelklick genügt; auf dem Rechner muss nichts installiert sein, auch kein Python. Die Datei
+
+1. holt das Kurspaket als ZIP von GitHub (4 MB) und entpackt es nach `C:\Kurs_Agent` (Bordmittel `curl.exe`, `tar.exe`, `robocopy`),
+2. holt das eingebettete Python 3.12 (11 MB) nach `paket\python_vorlage`,
+3. ruft damit `alles_gut.py`: `import site` freischalten, pip aus `get-pip.py`, Arbeitsspeicher messen und das Modell wählen (ab 12 GB nutzbar das 7B mit
+   4,7 GB, sonst das 3B mit 1,9 GB; Eintrag in `paket\modell\GEWAEHLT.txt`), dann `hole_paket.py` (Räder, llama.cpp, Firmware, Treiber, Modell),
+   das Kurs-Python vervollständigen (setuptools, wheel, esptool aus dem Quellarchiv als Rad vorbauen, pyserial, mpremote, esptool),
+   Treiber-Archive entpacken, Bestand prüfen,
+4. ruft `START.bat`: Einrichtung (12 Punkte), Diener, Modellserver, Browser.
+
+Dauer je nach Leitung 5 bis 60 Minuten, fast alles davon ist das Modell. Abbruch ist unschädlich: erneut doppelklicken, Vorhandenes wird
+nicht noch einmal geladen. Hält Windows die heruntergeladene Datei an („Der Computer wurde durch Windows geschützt“): „Weitere
+Informationen“, „Trotzdem ausführen“. Fortschritt und Befunde: `C:\Kurs_Agent\alles_gut_protokoll.txt` und `fuellen_protokoll.txt`.
+Nötig: Windows 10 (ab 1803) oder 11, etwa 7 GB freier Platz, Internet nur für diesen einen Lauf. Danach läuft der Ordner ohne Netz wie
+unten beschrieben. `ALLES_GUT_START_1.0.bat [Ordner] [--ohne-start]` nimmt auch einen anderen Zielordner; `--ohne-start` holt nur.
+
+**Gemessen am 11.11.2026:** auf dem Server (Linux) mit echten Downloads von null: Paket 4,84 GB mit dem 7B, Lader Rückgabe 0. Auf einem
+Windows-11-Rechner (13,8 GB nutzbar) im Probeordner mit dem 3B: Python-ZIP aus dem Netz, `import site`, pip 26.3, esptool 5.4.0 als Rad
+gebaut (im eingebetteten Python scheitert der Bau aus dem Quellarchiv mit pip-Abschirmung — daher das Vorbauen), Bestand 17 Punkte alle da,
+`einrichten.py` danach 12 von 12. **Nicht gemessen:** ein wirklich leerer Windows-Rechner von der Startdatei bis zum laufenden Kurs in einem
+Zug, der Modell-Download über eine langsame Leitung, SmartScreen, der Treiber-Weg mit Administratorrechten. Das prüfen die ersten
+Studierenden; sie schicken `alles_gut_protokoll.txt` und `fuellen_protokoll.txt`.
 
 ## Für den Nutzer: Ordner kopieren, START.bat
 
