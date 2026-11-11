@@ -303,5 +303,11 @@ noch einmal (3 s).
 
 **Nicht gemessen:** ein wirklich leerer Windows-Rechner in einem Zug von der heruntergeladenen Startdatei bis zum laufenden Kurs (auf
 seinem Rechner lag der Vorrat, und `START.bat` wurde nicht aus der bat heraus gestartet — Schritt 1 davon, die Einrichtung, aber schon);
-der 4,7-GB-Download über eine langsame Leitung; SmartScreen bei der heruntergeladenen bat; der Treiber-Weg mit Administratorrechten;
-die Startdatei aus dem veröffentlichten Repositorium (erst nach dem Hochladen möglich). Das ist der Auftrag an die ersten Studierenden.
+der 4,7-GB-Download über eine langsame Leitung; SmartScreen bei der heruntergeladenen bat; der Treiber-Weg mit Administratorrechten.
+Das ist der Auftrag an die ersten Studierenden.
+
+**Nachtrag 13:45, nach dem Hochladen** (sein Wort: „ok, git add, commit und push, probeordner löschen"; Commit 6d1a873): die Startdatei
+von der veröffentlichten Kursseite geladen (SHA-256 gleich der Arbeitskopie), allein in den geleerten Probeordner gelegt und mit
+`--ohne-start` gestartet. Kurspaket als `main.zip` von GitHub (73 Dateien, `alles_gut.py` dabei), Python-ZIP aus dem Netz, der Rest aus dem
+Vorrat; bei 13,8 GB jetzt das 7B (Grenze 12 GB), Paket 1086 Dateien 4,84 GB, Rückgabe 0 nach 27 s; `einrichten.py` 12 von 12. Der
+Probeordner (4,98 GB) ist danach auf sein Wort entfernt. Damit ist auch der Weg über das veröffentlichte Repositorium gemessen.

@@ -63,7 +63,9 @@ unten beschrieben. `ALLES_GUT_START_1.0.bat [Ordner] [--ohne-start]` nimmt auch 
 **Gemessen am 11.11.2026:** auf dem Server (Linux) mit echten Downloads von null: Paket 4,84 GB mit dem 7B, Lader Rückgabe 0. Auf einem
 Windows-11-Rechner (13,8 GB nutzbar) im Probeordner mit dem 3B: Python-ZIP aus dem Netz, `import site`, pip 26.3, esptool 5.4.0 als Rad
 gebaut (im eingebetteten Python scheitert der Bau aus dem Quellarchiv mit pip-Abschirmung — daher das Vorbauen), Bestand 17 Punkte alle da,
-`einrichten.py` danach 12 von 12. **Nicht gemessen:** ein wirklich leerer Windows-Rechner von der Startdatei bis zum laufenden Kurs in einem
+`einrichten.py` danach 12 von 12. Nach dem Hochladen noch einmal so, wie es der Studierende tut: die bat von der Kursseite geladen, allein
+in einen leeren Ordner gelegt und gestartet — Kurspaket und Python aus dem Netz, bei 13,8 GB das 7B, `einrichten.py` 12 von 12.
+**Nicht gemessen:** ein wirklich leerer Windows-Rechner von der Startdatei bis zum laufenden Kurs in einem
 Zug, der Modell-Download über eine langsame Leitung, SmartScreen, der Treiber-Weg mit Administratorrechten. Das prüfen die ersten
 Studierenden; sie schicken `alles_gut_protokoll.txt` und `fuellen_protokoll.txt`.
 
